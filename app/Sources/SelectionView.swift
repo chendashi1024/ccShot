@@ -1,6 +1,6 @@
 import AppKit
 
-enum SelectionAction { case edit, copy, save, pin }
+enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(AnnotationTool) }
 
 @MainActor final class SelectionWindow: NSWindow {
     override var canBecomeKey: Bool { true }
@@ -30,7 +30,14 @@ enum SelectionAction { case edit, copy, save, pin }
     init(image: CGImage, frame: NSRect) {
         self.image = image
         super.init(frame: frame)
-        for (title, action) in [("重新选择", #selector(reset)), ("取消", #selector(cancel)), ("完成", #selector(confirm)), ("复制", #selector(copy(_:))), ("保存", #selector(saveDocument(_:))), ("钉住", #selector(pinSelection))] {
+        for tool in [AnnotationTool.select,.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
+            let title = tool == .rectangle ? "画框" : tool.title
+            let button = NSButton(title:title,target:self,action:#selector(editTool(_:)))
+            button.tag = AnnotationTool.allCases.firstIndex(of:tool)!
+            button.bezelStyle = .rounded
+            actions.addArrangedSubview(button)
+        }
+        for (title, action) in [("复制", #selector(copy(_:))), ("保存", #selector(saveDocument(_:))), ("钉住", #selector(pinSelection)), ("重新选择", #selector(reset)), ("取消", #selector(cancel))] {
             let button = NSButton(title: title, target: self, action: action)
             button.bezelStyle = .rounded
             actions.addArrangedSubview(button)
@@ -217,6 +224,10 @@ enum SelectionAction { case edit, copy, save, pin }
     @objc func copy(_ sender: Any?) { finish(.copy) }
     @objc func saveDocument(_ sender: Any?) { finish(.save) }
     @objc func pinSelection() { finish(.pin) }
+    @objc private func editTool(_ sender: NSButton) {
+        guard AnnotationTool.allCases.indices.contains(sender.tag) else { return }
+        finish(.annotate(AnnotationTool.allCases[sender.tag]))
+    }
     @objc func confirm() { finish(.edit) }
     private func finish(_ action: SelectionAction) {
         guard let pixels = selectionPixels,

@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-03",
+  "scope": "框选条直接点常用工具，携带当前选区和工具进入现有编辑器",
+  "source_base": "840c5fd64027dd404fae78c2abfaaaac2992a878",
+  "source_hashes": {
+    "app/Sources/SelectionView.swift": "b6cbdc35a4b57d6cb8bd5ca687119a3a3dd9cb6c60a07995c71001b919761cac",
+    "app/Sources/App.swift": "880c59a11a48317c1bef4f04ceb305b6a886bcceb8d3bc11e34b7745594cc8a9",
+    "app/Tests/SelectionOutputTests.swift": "9944e4b086de3525117ef4d2af0179d16f952fe643e03e28b8553578f8c413d9",
+    "app/check.sh": "c8fb065c8ef4fff1a0a427033223b2a67bd8bd0de333d62d1e2981bab6f1a861",
+    "app/previews/selection-tools-light-2026-11-03.png": "9dae54a543b8f18f2bf5e515276876057699cc4d29dfdad66cc4441f53b7d0e8",
+    "app/previews/selection-tools-dark-2026-11-03.png": "50dbbbc2a878ac8c70b207a5d4376e98ae300e242430c0ece6393364fed8f070"
+  },
+  "red": "未加入工具按钮前，直接检查以退出码1报告框选后无法直接点选选择，仍须先点完成",
+  "checks": {
+    "eight_tools_visible_without_finish_button": true,
+    "buttons_deliver_requested_tool_with_current_120_by_96_crop": true,
+    "empty_region_never_delivers_old_tool_or_image": true,
+    "copy_save_pin_pixel_and_action_regression": true,
+    "edge_toolbar_inside_canvas": true,
+    "independent_app_build_including_app_consumer_switch": true,
+    "check_script_syntax": true
+  },
+  "consumer_code_review": "App取消本次框选后，用回调携带的CGImage建立编辑文档，再在同一ImageWindow.canvas激活携带的AnnotationTool；无全局旧工具缓存",
+  "visual": {
+    "light": "已查看原生SelectionView渲染原图，八工具与输出同排，无截断",
+    "dark": "已查看非激活窗口的原生缓存图，控件呈系统非激活灰色；不将该图当作实际激活态深色视觉验收"
+  },
+  "previews": [
+    "previews/selection-tools-light-2026-11-03.png",
+    "previews/selection-tools-dark-2026-11-03.png"
+  ],
+  "main_app_rebuilt_or_restarted": false,
+  "new_package": false,
+  "clipboard_touched": false,
+  "new_permissions": false,
+  "limits": [
+    "检查覆盖真实按钮到选区/工具动作回调；未在用户正在试用时抢前台做完整鼠标跨窗口流程",
+    "本次是点工具进入编辑器，未实现框选遮罩内原地OCR或原地绘制；点击选择进入现有选字编辑器",
+    "用户仍可在点击工具前用八控制点调整选区；进入编辑后沿用既有裁剪图片编辑行为",
+    "当前运行App与已交付包未替换；真实快捷键、中文候选及完整目标仍未完成"
+  ]
+}

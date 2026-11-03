@@ -193,6 +193,7 @@ import QuartzCore
             self.cancelCapture()
             switch action {
             case .edit: self.showImage(image, pinned: false)
+            case .annotate(let tool): self.showImage(image, pinned:false).canvas.chooseTool(tool)
             case .pin: self.showImage(image, pinned: true)
             case .save: self.showImage(image, pinned: false).saveImage()
             case .copy:

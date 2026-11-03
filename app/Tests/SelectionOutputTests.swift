@@ -36,9 +36,23 @@ import AppKit
             button.performClick(nil)
             precondition(results.count==1,"选区清空后不能输出旧缓存")
         }
+        let tools:[(String,AnnotationTool)] = [("选择",.select),("箭头",.arrow),("画框",.rectangle),("文字",.text),("画笔",.pen),("遮挡",.mask),("高亮",.highlight),("序号",.number)]
+        for (title,tool) in tools {
+            guard let button=actions.first(where:{$0.title==title}) else {
+                print("失败：框选后无法直接点选\(title)，仍须先点完成");exit(1)
+            }
+            var delivered:SelectionAction?;var size:CGSize?
+            view.onConfirm = {image,_,action in delivered=action;size=CGSize(width:image.width,height:image.height)}
+            view.selectRegion(CGRect(x:100,y:120,width:300,height:240))
+            precondition(!button.isHiddenOrHasHiddenAncestor)
+            button.performClick(nil)
+            precondition(delivered == .annotate(tool) && size == CGSize(width:120,height:96),"必须把当前选区和选中的工具交给编辑器")
+            delivered=nil;view.selectRegion(.zero);button.performClick(nil)
+            precondition(delivered==nil,"清空选区后不能用上一次工具操作旧图")
+        }
         view.selectRegion(CGRect(x:900,y:550,width:100,height:50))
         let row=actions[0].superview!
         precondition(view.bounds.insetBy(dx:7,dy:7).contains(row.frame),"屏边选区不能把输出按钮推到屏幕外")
-        print("通过：框选后的复制/保存/钉住按钮、当前裁剪像素、空选区拒绝与屏边布局")
+        print("通过：框选直接选择八个常用工具、复制/保存/钉住、当前裁剪像素与空选区拒绝")
     }
 }
