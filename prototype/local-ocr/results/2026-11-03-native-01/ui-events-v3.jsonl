@@ -1,0 +1,11 @@
+{"event":"hotkey_handler","status":0,"time":"2026-11-03T06:37:07Z"}
+{"event":"hotkey_registration","shortcut":"control-option-S","status":0,"time":"2026-11-03T06:37:07Z"}
+{"event":"hotkey_registration","shortcut":"F1","status":0,"time":"2026-11-03T06:37:07Z"}
+{"accessibility_authorized":true,"event":"startup","image_analyzer_supported":true,"screen_capture_authorized":true,"time":"2026-11-03T06:37:07Z"}
+{"characters":0,"event":"selection_changed","ranges":1,"synthetic":true,"time":"2026-11-03T06:37:07Z"}
+{"characters":58,"event":"analysis_ready","latency_ms":362.21858329372481,"synthetic":true,"time":"2026-11-03T06:37:07Z"}
+{"characters":5,"event":"selection_changed","ranges":1,"synthetic":true,"time":"2026-11-03T06:37:07Z"}
+{"characters":5,"clipboard_roundtrip_matches":true,"event":"copy_selection","synthetic":true,"synthetic_text":"今天下午三","time":"2026-11-03T06:37:07Z"}
+{"characters":58,"event":"selection_changed","ranges":1,"synthetic":true,"time":"2026-11-03T06:37:07Z"}
+{"characters":58,"clipboard_roundtrip_matches":true,"event":"copy_selection","synthetic":true,"synthetic_text":"今天下午三点半，我们在图书馆门口见面。\n请带上笔记本电脑，提前检查电量和网络。\n截图里的文字应该可以直接选择、复制。","time":"2026-11-03T06:37:07Z"}
+{"actual_synthetic_text":"今天下午三","clipboard_restored":true,"event":"selection_selftest","expected_synthetic_text":"今天下午","full_selection_exact":true,"method":"native_selectedRanges_and_pasteboard_roundtrip","partial_range_exact":false,"time":"2026-11-03T06:37:07Z"}

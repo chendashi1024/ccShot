@@ -1,0 +1,4 @@
+build/
+__pycache__/
+Tests/__pycache__/
+private-screenshots/

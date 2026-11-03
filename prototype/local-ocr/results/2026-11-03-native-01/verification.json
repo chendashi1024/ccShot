@@ -1,0 +1,129 @@
+{
+  "scope": "技术原型；这份JSON记录状态，不代表所有门槛通过",
+  "metric_unit_tests": {
+    "passed": 3,
+    "failed": 0
+  },
+  "benchmark_calls": 96,
+  "benchmark_error_runs": 0,
+  "real_own_window_capture": [
+    {
+      "capture_ms": 126.39641668647528,
+      "event": "fixture_capture_success",
+      "height": 1356,
+      "saved_to_disk": false,
+      "source": "own_synthetic_window_only",
+      "time": "2026-11-03T06:31:51Z",
+      "width": 2000,
+      "evidence_file": "ui-events-v2.jsonl"
+    }
+  ],
+  "mouse_selection_copy_evidence": [
+    {
+      "characters": 4,
+      "clipboard_roundtrip_matches": true,
+      "event": "copy_selection",
+      "synthetic": true,
+      "synthetic_text": "今天下午",
+      "time": "2026-11-03T06:33:13Z",
+      "evidence_file": "ui-events-v2.jsonl"
+    }
+  ],
+  "global_hotkey_registration": [
+    {
+      "event": "hotkey_registration",
+      "shortcut": "control-option-S",
+      "status": 0,
+      "time": "2026-11-03T06:31:33Z",
+      "evidence_file": "ui-events-v2.jsonl"
+    },
+    {
+      "event": "hotkey_registration",
+      "shortcut": "F1",
+      "status": 0,
+      "time": "2026-11-03T06:31:33Z",
+      "evidence_file": "ui-events-v2.jsonl"
+    },
+    {
+      "event": "hotkey_registration",
+      "shortcut": "control-option-S",
+      "status": 0,
+      "time": "2026-11-03T06:37:07Z",
+      "evidence_file": "ui-events-v3.jsonl"
+    },
+    {
+      "event": "hotkey_registration",
+      "shortcut": "F1",
+      "status": 0,
+      "time": "2026-11-03T06:37:07Z",
+      "evidence_file": "ui-events-v3.jsonl"
+    },
+    {
+      "event": "hotkey_registration",
+      "shortcut": "control-option-S",
+      "status": 0,
+      "time": "2026-11-03T06:27:41Z",
+      "evidence_file": "ui-events.jsonl"
+    },
+    {
+      "event": "hotkey_registration",
+      "shortcut": "F1",
+      "status": 0,
+      "time": "2026-11-03T06:27:41Z",
+      "evidence_file": "ui-events.jsonl"
+    }
+  ],
+  "global_hotkey_callback_count": 0,
+  "global_hotkey_status": "未验证：自动按键未得到回调，待真实键盘测试",
+  "native_range_test": [
+    {
+      "actual_synthetic_text": "今天下午三",
+      "clipboard_restored": true,
+      "event": "selection_selftest",
+      "expected_synthetic_text": "今天下午",
+      "full_selection_exact": true,
+      "method": "native_selectedRanges_and_pasteboard_roundtrip",
+      "partial_range_exact": false,
+      "time": "2026-11-03T06:31:34Z",
+      "evidence_file": "ui-events-v2.jsonl"
+    },
+    {
+      "actual_synthetic_text": "CcSho",
+      "clipboard_restored": true,
+      "event": "selection_selftest",
+      "expected_synthetic_text": "CcSh",
+      "full_selection_exact": true,
+      "method": "native_selectedRanges_and_pasteboard_roundtrip",
+      "partial_range_exact": false,
+      "time": "2026-11-03T06:31:51Z",
+      "evidence_file": "ui-events-v2.jsonl"
+    },
+    {
+      "actual_synthetic_text": "今天下午三",
+      "clipboard_restored": true,
+      "event": "selection_selftest",
+      "expected_synthetic_text": "今天下午",
+      "full_selection_exact": true,
+      "method": "native_selectedRanges_and_pasteboard_roundtrip",
+      "partial_range_exact": false,
+      "time": "2026-11-03T06:37:07Z",
+      "evidence_file": "ui-events-v3.jsonl"
+    },
+    {
+      "clipboard_restored": true,
+      "event": "selection_selftest",
+      "expected_synthetic_text": "今天下午",
+      "method": "native_selectedRanges_and_pasteboard_roundtrip",
+      "passed": false,
+      "time": "2026-11-03T06:27:42Z",
+      "evidence_file": "ui-events.jsonl"
+    }
+  ],
+  "wechat_comparison": "未执行：缺少同图逐张输出与对齐评分链路，没有读取或发送聊天",
+  "build_target": "arm64-apple-macos14.0",
+  "source_hashes": {
+    "Sources/App.swift": "da32bd06704770b25627118e5aeccf7895f5f3ba8025fd36f086494a5287ac7c",
+    "Sources/Fixtures.swift": "161ed62d9c5e8ee6ef45836f8da62b50f391eda5b3e4d333097d1d987fd4e435",
+    "Sources/OCR.swift": "110a2c56defc2476af7ce276ba02372c973e9d4f335ec6df8fefadeb5b5c17d9"
+  }
+}
