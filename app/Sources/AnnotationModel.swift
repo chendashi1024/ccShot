@@ -1,7 +1,7 @@
 import AppKit
 
 enum AnnotationTool: String, Codable, CaseIterable {
-    case select, rectangle, ellipse, arrow, line, pen, mask, highlight, number
+    case select, rectangle, ellipse, arrow, line, pen, text, mask, highlight, number
     var title: String {
         switch self {
         case .select: return "选择"
@@ -10,12 +10,13 @@ enum AnnotationTool: String, Codable, CaseIterable {
         case .arrow: return "箭头"
         case .line: return "直线"
         case .pen: return "画笔"
+        case .text: return "文字"
         case .mask: return "马赛克"
         case .highlight: return "高亮"
         case .number: return "序号"
         }
     }
-    var key: String { [.select: "v", .rectangle: "r", .ellipse: "o", .arrow: "a", .line: "l", .pen: "p", .mask: "m", .highlight: "h", .number: "n"][self]! }
+    var key: String { [.select: "v", .rectangle: "r", .ellipse: "o", .arrow: "a", .line: "l", .pen: "p", .text: "t", .mask: "m", .highlight: "h", .number: "n"][self]! }
 }
 
 struct AnnotationColor: Codable, Equatable {
@@ -46,7 +47,11 @@ struct AnnotationStyle: Codable, Equatable {
     var maskEffect = MaskEffect.pixelate
     var maskBrush = false
     var maskStrength: CGFloat = 16
-    var valid: Bool { fillOpacity.isFinite && (0...1).contains(fillOpacity) && color.valid && width.isFinite && (1...80).contains(width) && maskStrength.isFinite && (4...80).contains(maskStrength) && cornerRadius.isFinite && (0...80).contains(cornerRadius) }
+    var fontSize: CGFloat = 24
+    var bold = false
+    var textBackground = false
+    var backgroundColor = AnnotationColor(red:1,green:0.96,blue:0.72)
+    var valid: Bool { fontSize.isFinite && (8...200).contains(fontSize) && backgroundColor.valid && fillOpacity.isFinite && (0...1).contains(fillOpacity) && color.valid && width.isFinite && (1...80).contains(width) && maskStrength.isFinite && (4...80).contains(maskStrength) && cornerRadius.isFinite && (0...80).contains(cornerRadius) }
     static func initial(_ tool: AnnotationTool) -> Self {
         var style = Self()
         if tool == .highlight { style.width = 18; style.color = .palette[2] }
@@ -64,14 +69,22 @@ struct AnnotationObject: Equatable {
     var end: CGPoint
     var points: [CGPoint] = []
     var number: Int = 1
-    init(id: UUID = UUID(), tool: AnnotationTool, style: AnnotationStyle, start: CGPoint, end: CGPoint, points: [CGPoint] = [], number: Int = 1) {
-        self.id = id; self.tool = tool; self.style = style; self.start = start; self.end = end; self.points = points; self.number = number
+    var text = ""
+    var textLayoutWidth: CGFloat = 360
+    init(id: UUID = UUID(), tool: AnnotationTool, style: AnnotationStyle, start: CGPoint, end: CGPoint, points: [CGPoint] = [], number: Int = 1, text: String = "", textLayoutWidth: CGFloat = 360) {
+        self.id = id; self.tool = tool; self.style = style; self.start = start; self.end = end; self.points = points; self.number = number; self.text = text; self.textLayoutWidth = textLayoutWidth
     }
     var bounds: CGRect {
         let values = points.isEmpty ? [start, end] : points
         let xs = values.map(\.x), ys = values.map(\.y)
         let minX = xs.min() ?? start.x, minY = ys.min() ?? start.y
         return CGRect(x: minX, y: minY, width: max(1, (xs.max() ?? end.x) - minX), height: max(1, (ys.max() ?? end.y) - minY))
+    }
+    var occlusion: CGRect? {
+        if tool == .mask { return bounds.insetBy(dx:style.maskBrush ? -style.width/2 : -1,dy:style.maskBrush ? -style.width/2 : -1) }
+        if [.rectangle,.ellipse].contains(tool) && style.filled && style.color.alpha > 0 && style.fillOpacity > 0 { return bounds }
+        if tool == .number || tool == .text && style.textBackground && style.backgroundColor.alpha > 0 { return bounds }
+        return nil
     }
     func moved(by delta: CGPoint) -> Self {
         var copy = self
@@ -80,8 +93,17 @@ struct AnnotationObject: Equatable {
         copy.points = points.map { CGPoint(x: $0.x + delta.x, y: $0.y + delta.y) }
         return copy
     }
-    func resized(to rect: CGRect) -> Self {
+    @MainActor func resized(to rect: CGRect) -> Self {
         let previous = bounds
+        if tool == .text {
+            var copy = self
+            let factor = min(rect.width/previous.width,rect.height/previous.height)
+            copy.style.fontSize = min(200,max(8,style.fontSize*factor))
+            copy.textLayoutWidth = max(2*AnnotationTextLayout.inset+1,textLayoutWidth*copy.style.fontSize/style.fontSize)
+            let size = AnnotationTextLayout.size(text,style:copy.style,maxWidth:copy.textLayoutWidth)
+            copy.start = rect.origin; copy.end = CGPoint(x:rect.minX+size.width,y:rect.minY+size.height)
+            return copy
+        }
         func map(_ p: CGPoint) -> CGPoint { CGPoint(x: rect.minX + (p.x - previous.minX) / previous.width * rect.width, y: rect.minY + (p.y - previous.minY) / previous.height * rect.height) }
         var copy = self; copy.start = map(start); copy.end = map(end); copy.points = points.map(map); return copy
     }
@@ -95,6 +117,7 @@ struct AnnotationObject: Equatable {
         let padding = tolerance + style.width / 2
         switch tool {
         case .line, .arrow: return distance(point, start, end) <= padding || (tool == .arrow && hypot(point.x-end.x, point.y-end.y) <= max(12, style.width * 3))
+        case .text: return bounds.insetBy(dx:-tolerance,dy:-tolerance).contains(point)
         case .mask where !style.maskBrush: return bounds.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
         case .pen, .highlight, .mask:
             if points.count == 1 { return distance(point, points[0], points[0]) <= padding }
@@ -114,12 +137,13 @@ struct AnnotationObject: Equatable {
 struct AnnotationState: Equatable {
     var objects: [AnnotationObject] = []
     var nextNumber = 1
-    var occlusions: [CGRect] {
-        objects.compactMap { object in
-            if object.tool == .mask { return object.bounds.insetBy(dx: object.style.maskBrush ? -object.style.width / 2 : -1, dy: object.style.maskBrush ? -object.style.width / 2 : -1) }
-            if [.rectangle, .ellipse].contains(object.tool) && object.style.filled && object.style.color.alpha > 0 { return object.bounds }
-            if object.tool == .number { return object.bounds }
-            return nil
+    var occlusions: [CGRect] { objects.compactMap(\.occlusion) }
+    var safeTextOverlays: [AnnotationObject] {
+        objects.indices.compactMap { index in
+            let object = objects[index]
+            guard object.tool == .text else { return nil }
+            let laterOcclusions = objects.dropFirst(index+1).compactMap(\.occlusion)
+            return laterOcclusions.contains(where:{$0.intersects(object.bounds)}) ? nil : object
         }
     }
 }

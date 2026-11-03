@@ -47,6 +47,7 @@ import CoreImage
                 context.addLine(to: previous)
             }
             context.strokePath()
+        case .text: AnnotationTextLayout.draw(object,in:context)
         case .mask:
             guard let source = context.makeImage(), let filtered = filtered(source, style: style) else { return false }
             context.setLineDash(phase: 0, lengths: [])

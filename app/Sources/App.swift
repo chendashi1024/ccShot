@@ -28,7 +28,7 @@ import ScreenCaptureKit
         let main = NSMenu()
         let appMenu = NSMenuItem(); appMenu.submenu = menu.copy() as? NSMenu; main.addItem(appMenu)
         let edit = NSMenuItem(); edit.submenu = NSMenu(title: "编辑")
-        for (title, selector, key) in [("复制", #selector(ImageWindow.copy(_:)), "c"), ("全选", #selector(NSResponder.selectAll(_:)), "a"), ("保存", #selector(ImageWindow.saveDocument(_:)), "s")] {
+        for (title, selector, key) in [("剪切", #selector(NSText.cut(_:)), "x"), ("复制", #selector(ImageWindow.copy(_:)), "c"), ("粘贴", #selector(NSText.paste(_:)), "v"), ("全选", #selector(NSResponder.selectAll(_:)), "a"), ("保存", #selector(ImageWindow.saveDocument(_:)), "s")] {
             edit.submenu?.addItem(withTitle: title, action: selector, keyEquivalent: key)
         }
         edit.submenu?.addItem(.separator())
@@ -40,7 +40,8 @@ import ScreenCaptureKit
         registerHotkeys()
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
-            if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview")) ? 0 : 1) } }
+            if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
+            else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview")) ? 0 : 1) } }
             else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
             else if let path = argument("--render-annotations") { Task { @MainActor in exit(await ImageWindow.annotationPreview(image, to: path) ? 0 : 1) } }
             else if let path = argument("--render-settings") { renderSettings(to: path) }

@@ -44,6 +44,11 @@ import UniformTypeIdentifiers
     private let arrowPicker = NSSegmentedControl(labels: ["实心", "开口", "双头"], trackingMode: .selectOne, target: nil, action: nil)
     private let numberLabel = NSTextField(labelWithString: "下一号")
     private let numberField = NSTextField(string: "1")
+    private let boldButton = NSButton(checkboxWithTitle: "加粗", target: nil, action: nil)
+    private let textBackground = NSButton(checkboxWithTitle: "底色", target: nil, action: nil)
+    private let backgroundWell = NSColorWell()
+    private var finishTextButton: NSButton!
+    private var cancelTextButton: NSButton!
     private let editButton = NSButton(title: "标注", target: nil, action: nil)
     private var undoButton: NSButton!
     private var redoButton: NSButton!
@@ -88,6 +93,9 @@ import UniformTypeIdentifiers
             let opacity = NSSlider(value: 1, minValue: 0.2, maxValue: 1, target: self, action: #selector(changeOpacity(_:)))
             opacity.widthAnchor.constraint(equalToConstant: 70).isActive = true; output.addArrangedSubview(opacity)
         }
+        finishTextButton = button("完成文字",#selector(finishText)); cancelTextButton = button("取消文字",#selector(cancelText))
+        finishTextButton.toolTip = "完成文字（⌘Return）"; cancelTextButton.toolTip = "取消文字（Esc）"
+        output.addArrangedSubview(finishTextButton); output.addArrangedSubview(cancelTextButton)
         undoButton = button("撤销", #selector(undo(_:))); redoButton = button("重做", #selector(redo(_:)))
         output.addArrangedSubview(undoButton); output.addArrangedSubview(redoButton)
         buildStyles()
@@ -100,6 +108,7 @@ import UniformTypeIdentifiers
             stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 12), stack.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -12),
             canvas.widthAnchor.constraint(equalTo: stack.widthAnchor), canvas.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
         ])
+        canvas.onError = { [weak self] message in self?.status.stringValue = message }
         canvas.onPreviewBegin = { [weak self] in self?.invalidateRecognition() }
         canvas.onDocumentChanged = { [weak self] in self?.updateControls(); self?.recognize() }
         canvas.onSelectionChanged = { [weak self] in self?.updateControls() }
@@ -147,7 +156,10 @@ import UniformTypeIdentifiers
         maskMode.target = self; maskMode.action = #selector(changeMask)
         brushWidth.target = self; brushWidth.action = #selector(changeBrush(_:)); brushWidth.isContinuous = true
         brushWidth.widthAnchor.constraint(equalToConstant: 90).isActive = true
-        for view in [fillButton, dashButton, cornerLabel, cornerSlider, arrowPicker, numberLabel, numberField, maskPicker, maskMode, brushLabel, brushWidth] as [NSView] { optionRow.addArrangedSubview(view) }
+        boldButton.target = self; boldButton.action = #selector(changeTextStyle)
+        textBackground.target = self; textBackground.action = #selector(changeTextStyle)
+        backgroundWell.target = self; backgroundWell.action = #selector(changeTextStyle); backgroundWell.widthAnchor.constraint(equalToConstant:40).isActive = true
+        for view in [boldButton, textBackground, backgroundWell, fillButton, dashButton, cornerLabel, cornerSlider, arrowPicker, numberLabel, numberField, maskPicker, maskMode, brushLabel, brushWidth] as [NSView] { optionRow.addArrangedSubview(view) }
         for slider in [widthSlider, cornerSlider, brushWidth] {
             slider.beginTracking = { [weak self] in if self?.canvas.selected != nil { self?.annotationDocument.beginTransaction() } }
             slider.endTracking = { [weak self] in if self?.annotationDocument.inTransaction == true { self?.annotationDocument.endTransaction() } }
@@ -159,17 +171,21 @@ import UniformTypeIdentifiers
         toolRow.isHidden = !editing
         styleRow.isHidden = !editing || tool == .select
         for (tool, button) in toolButtons { button.state = tool == canvas.tool ? .on : .off }
-        let width = tool == .mask ? style.maskStrength : style.width
-        widthTitle.stringValue = tool == .mask ? "强度" : "粗细"
-        widthSlider.minValue = tool == .mask ? 4 : 1
+        let width = tool == .text ? style.fontSize : tool == .mask ? style.maskStrength : style.width
+        widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : "粗细"
+        widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
         widthSlider.doubleValue = Double(width); widthLabel.stringValue = "\(Int(width)) px";
-        let presetWidths = tool == .mask ? [8,16,32,64] : [2,4,8,16]
+        let presetWidths = tool == .text ? [16,24,32,48] : tool == .mask ? [8,16,32,64] : [2,4,8,16]
         for (button, value) in zip(presetButtons,presetWidths) { button.title = "\(value)"; button.tag = value }
         for control in colorControls { control.isHidden = tool == .mask }
         maskPicker.isHidden = tool != .mask; maskMode.isHidden = tool != .mask || canvas.selected != nil
         maskPicker.selectedSegment = style.maskEffect == .pixelate ? 0 : 1; maskMode.selectedSegment = style.maskBrush ? 1 : 0
         brushWidth.isHidden = tool != .mask || !style.maskBrush; brushLabel.isHidden = brushWidth.isHidden; brushWidth.doubleValue = Double(style.width)
          colorWell.color = style.color.nsColor
+        finishTextButton.isHidden = canvas.textEditor == nil; cancelTextButton.isHidden = canvas.textEditor == nil
+        boldButton.isHidden = tool != .text; textBackground.isHidden = tool != .text
+        backgroundWell.isHidden = tool != .text || !style.textBackground
+        boldButton.state = style.bold ? .on : .off; textBackground.state = style.textBackground ? .on : .off; backgroundWell.color = style.backgroundColor.nsColor
         fillButton.selectedSegment = style.filled ? (style.fillOpacity < 1 ? 1 : 2) : 0; dashButton.state = style.dashed ? .on : .off
         cornerSlider.doubleValue = Double(style.cornerRadius)
         arrowPicker.selectedSegment = ArrowHead.allCases.firstIndex(of: style.arrowHead) ?? 0
@@ -187,17 +203,22 @@ import UniformTypeIdentifiers
         overlay.isHidden = canvas.hasDraft || canvas.tool != .select || canvas.selected != nil
         canvas.needsDisplay = true
     }
-    @objc private func chooseTool(_ sender: NSButton) { canvas.chooseTool(AnnotationTool.allCases[sender.tag]); window?.makeFirstResponder(canvas) }
-    @objc private func changeWidth(_ sender: NSSlider) { var style = canvas.currentStyle; if canvas.currentTool == .mask { style.maskStrength = CGFloat(sender.doubleValue.rounded()) } else { style.width = CGFloat(sender.doubleValue.rounded()) }; canvas.changeStyle(style) }
-    @objc private func widthPreset(_ sender: NSButton) { var style = canvas.currentStyle; if canvas.currentTool == .mask { style.maskStrength = max(4,CGFloat(sender.tag)) } else { style.width = CGFloat(sender.tag) }; canvas.changeStyle(style) }
+    @objc private func chooseTool(_ sender: NSButton) { canvas.chooseTool(AnnotationTool.allCases[sender.tag]); if canvas.textEditor == nil { window?.makeFirstResponder(canvas) } }
+    @objc private func changeWidth(_ sender: NSSlider) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.doubleValue.rounded()) } else if canvas.currentTool == .mask { style.maskStrength = CGFloat(sender.doubleValue.rounded()) } else { style.width = CGFloat(sender.doubleValue.rounded()) }; canvas.changeStyle(style) }
+    @objc private func widthPreset(_ sender: NSButton) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.tag) } else if canvas.currentTool == .mask { style.maskStrength = max(4,CGFloat(sender.tag)) } else { style.width = CGFloat(sender.tag) }; canvas.changeStyle(style) }
     @objc private func palette(_ sender: NSButton) { changeStyleKey(nil, sender.tag) }
     @objc private func changeColor(_ sender: NSColorWell) { var style = canvas.currentStyle; style.color = AnnotationColor(sender.color); canvas.changeStyle(style) }
     private func changeStyleKey(_ delta: CGFloat?, _ color: Int?) {
         guard canvas.currentTool != .select else { return }
         var style = canvas.currentStyle
-        if let delta { if canvas.currentTool == .mask { style.maskStrength = min(80,max(4,style.maskStrength+delta)) } else { style.width = min(80, max(1, style.width + delta)) } }
+        if let delta { if canvas.currentTool == .text { style.fontSize = min(200,max(8,style.fontSize+delta)) } else if canvas.currentTool == .mask { style.maskStrength = min(80,max(4,style.maskStrength+delta)) } else { style.width = min(80, max(1, style.width + delta)) } }
         if let color, canvas.currentTool != .mask { style.color = AnnotationColor.palette[color] }
         canvas.changeStyle(style)
+    }
+    @objc private func finishText() { _ = canvas.finishTextEditing() }
+    @objc private func cancelText() { canvas.cancelTextEditing() }
+    @objc private func changeTextStyle() {
+        var style = canvas.currentStyle; style.bold = boldButton.state == .on; style.textBackground = textBackground.state == .on; style.backgroundColor = AnnotationColor(backgroundWell.color); canvas.changeStyle(style)
     }
     @objc private func changeMask() {
         var style = canvas.currentStyle; style.maskEffect = maskPicker.selectedSegment == 0 ? .pixelate : .blur; if canvas.selected == nil { style.maskBrush = maskMode.selectedSegment == 1 }; canvas.changeStyle(style)
@@ -243,6 +264,7 @@ import UniformTypeIdentifiers
         guard !closed, !canvas.hasDraft, !annotationDocument.inTransaction, let image = canvas.previewImage else { return }
         let revision = annotationDocument.revision, token = generation
         let occlusions = annotationDocument.state.occlusions
+        let textOverlays = annotationDocument.state.safeTextOverlays
         if !occlusions.isEmpty && baseRegionsTask == nil {
             let base = annotationDocument.baseImage
             baseRegionsTask = Task.detached(priority: .userInitiated) { try SafeTextImage.textRegions(in: base) }
@@ -258,6 +280,10 @@ import UniformTypeIdentifiers
                     try Task.checkCancellation()
                     let preparation = Task.detached(priority: .userInitiated) { try SafeTextImage.prepare(image: image, baseRegions: regions, occlusions: occlusions) }
                     input = try await withTaskCancellationHandler(operation: { try await preparation.value }, onCancel: { preparation.cancel() })
+                    if !textOverlays.isEmpty {
+                        guard let restored = AnnotationRenderer.render(base:input,objects:textOverlays) else { throw SafeTextImage.PreparationError.allocation }
+                        input = restored
+                    }
                 }
                 try Task.checkCancellation()
                 let result = try await ImageAnalyzer().analyze(input, orientation: .up, configuration: config)

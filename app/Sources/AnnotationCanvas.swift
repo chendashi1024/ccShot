@@ -14,6 +14,11 @@ import AppKit
     var onConfirm: (() -> Void)?
     var onSpace: (() -> Void)?
     var onExit: (() -> Void)?
+    var onError: ((String) -> Void)?
+    private(set) var textEditor: AnnotationTextView?
+    private var textScroll: NSScrollView?
+    private var textTopLeft: CGPoint?
+    private var textMaximumWidth: CGFloat = 360
     var onZoom: ((CGFloat) -> Void)?
     private enum Drag { case draw, move(AnnotationObject), resize(AnnotationObject, SelectionHandle), endpoint(AnnotationObject, Bool) }
     private var drag: Drag?
@@ -21,10 +26,10 @@ import AppKit
     private var draft: AnnotationObject?
     private var following: [AnnotationObject] = []
     private var fullDraftPreview = false
-    var hasDraft: Bool { drag != nil }
+    var hasDraft: Bool { drag != nil || textEditor != nil }
     var selected: AnnotationObject? { document.state.objects.first { $0.id == selectedID } }
-    var currentStyle: AnnotationStyle { selected?.style ?? preferences.annotationStyle(for: tool) }
-    var currentTool: AnnotationTool { selected?.tool ?? tool }
+    var currentStyle: AnnotationStyle { (textEditor != nil ? draft?.style : nil) ?? selected?.style ?? preferences.annotationStyle(for: tool) }
+    var currentTool: AnnotationTool { textEditor != nil ? .text : selected?.tool ?? tool }
     var imageSize: CGSize { CGSize(width: document.baseImage.width, height: document.baseImage.height) }
     var contentRect: CGRect {
         let scale = min(bounds.width / imageSize.width, bounds.height / imageSize.height)
@@ -44,6 +49,7 @@ import AppKit
     }
     required init?(coder: NSCoder) { nil }
     override var acceptsFirstResponder: Bool { true }
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     func canonical(_ point: CGPoint, clamp: Bool = false) -> CGPoint? {
         let rect = contentRect
         guard rect.width > 0, rect.height > 0, clamp || rect.contains(point) else { return nil }
@@ -62,10 +68,12 @@ import AppKit
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
         guard bounds.contains(local) else { return nil }
+        if textEditor != nil { return super.hitTest(point) }
         if editingEnabled && (tool != .select || selectedID != nil || (canonical(local).flatMap { object(at: $0) } != nil)) { return self }
         return super.hitTest(point)
     }
     func chooseTool(_ value: AnnotationTool) {
+        if textEditor != nil && !finishTextEditing() { return }
         cancelGesture(); tool = value; selectedID = nil; needsDisplay = true; onSelectionChanged?()
     }
     func deselect() { selectedID = nil; needsDisplay = true; onSelectionChanged?() }
@@ -87,11 +95,11 @@ import AppKit
             context.clip(to: contentRect)
             context.translateBy(x: contentRect.minX, y: contentRect.minY)
             context.scaleBy(x: contentRect.width/imageSize.width, y: contentRect.height/imageSize.height)
-            AnnotationRenderer.draw(draft, in: context)
+            if textEditor == nil { AnnotationRenderer.draw(draft, in: context) }
             for object in following { AnnotationRenderer.draw(object, in: context) }
             context.restoreGState()
         }
-        guard editingEnabled, let object = draft ?? selected else { return }
+        guard editingEnabled, textEditor == nil, let object = draft ?? selected else { return }
         NSColor.systemBlue.setStroke()
         let topLeft = viewPoint(CGPoint(x: object.bounds.minX, y: object.bounds.minY))
         let bottomRight = viewPoint(CGPoint(x: object.bounds.maxX, y: object.bounds.maxY))
@@ -105,8 +113,15 @@ import AppKit
     }
     override func mouseDown(with event: NSEvent) {
         guard editingEnabled, let point = canonical(convert(event.locationInWindow, from: nil)) else { return }
+        if textEditor != nil { _ = finishTextEditing(); return }
         window?.makeFirstResponder(self)
+        if tool == .text {
+            if let object = object(at: point), object.tool == .text { beginTextEditing(object, at: point) }
+            else { beginTextEditing(nil, at: point) }
+            return
+        }
         if tool == .select {
+            if event.clickCount >= 2, let object = object(at: point), object.tool == .text { beginTextEditing(object, at: point); return }
             if let object = selected {
                 if object.tool == .line || object.tool == .arrow {
                     if hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
@@ -154,7 +169,14 @@ import AppKit
             let b = original.bounds
             let delta = CGPoint(x: min(max(point.x-anchor.x,-b.minX),imageSize.width-b.maxX), y: min(max(point.y-anchor.y,-b.minY),imageSize.height-b.maxY))
             draft = original.moved(by: delta)
-        case .resize(let original, let handle): draft = original.resized(to: handle.resize(original.bounds, toward: point, canvas: imageSize, minimum: CGSize(width: 1, height: 1)))
+        case .resize(let original, let handle):
+            var value = original.resized(to: handle.resize(original.bounds, toward: point, canvas: imageSize, minimum: CGSize(width: 1, height: 1)))
+            if value.tool == .text {
+                let b = value.bounds
+                guard b.width <= imageSize.width, b.height <= imageSize.height else { onError?("文字超出截图，请调小字号"); return }
+                value = value.moved(by:CGPoint(x:min(max(0,b.minX),imageSize.width-b.width)-b.minX,y:min(max(0,b.minY),imageSize.height-b.height)-b.minY))
+            }
+            draft = value
         case .endpoint(var original, let first):
             if first { original.start = snapped(point, from: original.end, event: event) }
             else { original.end = snapped(point, from: original.start, event: event) }
@@ -163,7 +185,7 @@ import AppKit
         if fullDraftPreview { refreshPreview() } else { needsDisplay = true }
     }
     override func mouseUp(with event: NSEvent) {
-        guard let object = draft else { return }
+        guard textEditor == nil, let object = draft else { return }
         let valid: Bool
         if object.tool == .rectangle || object.tool == .ellipse || object.tool == .mask && !object.style.maskBrush { valid = abs(object.end.x-object.start.x) >= 1 && abs(object.end.y-object.start.y) >= 1 }
         else { valid = !object.points.isEmpty || hypot(object.end.x-object.start.x,object.end.y-object.start.y) >= 1 }
@@ -178,11 +200,17 @@ import AppKit
         onSelectionChanged?()
     }
     func cancelGesture() {
+        if textEditor != nil { cancelTextEditing(); return }
         guard hasDraft else { return }
         draft = nil; drag = nil; anchor = nil; following = []; refreshPreview(); onDocumentChanged?()
     }
     func changeStyle(_ style: AnnotationStyle) {
-        guard !hasDraft, style.valid else { return }
+        guard style.valid else { return }
+        if let editor = textEditor {
+            guard !editor.hasMarkedText() else { onError?("请先确认当前中文候选"); onSelectionChanged?(); return }
+            draft?.style = style; updateTextEditorLayout(); onSelectionChanged?(); return
+        }
+        guard !hasDraft else { return }
         if let selectedID, let index = document.state.objects.firstIndex(where: { $0.id == selectedID }) {
             var state = document.state; state.objects[index].style = style
             if state.objects[index].tool == .number {
@@ -190,11 +218,19 @@ import AppKit
                 let center = CGPoint(x: min(max(radius,b.midX),imageSize.width-radius),y:min(max(radius,b.midY),imageSize.height-radius))
                 state.objects[index].start = CGPoint(x: center.x-radius,y:center.y-radius); state.objects[index].end = CGPoint(x:center.x+radius,y:center.y+radius)
             }
+            if state.objects[index].tool == .text {
+                let old = state.objects[index].bounds
+                let width = min(state.objects[index].textLayoutWidth,imageSize.width-old.minX)
+                let size = AnnotationTextLayout.size(state.objects[index].text,style:style,maxWidth:width)
+                guard size.height <= imageSize.height, size.width <= imageSize.width else { onError?("文字超出截图，请调小字号"); onSelectionChanged?(); return }
+                let top = min(imageSize.height,max(size.height,old.maxY))
+                state.objects[index].start = CGPoint(x:old.minX,y:top-size.height); state.objects[index].end = CGPoint(x:old.minX+size.width,y:top)
+            }
             document.commit(state)
         } else { preferences.setAnnotationStyle(style, for: tool); onSelectionChanged?() }
     }
     @discardableResult func handleKey(_ event: NSEvent) -> Bool {
-        guard !event.modifierFlags.contains(.command), !event.modifierFlags.contains(.control), !event.modifierFlags.contains(.option) else { return false }
+        guard textEditor == nil, !event.modifierFlags.contains(.command), !event.modifierFlags.contains(.control), !event.modifierFlags.contains(.option) else { return false }
         if event.keyCode == 53 {
             if hasDraft { cancelGesture() }
             else if tool != .select { chooseTool(.select) }
@@ -225,7 +261,90 @@ import AppKit
     }
     override func keyDown(with event: NSEvent) { if !handleKey(event) { super.keyDown(with: event) } }
     override func scrollWheel(with event: NSEvent) {
+        if textEditor != nil { super.scrollWheel(with:event); return }
         if editingEnabled && (tool != .select || selectedID != nil) { onStyleKey?(event.scrollingDeltaY >= 0 ? 1 : -1,nil) }
         else { onZoom?(event.scrollingDeltaY >= 0 ? 1.05 : 0.95) }
+    }
+}
+
+extension AnnotationCanvas {
+    override func resizeSubviews(withOldSize oldSize: NSSize) {
+        super.resizeSubviews(withOldSize:oldSize); updateTextEditorLayout()
+    }
+    private func beginTextEditing(_ original: AnnotationObject?, at point: CGPoint) {
+        guard imageSize.width >= 40, imageSize.height >= 32 else { onError?("截图太小，无法放入文字"); return }
+        cancelGesture()
+        var object = original ?? AnnotationObject(tool:.text,style:preferences.annotationStyle(for:.text),start:point,end:point)
+        let previousText = object.text
+        let topLeft = original.map { CGPoint(x:$0.bounds.minX,y:$0.bounds.maxY) } ?? CGPoint(x:min(point.x,imageSize.width-40),y:max(min(imageSize.height,point.y),min(100,imageSize.height)))
+        textTopLeft = topLeft
+        textMaximumWidth = min(original?.textLayoutWidth ?? 440,imageSize.width-topLeft.x)
+        object.textLayoutWidth = textMaximumWidth
+        object.text = ""
+        object.start = CGPoint(x:topLeft.x,y:max(0,topLeft.y-min(180,topLeft.y)))
+        object.end = CGPoint(x:topLeft.x+textMaximumWidth,y:topLeft.y)
+        draft = object; selectedID = original?.id
+        let editor = AnnotationTextView(frame:.zero)
+        editor.isRichText = false; editor.importsGraphics = false; editor.allowsUndo = true
+        editor.isVerticallyResizable = true; editor.isHorizontallyResizable = false
+        editor.autoresizingMask = [.width]; editor.minSize = .zero; editor.maxSize = CGSize(width:1000000,height:1000000)
+        editor.textContainer?.widthTracksTextView = true; editor.textContainer?.lineFragmentPadding = 0
+        editor.insertionPointColor = .controlAccentColor; editor.string = previousText
+        editor.onCommit = { [weak self] in _ = self?.finishTextEditing() }
+        editor.onCancel = { [weak self] in self?.cancelTextEditing() }
+        let scroll = NSScrollView(); scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true; scroll.scrollerStyle = .overlay
+        scroll.drawsBackground = false; scroll.contentView.drawsBackground = false; scroll.borderType = .noBorder
+        scroll.wantsLayer = true; scroll.layer?.borderColor = NSColor.controlAccentColor.cgColor; scroll.layer?.borderWidth = 1.5
+        scroll.documentView = editor
+        textEditor = editor; textScroll = scroll; addSubview(scroll)
+        setAccessibilityElement(true); setAccessibilityRole(.group); setAccessibilityLabel("文字标注"); setAccessibilityChildren([scroll])
+        onPreviewBegin?(); refreshPreview(); updateTextEditorLayout(); onSelectionChanged?()
+        window?.makeFirstResponder(editor)
+        editor.setSelectedRange(NSRange(location:0,length:(previousText as NSString).length))
+    }
+    private func updateTextEditorLayout() {
+        guard let editor = textEditor, let scroll = textScroll, let object = draft, let topLeft = textTopLeft else { return }
+        let scale = contentRect.width/imageSize.width
+        let height = min(max(120,object.bounds.height),topLeft.y)
+        let bottomLeft = viewPoint(CGPoint(x:topLeft.x,y:topLeft.y-height))
+        scroll.frame = CGRect(x:bottomLeft.x,y:bottomLeft.y,width:textMaximumWidth*scale,height:height*scale)
+        editor.setFrameSize(CGSize(width:scroll.contentSize.width,height:max(scroll.contentSize.height,editor.frame.height)))
+        editor.textContainerInset = CGSize(width:AnnotationTextLayout.inset*scale,height:AnnotationTextLayout.inset*scale)
+        if !editor.hasMarkedText() {
+            editor.font = NSFont.systemFont(ofSize:object.style.fontSize*scale,weight:object.style.bold ? .bold : .regular)
+            editor.textColor = object.style.color.nsColor
+            editor.drawsBackground = object.style.textBackground; editor.backgroundColor = object.style.backgroundColor.nsColor
+        }
+    }
+    @discardableResult func finishTextEditing() -> Bool {
+        guard let editor = textEditor, var object = draft, let topLeft = textTopLeft else { return true }
+        guard !editor.hasMarkedText() else { onError?("请先确认当前中文候选"); return false }
+        let text = editor.string
+        if text.trimmingCharacters(in:.whitespacesAndNewlines).isEmpty {
+            var state = document.state; state.objects.removeAll { $0.id == object.id }
+            endTextEditing(); selectedID = nil
+            if !document.commit(state) { refreshPreview(); onDocumentChanged?() }
+            onSelectionChanged?(); return true
+        }
+        let size = AnnotationTextLayout.size(text,style:object.style,maxWidth:textMaximumWidth)
+        guard size.height <= topLeft.y, size.width <= imageSize.width-topLeft.x else { onError?("文字超出截图，请缩短内容或调小字号"); return false }
+        object.text = text; object.textLayoutWidth = textMaximumWidth
+        object.start = CGPoint(x:topLeft.x,y:topLeft.y-size.height); object.end = CGPoint(x:topLeft.x+size.width,y:topLeft.y)
+        endTextEditing(); selectedID = object.id
+        var state = document.state
+        if let index = state.objects.firstIndex(where:{$0.id == object.id}) { state.objects[index] = object } else { state.objects.append(object); preferences.setAnnotationStyle(object.style,for:.text) }
+        if !document.commit(state) { refreshPreview(); onDocumentChanged?() }
+        onSelectionChanged?(); return true
+    }
+    func cancelTextEditing() {
+        guard textEditor != nil else { return }
+        endTextEditing(); if selected == nil { selectedID = nil }
+        refreshPreview(); onDocumentChanged?(); onSelectionChanged?()
+    }
+    private func endTextEditing() {
+        textEditor?.inputContext?.discardMarkedText(); window?.makeFirstResponder(self)
+        textScroll?.removeFromSuperview(); textScroll = nil; textEditor = nil; textTopLeft = nil
+        setAccessibilityElement(true); setAccessibilityRole(.image); setAccessibilityLabel("截图"); setAccessibilityChildren(nil)
+        draft = nil; drag = nil; anchor = nil; following = []
     }
 }
