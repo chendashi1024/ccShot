@@ -1,0 +1,92 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS15.4.1/arm64/SDK15.4",
+  "sources": {
+    "app/Sources/PixelSampler.swift": "0bac310684a4e4145b00b8fad1a3c47593c947e7ac0b0b0154f2ad7c785ecb0c",
+    "app/Sources/SettingsWindow.swift": "f7952a8f3fd0f664cf4e8323fce2747ba9ea4f6d3e89c02b39e33745c0f8f5b6",
+    "app/Sources/AnnotationCanvas.swift": "f274ee99e18599b1633d174715d9b98c6b288dd71e302631584f6b42308e109e",
+    "app/Sources/AnnotationModel.swift": "95470f04bfa36d1ec315c535ec026764f7bbb3ef29bc7f5303410388dfd32f4e",
+    "app/Sources/WindowCapture.swift": "ba63b78b70b90aae8b4e8dd66842d22bf60355217a8899879be3caea40ad6106",
+    "app/Sources/SelectionView.swift": "0568eb69fe465c84e354578cf8987793d7ccb79890eac47eb6d6aaae86e0d52a",
+    "app/Sources/HotkeyManager.swift": "6e974ad45b23616cd9cc3ae3b87d61c21d6477328be86d17261df0ef9aa831a5",
+    "app/Sources/AnnotationPreferences.swift": "9be69d87f8ba189cf2dba1a774e67c34c5ac17d0d269f90902eefe58003ae791",
+    "app/Sources/CaptureGeometry.swift": "88dbab5df62c170e2029d075150a8d9ae23b7ee10596c3f5197b76a4dd8db1f8",
+    "app/Sources/SelectionHandle.swift": "a27742ad44edb2c9b3fe2f3f3c6c8a36d244fa906e776a7eff3aa97146262d95",
+    "app/Sources/AppPreferences.swift": "46b1fcfd42d54f6ea408e0217f22a4306384d13a00178b5dab767ea32100ab65",
+    "app/Sources/AnnotationRenderer.swift": "56c48037948fb5116b26d6a4e78281402aa1592ef844f82c44c9fd9de92f090a",
+    "app/Sources/WindowTarget.swift": "897ca7c5587aacba8fd11178384f461496cfc562690260e8dd6a843a66bc0fc7",
+    "app/Sources/AnnotationVerification.swift": "6d40fd62f10d95e3ec09d06d0172dc2bdffc7d387781603cf6ca270fc5090923",
+    "app/Sources/App.swift": "f7951c3c96cd8b10439ae6f95497f74bb2c5b3bb9948154eea2014d68ef63659",
+    "app/Sources/ImageWindow.swift": "7b7ab4bbbe3c2d6a10435747ce09f7e7a7b92bbd09d8055949cf25bf40cc7f82",
+    "app/Tests/AnnotationTests.swift": "80139621a2a404d3ad6c3698c49d3b537d391824a5c3684d63e2fb9cb63cc509",
+    "app/check.sh": "e202c8645dff0b5284d5c5d9388aff9c708e37e0361fb3040065a2e19639aaa4"
+  },
+  "model_checks": "120步历史无固定上限、120步新增/移动/样式/删除混合历史逐步还原、滑块事务、对象变换、原图不变、统一合成、独立钉图、独立样式记忆及损坏回退通过",
+  "consumer_smoke": {
+    "annotations": {
+      "cancel_gesture_keeps_document": true,
+      "composite_contains_annotation": true,
+      "draft_blocks_export": true,
+      "draw_event_creates_object": true,
+      "move_event_updates_object": true,
+      "move_redo": true,
+      "move_undo": true,
+      "number_sequence": true,
+      "number_undo_restores_next": true,
+      "pin_copy_uses_composite": true,
+      "pin_edit_independent": true,
+      "pin_initial_space_enters_editing": true,
+      "pin_keeps_editable_objects": true,
+      "resize_event_updates_object": true,
+      "selected_style_keeps_tool_default": true,
+      "style_buttons_route_to_current_tool": true,
+      "transaction_blocks_export": true
+    },
+    "cancel_window_pick": true,
+    "closed_windows_removed": true,
+    "copy_closes_editor_only": true,
+    "escape_clears_then_cancels": true,
+    "escape_restores_drag": true,
+    "fixture_only": true,
+    "hex_key_clipboard": true,
+    "hotkey_conflict_keeps_old_bindings": true,
+    "hotkey_fallback_as_primary": true,
+    "hotkey_reapply": true,
+    "jpeg_roundtrip": true,
+    "passed": true,
+    "png_roundtrip": true,
+    "resize_event_callback": true,
+    "rgb_key_clipboard": true,
+    "selection_callback_crop": true,
+    "settings_recorder": {
+      "close_stops_recording": true,
+      "escape_stops_recording": true,
+      "failed_change_keeps_value": true,
+      "recording_accepts_key": true,
+      "recording_pause_resume_balanced": true
+    },
+    "two_windows_and_pin_level": true,
+    "window_click_target": true,
+    "window_drag_is_region": true
+  },
+  "native_ui_observed": [
+    "真实窗口拖出矩形、改蓝色和8px线宽",
+    "空心框内鼠标拖选文字，⌘C后编辑窗保留",
+    "钉图保留框线、首次空格进入标注态（修复后复测）"
+  ],
+  "preview": {
+    "path": "app/previews/annotations-2026-11-03.png",
+    "sha256": "0cabc01c4ba8fb196918bca4f45fde3d93136f791fc38df6446228e5bdf160f3",
+    "scope": "使用既有屏幕权限，只捕获本进程自制样本窗口；已查看工具栏、箭头、圆角框、高亮、序号及正文布局"
+  },
+  "remaining": [
+    "文字标注及中文输入法",
+    "马赛克/模糊及遮挡安全OCR",
+    "完整九工具交互与极值",
+    "真实保存面板",
+    "混合多屏/全局硬件热键",
+    "美化、云AI、发布及完整44项验收"
+  ],
+  "passed_scope": "七类图形标注的本轮聚焦检查通过；S3和完整MVP尚未完成",
+  "system_permissions_requested": false
+}

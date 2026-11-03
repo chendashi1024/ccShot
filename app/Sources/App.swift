@@ -31,11 +31,17 @@ import ScreenCaptureKit
         for (title, selector, key) in [("复制", #selector(ImageWindow.copy(_:)), "c"), ("全选", #selector(NSResponder.selectAll(_:)), "a"), ("保存", #selector(ImageWindow.saveDocument(_:)), "s")] {
             edit.submenu?.addItem(withTitle: title, action: selector, keyEquivalent: key)
         }
+        edit.submenu?.addItem(.separator())
+        edit.submenu?.addItem(withTitle: "撤销", action: #selector(ImageWindow.undo(_:)), keyEquivalent: "z")
+        let redo = edit.submenu?.addItem(withTitle: "重做", action: #selector(ImageWindow.redo(_:)), keyEquivalent: "z"); redo?.keyEquivalentModifierMask = [.command, .shift]
+        let allText = edit.submenu?.addItem(withTitle: "复制全部文字", action: #selector(ImageWindow.copyAllText), keyEquivalent: "c"); allText?.keyEquivalentModifierMask = [.command, .shift]
+        edit.submenu?.addItem(withTitle: "钉图", action: #selector(ImageWindow.pinImage), keyEquivalent: "t")
         main.addItem(edit); NSApp.mainMenu = main
         registerHotkeys()
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
             if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
+            else if let path = argument("--render-annotations") { Task { @MainActor in exit(await ImageWindow.annotationPreview(image, to: path) ? 0 : 1) } }
             else if let path = argument("--render-settings") { renderSettings(to: path) }
             else if let previewPath = argument("--render-window-highlight") { renderSelection(image, to: previewPath, windowHighlight: true) }
             else if let previewPath = argument("--render-selection") { renderSelection(image, to: previewPath) }
@@ -195,10 +201,13 @@ import ScreenCaptureKit
         if hadSelection { showError("屏幕已变化", detail: "请重新开始截图。") }
     }
     @discardableResult private func showImage(_ image: CGImage, pinned: Bool) -> ImageWindow {
+        return showDocument(AnnotationDocument(image: image), pinned: pinned)
+    }
+    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool) -> ImageWindow {
         let id = UUID()
-        let controller = ImageWindow(image: image, pinned: pinned)
+        let controller = ImageWindow(annotationDocument: document, pinned: pinned)
         controller.onClose = { [weak self] in self?.imageWindows.removeValue(forKey: id) }
-        controller.onPin = { [weak self] image in self?.showImage(image, pinned: true) }
+        controller.onPin = { [weak self] document in self?.showDocument(document, pinned: true) }
         imageWindows[id] = controller
         return controller
     }
@@ -221,7 +230,7 @@ import ScreenCaptureKit
     }
     private func pinCurrentOrClipboard() {
         if let selection = selectionWindow?.contentView as? SelectionView { selection.pinSelection() }
-        else if let editor = imageWindows.values.first(where: { $0.window?.isKeyWindow == true }) { showImage(editor.image, pinned: true) }
+        else if let editor = imageWindows.values.first(where: { $0.window?.isKeyWindow == true }) { editor.pinImage() }
         else { pinClipboard() }
     }
     private func showError(_ title: String, detail: String) {
@@ -308,6 +317,7 @@ import ScreenCaptureKit
         selector.cancelOperation(nil)
         selector.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 100, y: 100)))
         let cancelWindowPassed = pickedWindow == nil
+        let annotationSmoke = ImageWindow.annotationChecks(image)
         let editor = showImage(image, pinned: false)
         let pin = showImage(image, pinned: true)
         let twoWindows = imageWindows.count == 2 && pin.window?.level == .floating
@@ -316,10 +326,10 @@ import ScreenCaptureKit
         let copyClosedEditorOnly = imageWindows.count == 1
         let png = pasteboard.data(forType: .png).flatMap(Self.loadImage)
         let jpeg = ImageWindow.encoded(image, type: .jpeg).flatMap(Self.loadImage)
-        let passed = settingsSmoke.values.allSatisfy({ $0 }) && repeatBindingPassed && fallbackBindingPassed && restoredAfterFallback && oldBindingsPreserved && cropPassed && resizePassed && cancelGesturePassed && cancelSequencePassed && hexKeyPassed && rgbKeyPassed && windowClickPassed && windowDragPassed && cancelWindowPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
+        let passed = annotationSmoke.values.allSatisfy({ $0 }) && settingsSmoke.values.allSatisfy({ $0 }) && repeatBindingPassed && fallbackBindingPassed && restoredAfterFallback && oldBindingsPreserved && cropPassed && resizePassed && cancelGesturePassed && cancelSequencePassed && hexKeyPassed && rgbKeyPassed && windowClickPassed && windowDragPassed && cancelWindowPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
         if pasteboard.changeCount == writtenCount { pasteboard.clearContents(); pasteboard.writeObjects(saved) }
         editor.close(); pin.close()
-        let result: [String: Any] = ["fixture_only": true, "settings_recorder": settingsSmoke, "hotkey_reapply": repeatBindingPassed, "hotkey_fallback_as_primary": fallbackBindingPassed && restoredAfterFallback, "hotkey_conflict_keeps_old_bindings": oldBindingsPreserved, "selection_callback_crop": cropPassed, "resize_event_callback": resizePassed, "escape_restores_drag": cancelGesturePassed, "escape_clears_then_cancels": cancelSequencePassed, "hex_key_clipboard": hexKeyPassed, "rgb_key_clipboard": rgbKeyPassed, "window_click_target": windowClickPassed, "window_drag_is_region": windowDragPassed, "cancel_window_pick": cancelWindowPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
+        let result: [String: Any] = ["fixture_only": true, "annotations": annotationSmoke, "settings_recorder": settingsSmoke, "hotkey_reapply": repeatBindingPassed, "hotkey_fallback_as_primary": fallbackBindingPassed && restoredAfterFallback, "hotkey_conflict_keeps_old_bindings": oldBindingsPreserved, "selection_callback_crop": cropPassed, "resize_event_callback": resizePassed, "escape_restores_drag": cancelGesturePassed, "escape_clears_then_cancels": cancelSequencePassed, "hex_key_clipboard": hexKeyPassed, "rgb_key_clipboard": rgbKeyPassed, "window_click_target": windowClickPassed, "window_drag_is_region": windowDragPassed, "cancel_window_pick": cancelWindowPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
         if let path = argument("--smoke-test"), let data = try? JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]) { try? data.write(to: URL(fileURLWithPath: path)) }
         exit(passed && imageWindows.isEmpty ? 0 : 1)
     }

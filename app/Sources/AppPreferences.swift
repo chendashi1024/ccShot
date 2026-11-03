@@ -43,7 +43,7 @@ struct AppShortcut: Codable, Hashable {
 
 final class AppPreferences {
     static let shared = AppPreferences()
-    private let store: UserDefaults
+    let store: UserDefaults
     static let captureKey = "ccshot.capture.shortcut.v1"
     static let pinKey = "ccshot.pin.shortcut.v1"
     static let directoryKey = "ccshot.save.directory.v1"
