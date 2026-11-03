@@ -59,7 +59,7 @@ import AppKit
         }
         var invalid = filled; invalid.style.width = 0
         precondition(AnnotationRenderer.render(base:base,objects:[invalid]) == nil, "合成失败不得返回原图")
-        for effect in MaskEffect.allCases {
+        for effect in [MaskEffect.pixelate,.blur] {
             for brush in [false,true] {
                 var style = AnnotationStyle.initial(.mask); style.maskEffect = effect; style.maskBrush = brush; style.width = 20; style.maskStrength = 20
                 let mask = AnnotationObject(tool:.mask,style:style,start:CGPoint(x:45,y:20),end:CGPoint(x:80,y:80),points:brush ? [CGPoint(x:60,y:20),CGPoint(x:60,y:80)] : [])

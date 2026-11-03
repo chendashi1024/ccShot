@@ -49,7 +49,11 @@ import CoreImage
             context.strokePath()
         case .text: AnnotationTextLayout.draw(object,in:context)
         case .mask:
-            guard let source = context.makeImage(), let filtered = filtered(source, style: style) else { return false }
+            var processed: CGImage?
+            if style.maskEffect != .solid {
+                guard let source = context.makeImage(),let image = filtered(source,style:style) else {return false}
+                processed=image
+            }
             context.setLineDash(phase: 0, lengths: [])
             if style.maskBrush {
                 guard let first = object.points.first else { return true }
@@ -57,8 +61,13 @@ import CoreImage
                 if object.points.count == 1 { context.addLine(to: CGPoint(x: first.x + 0.01, y: first.y)) }
                 else { for point in object.points.dropFirst() { context.addLine(to: point) } }
                 context.replacePathWithStrokedPath(); context.clip()
-            } else { context.clip(to: object.bounds) }
-            context.draw(filtered, in: CGRect(x: 0, y: 0, width: source.width, height: source.height))
+            } else { context.clip(to: style.maskEffect == .solid ? object.bounds.integral : object.bounds) }
+            if let processed {context.draw(processed,in:CGRect(x:0,y:0,width:processed.width,height:processed.height))}
+            else {
+                // 实心遮挡始终不透明，不能继承旧样式或颜色面板中的Alpha。
+                context.setFillColor(style.color.nsColor.withAlphaComponent(1).cgColor)
+                context.fill(context.boundingBoxOfClipPath)
+            }
         case .number:
             let rect = object.bounds
             context.fillEllipse(in: rect)

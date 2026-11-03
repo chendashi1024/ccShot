@@ -2,7 +2,7 @@ import AppKit
 import QuartzCore
 
 @MainActor enum PrivacyVerification {
-    static func run(reportPath: String, previewPath: String? = nil) async -> Bool {
+    static func run(reportPath: String, previewPath: String? = nil, checkClipboard: Bool = true) async -> Bool {
         let suite = "com.ccshot.privacy-check.\(UUID().uuidString)"
         let store = UserDefaults(suiteName:suite)!
         defer { store.removePersistentDomain(forName:suite) }
@@ -34,16 +34,20 @@ import QuartzCore
                 await editor.recognitionForVerification?.value
                 let text = editor.recognizedTextForVerification
                 result[name+"_suppresses_entire_private_unit"] = !text.contains("PRIVATE") && !text.contains("4832") && text.contains("PUBLIC")
-                let pasteboard = NSPasteboard.general
-                let saved = pasteboard.pasteboardItems?.map { item -> NSPasteboardItem in
-                    let copy = NSPasteboardItem()
-                    for type in item.types { if let data = item.data(forType:type) { copy.setData(data,forType:type) } }
-                    return copy
-                } ?? []
-                editor.copyAllText(); let written = pasteboard.changeCount
-                let copied = pasteboard.string(forType:.string) ?? ""
-                result[name+"_copy_all_uses_safe_text"] = !copied.contains("PRIVATE") && !copied.contains("4832") && copied.contains("PUBLIC")
-                if pasteboard.changeCount == written { pasteboard.clearContents(); pasteboard.writeObjects(saved) }
+                editor.selectAll(nil)
+                result[name+"_selection_matches_safe_text"] = !text.isEmpty && editor.selectedTextForVerification == text
+                if checkClipboard {
+                    let pasteboard = NSPasteboard.general
+                    let saved = pasteboard.pasteboardItems?.map { item -> NSPasteboardItem in
+                        let copy = NSPasteboardItem()
+                        for type in item.types { if let data = item.data(forType:type) { copy.setData(data,forType:type) } }
+                        return copy
+                    } ?? []
+                    editor.copyAllText(); let written = pasteboard.changeCount
+                    let copied = pasteboard.string(forType:.string) ?? ""
+                    result[name+"_copy_all_uses_safe_text"] = !copied.contains("PRIVATE") && !copied.contains("4832") && copied.contains("PUBLIC")
+                    if pasteboard.changeCount == written { pasteboard.clearContents(); pasteboard.writeObjects(saved) }
+                }
             }
         }
         var moved = document.state; moved.objects = [latestMask.moved(by:CGPoint(x:500,y:-160))]; document.commit(moved)
@@ -79,7 +83,7 @@ import QuartzCore
         editor.close(); await late?.value
         result["closed_window_has_no_old_analysis"] = editor.recognizedTextForVerification.isEmpty
         let passed = result.values.allSatisfy { $0 }
-        let report: [String:Any] = ["fixture_only":true,"test_data":"两行虚构英文，仅局部遮挡第一行；不记录私人截图或OCR","checks":result,"passed":passed]
+        let report: [String:Any] = ["fixture_only":true,"clipboard_tested":checkClipboard,"test_data":"两行虚构英文，仅局部遮挡第一行；不记录私人截图或OCR","checks":result,"passed":passed]
         if let data = try? JSONSerialization.data(withJSONObject:report,options:[.prettyPrinted,.sortedKeys]) { try? data.write(to:URL(fileURLWithPath:reportPath),options:.atomic) }
         return passed
     }

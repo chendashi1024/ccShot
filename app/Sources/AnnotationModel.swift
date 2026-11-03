@@ -11,7 +11,7 @@ enum AnnotationTool: String, Codable, CaseIterable {
         case .line: return "直线"
         case .pen: return "画笔"
         case .text: return "文字"
-        case .mask: return "马赛克"
+        case .mask: return "遮挡"
         case .highlight: return "高亮"
         case .number: return "序号"
         }
@@ -34,7 +34,7 @@ struct AnnotationColor: Codable, Equatable {
     }
 }
 
-enum MaskEffect: String, Codable, CaseIterable { case pixelate, blur }
+enum MaskEffect: String, Codable, CaseIterable { case solid, pixelate, blur }
 enum ArrowHead: String, Codable, CaseIterable { case filled, open, double }
 struct AnnotationStyle: Codable, Equatable {
     var color = AnnotationColor.palette[0]
@@ -44,7 +44,7 @@ struct AnnotationStyle: Codable, Equatable {
     var cornerRadius: CGFloat = 0
     var dashed = false
     var arrowHead = ArrowHead.filled
-    var maskEffect = MaskEffect.pixelate
+    var maskEffect = MaskEffect.solid
     var maskBrush = false
     var maskStrength: CGFloat = 16
     var fontSize: CGFloat = 24
@@ -56,7 +56,7 @@ struct AnnotationStyle: Codable, Equatable {
         var style = Self()
         if tool == .highlight { style.width = 18; style.color = .palette[2] }
         if tool == .number { style.width = 6 }
-        if tool == .mask { style.width = 32 }
+        if tool == .mask { style.width = 32; style.color = .palette[6] }
         return style
     }
 }

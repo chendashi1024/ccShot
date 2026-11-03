@@ -40,7 +40,7 @@ import UniformTypeIdentifiers
     private let widthTitle = NSTextField(labelWithString: "粗细")
     private var presetButtons: [NSButton] = []
     private var colorControls: [NSView] = []
-    private let maskPicker = NSSegmentedControl(labels: ["马赛克", "模糊"], trackingMode: .selectOne, target: nil, action: nil)
+    private let maskPicker = NSSegmentedControl(labels: ["实心", "马赛克", "模糊"], trackingMode: .selectOne, target: nil, action: nil)
     private let maskMode = NSSegmentedControl(labels: ["框选", "涂抹"], trackingMode: .selectOne, target: nil, action: nil)
     private let brushWidth = StyleSlider(value: 32, minValue: 1, maxValue: 80, target: nil, action: nil)
     private let brushLabel = NSTextField(labelWithString: "笔宽")
@@ -199,15 +199,18 @@ import UniformTypeIdentifiers
             let selected = tool == canvas.tool; button.state = selected ? .on : .off
             button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor
         }
+        let solidMask = tool == .mask && style.maskEffect == .solid
+        for control in [widthTitle,widthSlider,widthLabel] as [NSView] {control.isHidden=solidMask}
+        for control in presetButtons {control.isHidden=solidMask}
         let width = tool == .text ? style.fontSize : tool == .mask ? style.maskStrength : style.width
         widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : "粗细"
         widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
         widthSlider.doubleValue = Double(width); widthLabel.stringValue = "\(Int(width)) px";
         let presetWidths = tool == .text ? [16,24,32,48] : tool == .mask ? [8,16,32,64] : [2,4,8,16]
         for (button, value) in zip(presetButtons,presetWidths) { button.title = "\(value)"; button.tag = value }
-        for control in colorControls { control.isHidden = tool == .mask }
+        for control in colorControls { control.isHidden = tool == .mask && !solidMask }
         maskPicker.isHidden = tool != .mask; maskMode.isHidden = tool != .mask || canvas.selected != nil
-        maskPicker.selectedSegment = style.maskEffect == .pixelate ? 0 : 1; maskMode.selectedSegment = style.maskBrush ? 1 : 0
+        maskPicker.selectedSegment = MaskEffect.allCases.firstIndex(of:style.maskEffect) ?? 0; maskMode.selectedSegment = style.maskBrush ? 1 : 0
         brushWidth.isHidden = tool != .mask || !style.maskBrush; brushLabel.isHidden = brushWidth.isHidden; brushWidth.doubleValue = Double(style.width)
          colorWell.color = style.color.nsColor
         finishTextButton.isHidden = canvas.textEditor == nil; cancelTextButton.isHidden = canvas.textEditor == nil
@@ -267,15 +270,15 @@ import UniformTypeIdentifiers
     @objc private func closeImage() { close() }
     @objc private func opacityPreset(_ sender: NSMenuItem) { window?.alphaValue = Double(sender.tag)/100 }
     @objc private func chooseTool(_ sender: NSButton) { canvas.chooseTool(AnnotationTool.allCases[sender.tag]); if canvas.textEditor == nil { window?.makeFirstResponder(canvas) } }
-    @objc private func changeWidth(_ sender: NSSlider) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.doubleValue.rounded()) } else if canvas.currentTool == .mask { style.maskStrength = CGFloat(sender.doubleValue.rounded()) } else { style.width = CGFloat(sender.doubleValue.rounded()) }; canvas.changeStyle(style) }
-    @objc private func widthPreset(_ sender: NSButton) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.tag) } else if canvas.currentTool == .mask { style.maskStrength = max(4,CGFloat(sender.tag)) } else { style.width = CGFloat(sender.tag) }; canvas.changeStyle(style) }
+    @objc private func changeWidth(_ sender: NSSlider) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.doubleValue.rounded()) } else if canvas.currentTool == .mask { guard style.maskEffect != .solid else {return}; style.maskStrength = CGFloat(sender.doubleValue.rounded()) } else { style.width = CGFloat(sender.doubleValue.rounded()) }; canvas.changeStyle(style) }
+    @objc private func widthPreset(_ sender: NSButton) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.tag) } else if canvas.currentTool == .mask { guard style.maskEffect != .solid else {return}; style.maskStrength = max(4,CGFloat(sender.tag)) } else { style.width = CGFloat(sender.tag) }; canvas.changeStyle(style) }
     @objc private func palette(_ sender: NSButton) { changeStyleKey(nil, sender.tag) }
-    @objc private func changeColor(_ sender: NSColorWell) { var style = canvas.currentStyle; style.color = AnnotationColor(sender.color); canvas.changeStyle(style) }
+    @objc private func changeColor(_ sender: NSColorWell) { var style = canvas.currentStyle; style.color = AnnotationColor(sender.color); if canvas.currentTool == .mask && style.maskEffect == .solid {style.color.alpha=1}; canvas.changeStyle(style) }
     private func changeStyleKey(_ delta: CGFloat?, _ color: Int?) {
         guard canvas.currentTool != .select else { return }
         var style = canvas.currentStyle
-        if let delta { if canvas.currentTool == .text { style.fontSize = min(200,max(8,style.fontSize+delta)) } else if canvas.currentTool == .mask { style.maskStrength = min(80,max(4,style.maskStrength+delta)) } else { style.width = min(80, max(1, style.width + delta)) } }
-        if let color, canvas.currentTool != .mask { style.color = AnnotationColor.palette[color] }
+        if let delta { if canvas.currentTool == .text { style.fontSize = min(200,max(8,style.fontSize+delta)) } else if canvas.currentTool == .mask { if style.maskEffect == .solid {guard style.maskBrush else {return};style.width=min(80,max(1,style.width+delta))} else {style.maskStrength = min(80,max(4,style.maskStrength+delta))} } else { style.width = min(80, max(1, style.width + delta)) } }
+        if let color, canvas.currentTool != .mask || style.maskEffect == .solid { style.color = AnnotationColor.palette[color] }
         canvas.changeStyle(style)
     }
     @objc private func finishText() { _ = canvas.finishTextEditing() }
@@ -284,7 +287,8 @@ import UniformTypeIdentifiers
         var style = canvas.currentStyle; style.bold = boldButton.state == .on; style.textBackground = textBackground.state == .on; style.backgroundColor = AnnotationColor(backgroundWell.color); canvas.changeStyle(style)
     }
     @objc private func changeMask() {
-        var style = canvas.currentStyle; style.maskEffect = maskPicker.selectedSegment == 0 ? .pixelate : .blur; if canvas.selected == nil { style.maskBrush = maskMode.selectedSegment == 1 }; canvas.changeStyle(style)
+        guard MaskEffect.allCases.indices.contains(maskPicker.selectedSegment) else {return}
+        var style = canvas.currentStyle; style.maskEffect = MaskEffect.allCases[maskPicker.selectedSegment]; if style.maskEffect == .solid {style.color.alpha=1}; if canvas.selected == nil { style.maskBrush = maskMode.selectedSegment == 1 }; canvas.changeStyle(style)
     }
     @objc private func changeBrush(_ sender: NSSlider) { var style = canvas.currentStyle; style.width = CGFloat(sender.doubleValue.rounded()); canvas.changeStyle(style) }
     @objc private func changeOptions() {

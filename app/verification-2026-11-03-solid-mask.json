@@ -1,0 +1,63 @@
+{
+  "checks": {
+    "baseline_recognizes_both_lines": true,
+    "blur_brush_composite_changed": true,
+    "blur_brush_old_text_cleared_immediately": true,
+    "blur_brush_selection_matches_safe_text": true,
+    "blur_brush_suppresses_entire_private_unit": true,
+    "blur_rectangle_composite_changed": true,
+    "blur_rectangle_old_text_cleared_immediately": true,
+    "blur_rectangle_selection_matches_safe_text": true,
+    "blur_rectangle_suppresses_entire_private_unit": true,
+    "closed_window_has_no_old_analysis": true,
+    "filled_shape_also_suppresses_private_unit": true,
+    "moving_mask_restores_visible_text": true,
+    "native_preview": true,
+    "pixelate_brush_composite_changed": true,
+    "pixelate_brush_old_text_cleared_immediately": true,
+    "pixelate_brush_selection_matches_safe_text": true,
+    "pixelate_brush_suppresses_entire_private_unit": true,
+    "pixelate_rectangle_composite_changed": true,
+    "pixelate_rectangle_old_text_cleared_immediately": true,
+    "pixelate_rectangle_selection_matches_safe_text": true,
+    "pixelate_rectangle_suppresses_entire_private_unit": true,
+    "redo_restores_visible_text": true,
+    "solid_brush_composite_changed": true,
+    "solid_brush_old_text_cleared_immediately": true,
+    "solid_brush_selection_matches_safe_text": true,
+    "solid_brush_suppresses_entire_private_unit": true,
+    "solid_rectangle_composite_changed": true,
+    "solid_rectangle_old_text_cleared_immediately": true,
+    "solid_rectangle_selection_matches_safe_text": true,
+    "solid_rectangle_suppresses_entire_private_unit": true,
+    "undo_clears_old_text": true,
+    "undo_restores_suppression": true
+  },
+  "clipboard_tested": false,
+  "fixture_only": true,
+  "passed": true,
+  "test_data": "两行虚构英文，仅局部遮挡第一行；不记录私人截图或OCR",
+  "date": "2026-11-03",
+  "scope": "实心遮挡补齐，非完整目标验收",
+  "pixel_checks": [
+    "框选和涂抹在颜色Alpha为0.1时仍完全不透明",
+    "区域外像素不变",
+    "非整数框边向完整源像素覆盖",
+    "撤销重做与独立钉图副本",
+    "已有pixelate/blur样式序列化兼容"
+  ],
+  "native_ui_checks": [
+    "CUA点遮挡即见实心默认、颜色及框选/涂抹",
+    "实际拖动生成实心块",
+    "切换马赛克/模糊显示强度，返回实心隐藏无意义强度"
+  ],
+  "clipboard_touched": false,
+  "preview": "previews/solid-mask-native-2026-11-03.png",
+  "limitations": [
+    "真实输入法候选、实体全局快捷键和安装升级未验收",
+    "样式自动展开属于同工作区另一项修改，截图为组合工作树；本提交精确排除其改动",
+    "未安装、未新增权限、未公开发布"
+  ],
+  "isolated_staged_sources_build_passed": true,
+  "existing_annotation_regression_passed": true
+}

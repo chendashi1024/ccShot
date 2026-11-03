@@ -13,6 +13,7 @@ import QuartzCore
     private var hotkeyWarning: NSMenuItem?
     private var captureTask: Task<Void, Never>?
     private var fixture: CGImage?
+    private var verificationPreferencesSuite: String?
     private var captureGeneration = 0
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -46,12 +47,13 @@ import QuartzCore
             else if let path = argument("--screen-smoke-test") { Task { @MainActor in exit(await ScreenVerification.run(image,reportPath:path)) } }
             else if CommandLine.arguments.contains("--permission-guide") { showPermissionGuide(); showImage(image,pinned:false) }
             else if let path = argument("--fixture-save-directory") {
-                let store = UserDefaults(suiteName:"com.ccshot.save-check.\(UUID().uuidString)")!
+                let suite="com.ccshot.save-check.\(UUID().uuidString)"; verificationPreferencesSuite=suite
+                let store = UserDefaults(suiteName:suite)!
                 store.setVolatileDomain([AppPreferences.directoryKey:path],forName:UserDefaults.argumentDomain)
                 showDocument(AnnotationDocument(image:image),pinned:false,preferences:AppPreferences(store:store))
             }
             else if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
-            else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview")) ? 0 : 1) } }
+            else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview"),checkClipboard:!CommandLine.arguments.contains("--no-clipboard")) ? 0 : 1) } }
             else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
             else if let path = argument("--render-annotations") { Task { @MainActor in exit(await ImageWindow.annotationPreview(image, to: path) ? 0 : 1) } }
             else if let path = argument("--render-settings") { Task { @MainActor in await renderSettings(to:path) } }
@@ -469,6 +471,7 @@ import QuartzCore
         cancelCapture()
         for controller in Array(imageWindows.values) { controller.close() }
         settings?.close()
+        if let suite=verificationPreferencesSuite {UserDefaults.standard.removePersistentDomain(forName:suite)}
         hotkeys.shutdown()
         NotificationCenter.default.removeObserver(self)
     }
