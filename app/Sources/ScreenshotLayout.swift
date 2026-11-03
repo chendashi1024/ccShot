@@ -8,11 +8,14 @@ struct ScreenshotPlacement {
 }
 
 enum ScreenshotLayout {
-    static func make(capture: CGSize, region: CGRect, viewport: CGSize, toolbar: CGSize, parameters: CGSize, toolbarAnchorWidth:CGFloat?=nil) -> ScreenshotPlacement? {
+    static func make(capture: CGSize, region: CGRect, viewport: CGSize, toolbar: CGSize, parameters: CGSize, toolbarAnchorWidth:CGFloat?=nil,allowsOutsideRegion:Bool=false) -> ScreenshotPlacement? {
         let values=[capture.width,capture.height,region.minX,region.minY,region.width,region.height,viewport.width,viewport.height,toolbar.width,toolbar.height,parameters.width,parameters.height]
         guard values.allSatisfy({$0.isFinite}),capture.width>0,capture.height>0,viewport.width>24,viewport.height>24,
-              region.width>0,region.height>0,CGRect(origin:.zero,size:capture).contains(region),toolbar.width>0,toolbar.height>0,
+              region.width>0,region.height>0,toolbar.width>0,toolbar.height>0,
               parameters.width>=0,parameters.height>=0 else {return nil}
+        let captureRect=CGRect(origin:.zero,size:capture)
+        let visible=region.intersection(captureRect)
+        guard allowsOutsideRegion ? (!visible.isNull && !visible.isEmpty) : captureRect.contains(region) else {return nil}
         let scale=min(viewport.width/capture.width,viewport.height/capture.height)
         let background=CGRect(x:(viewport.width-capture.width*scale)/2,y:(viewport.height-capture.height*scale)/2,width:capture.width*scale,height:capture.height*scale)
         let image=CGRect(x:background.minX+region.minX*scale,y:background.minY+region.minY*scale,width:region.width*scale,height:region.height*scale)

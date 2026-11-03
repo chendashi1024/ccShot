@@ -53,6 +53,7 @@ import QuartzCore
                 store.setVolatileDomain([AppPreferences.directoryKey:path],forName:UserDefaults.argumentDomain)
                 showDocument(AnnotationDocument(image:image),pinned:false,preferences:AppPreferences(store:store))
             }
+            else if let path=argument("--window-inline-smoke-test") {Task { @MainActor in let passed=await InlineVerification.runWindow(reportPath:path,preview:CommandLine.arguments.contains("--keep-window-preview"));if !CommandLine.arguments.contains("--keep-window-preview") {exit(passed ? 0 : 1)} }}
             else if let path=argument("--inline-smoke-test") {Task { @MainActor in exit(await InlineVerification.run(reportPath:path) ? 0 : 1) }}
             else if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
             else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview"),checkClipboard:!CommandLine.arguments.contains("--no-clipboard")) ? 0 : 1) } }
@@ -179,6 +180,8 @@ import QuartzCore
         context.draw(image,in:frame);return context.makeImage() ?? image
     }
     private func presentSelection(_ image: CGImage, on screen: NSScreen, targets: [WindowTarget] = []) {
+        let sourceFrame=screen.frame
+        let sourceDisplayID=(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
         let window = SelectionWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.title = "CcShot · 框选"
         window.level = .screenSaver
@@ -193,13 +196,17 @@ import QuartzCore
             view.showWindowStatus("正在捕获窗口…")
             self.captureTask?.cancel()
             let token = self.captureGeneration
-            self.captureTask = Task { @MainActor [weak self, weak view] in
+            self.captureTask = Task { @MainActor [weak self, weak view,weak window] in
                 guard let self else { return }
                 do {
-                    let captured = try await WindowCapture.capture(id: target.id, ownerPID: target.ownerPID)
-                    guard !Task.isCancelled, token == self.captureGeneration else { return }
+                    let captured = try await WindowCapture.captureSnapshot(id: target.id, ownerPID: target.ownerPID)
+                    guard !Task.isCancelled,token == self.captureGeneration,let window,self.selectionWindow === window else {return}
+                    guard let primaryTop=NSScreen.screens.first?.frame.maxY,
+                          NSScreen.screens.contains(where:{($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == sourceDisplayID && $0.frame == sourceFrame}),
+                          let region=WindowTarget.editorRect(quartzFrame:captured.quartzFrame,screenFrame:sourceFrame,primaryTop:primaryTop) else {throw WindowCapture.CaptureError.missing}
+                    let context=ScreenshotPresentation(background:image,screenFrame:sourceFrame,region:region,displayID:sourceDisplayID,allowsAdjustment:false)
                     self.cancelCapture()
-                    self.showImage(captured, pinned: false)
+                    self.showDocument(AnnotationDocument(image:captured.image),pinned:false,screenshot:context)
                 } catch {
                     guard !Task.isCancelled, token == self.captureGeneration else { return }
                     view?.showWindowStatus("窗口已关闭或无法捕获，请重新选择或拖动截图区域")
@@ -208,9 +215,8 @@ import QuartzCore
         }
         view.onConfirm = { [weak self,weak window] selected, rect, action in
             guard let self,let window,self.selectionWindow === window else {return}
-            let local=rect.offsetBy(dx:-screen.frame.minX,dy:-screen.frame.minY)
-            let displayID=(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
-            let context=ScreenshotPresentation(background:image,screenFrame:screen.frame,region:local,displayID:displayID,allowsAdjustment:true)
+            let local=rect.offsetBy(dx:-sourceFrame.minX,dy:-sourceFrame.minY)
+            let context=ScreenshotPresentation(background:image,screenFrame:sourceFrame,region:local,displayID:sourceDisplayID,allowsAdjustment:true)
             let image=selected
             self.cancelCapture()
             switch action {
@@ -482,7 +488,14 @@ import QuartzCore
         disposable.close()
         Task { @MainActor in
             do {
-                let captured = try await WindowCapture.capture(id: targetID, ownerPID: ProcessInfo.processInfo.processIdentifier)
+                let snapshot = try await WindowCapture.captureSnapshot(id: targetID, ownerPID: ProcessInfo.processInfo.processIdentifier)
+                let captured=snapshot.image
+                guard let sourceWindow=editor.window,let screen=sourceWindow.screen,let primaryTop=NSScreen.screens.first?.frame.maxY,
+                      let region=WindowTarget.editorRect(quartzFrame:snapshot.quartzFrame,screenFrame:screen.frame,primaryTop:primaryTop) else {throw WindowCapture.CaptureError.missing}
+                let context=ScreenshotPresentation(background:Self.fixtureBackground(image,on:screen),screenFrame:screen.frame,region:region,displayID:0,allowsAdjustment:false)
+                let inline=showDocument(AnnotationDocument(image:captured),pinned:false,screenshot:context)
+                let inlineChecks=inline.windowCaptureLayoutChecks(region:region,pixels:CGSize(width:captured.width,height:captured.height))
+                inline.close()
                 guard let png = ImageWindow.encoded(captured, type: .png) else { throw WindowCapture.CaptureError.unsupportedSize }
                 let output = URL(fileURLWithPath: report).deletingPathExtension().appendingPathExtension("png")
                 try png.write(to: output, options: .atomic)
@@ -493,7 +506,8 @@ import QuartzCore
                 do { _ = try await WindowCapture.capture(id: targetID, ownerPID: -1) }
                 catch { rejectedOwner = true }
                 editor.close()
-                finish(["fixture_only": true, "source_owner_only": true, "width": captured.width, "height": captured.height, "closed_window_rejected": rejectedClosed, "wrong_owner_rejected": rejectedOwner, "passed": rejectedClosed && rejectedOwner], code: rejectedClosed && rejectedOwner ? 0 : 1)
+                let passed=rejectedClosed && rejectedOwner && inlineChecks.values.allSatisfy{$0} && !inlineChecks.isEmpty
+                finish(["fixture_only":true,"actual_system_window_capture":true,"source_owner_only":true,"width":captured.width,"height":captured.height,"closed_window_rejected":rejectedClosed,"wrong_owner_rejected":rejectedOwner,"inline_checks":inlineChecks,"passed":passed],code:passed ? 0 : 1)
             } catch {
                 editor.close()
                 finish(["fixture_only": true, "passed": false, "status": "capture_failed"], code: 1)

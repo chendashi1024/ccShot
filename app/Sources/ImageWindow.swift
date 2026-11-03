@@ -213,7 +213,7 @@ import UniformTypeIdentifiers
         let primary=toolbarContent.fittingSize
         let options=parametersContent.fittingSize
         let parameterSize=styleRow.isHidden ? CGSize.zero : CGSize(width:options.width+16,height:options.height+16)
-        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:CGSize(width:primary.width+16,height:56),parameters:parameterSize,toolbarAnchorWidth:primary.width+16-(copyButton.title == "复制文字" ? 28 : 0)) else {
+        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:CGSize(width:primary.width+16,height:56),parameters:parameterSize,toolbarAnchorWidth:primary.width+16-(copyButton.title == "复制文字" ? 28 : 0),allowsOutsideRegion:!root.presentation.allowsAdjustment) else {
             canvas.isHidden=true;toolbarPanel.isHidden=true;parametersPanel.isHidden=true;root.placement=nil;return
         }
         root.placement=placement;canvas.frame=placement.image;overlay.frame=canvas.bounds;overlay.setContentsRectNeedsUpdate()
@@ -673,6 +673,17 @@ import UniformTypeIdentifiers
 }
 
 extension ImageWindow {
+    func windowCaptureLayoutChecks(region:CGRect,pixels:CGSize)->[String:Bool] {
+        guard let root=screenshotView else {return ["uses_inline_editor":false]}
+        root.layoutSubtreeIfNeeded();layoutScreenshot()
+        let output=stableImage(),base=annotationDocument.baseImage
+        let samePixels=output.map {image in [(0,0),(base.width/2,base.height/2),(base.width-1,base.height-1)].allSatisfy {point in PixelSampler.color(in:image,x:point.0,y:point.1)==PixelSampler.color(in:base,x:point.0,y:point.1)}} ?? false
+        let scale=min(root.bounds.width/root.presentation.captureSize.width,root.bounds.height/root.presentation.captureSize.height)
+        let mapped=CGRect(x:(root.bounds.width-root.presentation.captureSize.width*scale)/2+region.minX*scale,y:(root.bounds.height-root.presentation.captureSize.height*scale)/2+region.minY*scale,width:region.width*scale,height:region.height*scale)
+        return ["uses_inline_editor":isScreenshot,"complete_window_placement":root.region==region && canvas.frame==mapped,
+                "window_capture_has_no_recrop_handles":!root.canAdjust,"output_keeps_complete_window_pixels":output?.width==Int(pixels.width) && output?.height==Int(pixels.height),
+                "output_pixel_samples_match_window":samePixels,"toolbar_visible_and_inside_screen":toolbarPanel.map {!$0.isHidden && root.bounds.contains($0.frame)} ?? false]
+    }
     func inlineLayoutChecks()->[String:Bool] {
         guard let root=screenshotView,let toolbarPanel,let parametersPanel else {return [:]}
         root.layoutSubtreeIfNeeded();layoutScreenshot()

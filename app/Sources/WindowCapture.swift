@@ -2,6 +2,7 @@ import AppKit
 import ScreenCaptureKit
 
 @MainActor enum WindowCapture {
+    struct Snapshot {let image:CGImage;let quartzFrame:CGRect}
     enum CaptureError: Error { case permission, missing, unsupportedSize }
 
     static func targets(in content: SCShareableContent, screen: NSScreen) -> [WindowTarget] {
@@ -17,7 +18,10 @@ import ScreenCaptureKit
             return WindowTarget(id: id.uint32Value, ownerPID: pid.int32Value, rect: rect)
         }
     }
-    static func capture(id: UInt32, ownerPID: Int32) async throws -> CGImage {
+    static func capture(id:UInt32,ownerPID:Int32) async throws -> CGImage {
+        try await captureSnapshot(id:id,ownerPID:ownerPID).image
+    }
+    static func captureSnapshot(id: UInt32, ownerPID: Int32) async throws -> Snapshot {
         guard CGPreflightScreenCaptureAccess() else { throw CaptureError.permission }
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         try Task.checkCancellation()
@@ -33,6 +37,6 @@ import ScreenCaptureKit
         config.ignoreShadowsSingleWindow = true
         let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
         try Task.checkCancellation()
-        return image
+        return Snapshot(image:image,quartzFrame:target.frame)
     }
 }

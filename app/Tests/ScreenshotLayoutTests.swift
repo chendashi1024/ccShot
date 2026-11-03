@@ -23,6 +23,11 @@ import AppKit
         precondition(scaled.image==CGRect(x:181,y:165,width:358,height:225),"屏幕改变后按同一比例映射，不拉伸图片")
         precondition(ScreenshotLayout.make(capture:.zero,region:region,viewport:source,toolbar:CGSize(width:956,height:56),parameters:.zero)==nil)
         precondition(ScreenshotLayout.make(capture:source,region:CGRect(x:-1,y:0,width:10,height:10),viewport:source,toolbar:CGSize(width:956,height:56),parameters:.zero)==nil)
+        let windowRegion=CGRect(x:-120,y:300,width:800,height:500)
+        let windowLayout=ScreenshotLayout.make(capture:source,region:windowRegion,viewport:source,toolbar:CGSize(width:956,height:56),parameters:CGSize(width:512,height:116),allowsOutsideRegion:true)!
+        precondition(windowLayout.image==windowRegion,"完整窗口不能被裁掉或挤压到可见高亮框")
+        precondition(CGRect(x:12,y:12,width:1416,height:876).contains(windowLayout.toolbar))
+        precondition(ScreenshotLayout.make(capture:source,region:CGRect(x:1500,y:0,width:100,height:100),viewport:source,toolbar:CGSize(width:956,height:56),parameters:.zero,allowsOutsideRegion:true)==nil,"窗口完全离开当前屏幕时拒绝原位交接")
         print("通过：原位图像、就近浮动、紧凑参数、屏边避让与等比视口映射")
     }
 }
