@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-03",
+  "source_revision": "efc4fd10d5f23986e8c10860be4faf71b036bf95",
+  "package_relative_path": "app/build/packages/efc4fd10d5f23986e8c10860be4faf71b036bf95/CcShot-0.1.0-dev-arm64.zip",
+  "package_sha256": "fd1ba979553680ca5985969c0e662323ed17fd4c346bc7b3b4b7f7d9d6a945ec",
+  "package_bytes": 346181,
+  "checks": {
+    "archive_sha256_matches": true,
+    "unpacked_binary_identical": true,
+    "embedded_source_revision_matches": true,
+    "arm64_only": true,
+    "macos14_target": true,
+    "simplified_chinese_declared": true,
+    "signature_verified": true,
+    "usage_notes_exist": true
+  },
+  "passed": true,
+  "scope": "本地ZIP生成、独立目录解压、签名及二进制/源码版本核对；不等同安装/升级/新权限恢复或公开分发验收",
+  "installed_verified": false,
+  "public_release": false,
+  "permission_guide": "真实原生对话框已查看，CUA点击暂不返回样本；未点击授权或撤销权限。打开系统设置按钮未操作。",
+  "remaining": [
+    "实体全局快捷键",
+    "真实中文输入法候选",
+    "混合1x/2x设备",
+    "新装与升级后的权限行为",
+    "磁盘满与外置卷断开恢复",
+    "用户整体视觉验收"
+  ]
+}
