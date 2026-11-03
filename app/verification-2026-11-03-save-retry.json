@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-03",
+  "scope": "真实NSSavePanel写入失败与原会话重试，OUT-02局部验证",
+  "fixture_only": true,
+  "binary_sha256": "690a9dab1eaa5a9b6fa678a541f164fbd024a7e8510c66667270e632966c58f7",
+  "test_steps": [
+    "以独立Bundle ID运行现有开发版虚构样本，保存偏好在独立临时域",
+    "打开保存面板后，仅将自建target目录从0700暂改0500",
+    "真实点击保存，生产写入catch显示保存失败，请检查目录权限与可用空间，原图与窗口保留且目录无文件",
+    "目录恢复0700后，同一窗口、同一图重新保存成功",
+    "sips解码PNG为1920×460，字节与原夹具完全相同",
+    "正常退出验证App，删除验证副本，仅保留忽略目录内输出样本与报告"
+  ],
+  "native_write_error_observed": true,
+  "failed_attempt_created_no_file": true,
+  "same_session_retry_success": true,
+  "output_identical_to_fixture": true,
+  "clipboard_touched": false,
+  "new_system_permissions": false,
+  "user_directory_permissions_changed": false,
+  "public_release": false,
+  "limitations": [
+    "未模拟磁盘满或外置卷拔出，不将同类错误统称全通过",
+    "运行的是当时组合工作树二进制；保存函数与已提交5baa6ffe一致，样式仍在其他会话收尾"
+  ],
+  "previews": [
+    "previews/save-write-failure-2026-11-03.png",
+    "previews/save-write-retry-2026-11-03.png"
+  ],
+  "save_method_matches_revision": "5baa6ffe",
+  "save_method_sha256": "0b3810c6906d2958777c4d49a6db6564a07c30eb3cf6fdb60edf8b491b39ad7b",
+  "preview_hashes": {
+    "previews/save-write-failure-2026-11-03.png": "a3208b88a3b859c919c7368efa50784e48d9e4e09f1a0d12b735f8d5aaa2d90c",
+    "previews/save-write-retry-2026-11-03.png": "679e46f25151be26b7bfd6a5980d524f03e63298bd178465b13d0f0e58c46073"
+  }
+}
