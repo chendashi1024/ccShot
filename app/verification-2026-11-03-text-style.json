@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-03",
+  "base_revision": "b9db8996415dce46109315657f08f6bd8b94fcb4",
+  "source_sha256": {
+    "CcShot/app/Sources/ImageWindow.swift": "2e2cd076dfd4eb70097e57346db002b4316a462e4805c7bb4063ebc1f4413f92",
+    "CcShot/app/Sources/AnnotationVerification.swift": "c90da8a5c0f4a631c83253a8df00f43c3da53e40d71643473ebf2e440f12fdb0"
+  },
+  "build": "通过",
+  "consumer_passed": true,
+  "text_checks": {
+    "font_input_changes_size": true,
+    "invalid_font_size_keeps_value": true,
+    "compact_text_controls_change_style": true,
+    "text_selection_reveals_font_options": true
+  },
+  "visual": "已查看 text-simple-light-2026-11-03.png 与 text-simple-dark-2026-11-03.png，两张为受控样本的真实原生窗口；文字参数单排，无挤压。",
+  "limits": "网页仅生成资产与语法检查，未浏览器点击验证；未重发安装包。"
+}

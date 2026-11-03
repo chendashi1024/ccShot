@@ -108,7 +108,7 @@ extension ImageWindow {
         defer { editor.close() }
         func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
         if pinned && CommandLine.arguments.contains("--preview-edit") { if let root = editor.window?.contentView { descendants(root).compactMap { $0 as? NSButton }.first(where:{$0.title == "标注"})?.performClick(nil) } }
-        if !pinned || CommandLine.arguments.contains("--preview-edit") { editor.canvas.chooseTool(.arrow) }
+        if !pinned || CommandLine.arguments.contains("--preview-edit") { editor.canvas.chooseTool(CommandLine.arguments.contains("--preview-text") ? .text : .arrow) }
         // 样式随选中工具自动出现；旧 --show-style 参数保留兼容，不再额外点击。
         await editor.recognitionForVerification?.value
         guard CGPreflightScreenCaptureAccess(), let window = editor.window else { return false }

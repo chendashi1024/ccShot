@@ -54,9 +54,10 @@ import UniformTypeIdentifiers
     private let arrowTitle = NSTextField(labelWithString: "箭头样式")
     private let numberLabel = NSTextField(labelWithString: "下一号")
     private let numberField = NSTextField(string: "1")
-    private let boldButton = NSButton(checkboxWithTitle: "加粗", target: nil, action: nil)
-    private let textBackground = NSButton(checkboxWithTitle: "底色", target: nil, action: nil)
-    private let backgroundWell = NSColorWell()
+    private let boldButton = NSButton(title: "B", target: nil, action: nil)
+    private let textBackground = NSButton(title: "底色", target: nil, action: nil)
+    private let fontSizeField = NSTextField(string: "24")
+    private let paletteTray = NSStackView()
     private var finishTextButton: NSButton!
     private var cancelTextButton: NSButton!
     private let editButton = NSButton(title: "标注", target: nil, action: nil)
@@ -193,15 +194,24 @@ import UniformTypeIdentifiers
         widthSlider.widthAnchor.constraint(equalToConstant: 105).isActive = true
         widthLabel.widthAnchor.constraint(equalToConstant: 44).isActive = true
         styleRow.addArrangedSubview(widthTitle); styleRow.addArrangedSubview(widthSlider); styleRow.addArrangedSubview(widthLabel)
+        fontSizeField.target = self; fontSizeField.action = #selector(changeFontSize); fontSizeField.delegate = self
+        fontSizeField.alignment = .center; fontSizeField.widthAnchor.constraint(equalToConstant:56).isActive = true
+        fontSizeField.setAccessibilityLabel("字号"); fontSizeField.toolTip = "字号：8–200"
+        styleRow.addArrangedSubview(fontSizeField)
+        styleRow.addArrangedSubview(boldButton); styleRow.addArrangedSubview(textBackground)
         for width in [2, 4, 8, 16] { let value = button("\(width)", #selector(widthPreset(_:))); value.tag = width; presetButtons.append(value); styleRow.addArrangedSubview(value) }
+        paletteTray.spacing = 4; paletteTray.edgeInsets = NSEdgeInsets(top:4,left:6,bottom:4,right:6)
+        paletteTray.wantsLayer = true; paletteTray.layer?.cornerRadius = 8
+        paletteTray.layer?.borderWidth = 1; paletteTray.layer?.borderColor = NSColor.separatorColor.cgColor
+        styleRow.addArrangedSubview(paletteTray)
         for (index, color) in AnnotationColor.palette.enumerated() {
             let value = NSButton(title: "●", target: self, action: #selector(palette(_:))); value.isBordered = false
             value.attributedTitle = NSAttributedString(string: "●", attributes: [.foregroundColor: color.nsColor, .font: NSFont.systemFont(ofSize: 22)])
             value.tag = index; value.toolTip = "颜色 \(index+1)"; value.setAccessibilityLabel("预设颜色 \(index+1)")
             value.widthAnchor.constraint(equalToConstant:26).isActive = true; value.heightAnchor.constraint(equalToConstant:26).isActive = true
-            value.wantsLayer = true; value.layer?.cornerRadius = 13; value.layer?.borderWidth = 0.75; value.layer?.borderColor = NSColor.gray.cgColor; colorControls.append(value); styleRow.addArrangedSubview(value)
+            value.wantsLayer = true; value.layer?.cornerRadius = 13; value.layer?.borderWidth = 0.75; value.layer?.borderColor = NSColor.gray.cgColor; colorControls.append(value); paletteTray.addArrangedSubview(value)
         }
-        colorWell.target = self; colorWell.action = #selector(changeColor(_:)); colorWell.widthAnchor.constraint(equalToConstant: 40).isActive = true; colorControls.append(colorWell); styleRow.addArrangedSubview(colorWell)
+        colorWell.target = self; colorWell.action = #selector(changeColor(_:)); colorWell.widthAnchor.constraint(equalToConstant: 40).isActive = true; colorControls.append(colorWell); paletteTray.addArrangedSubview(colorWell)
         fillButton.target = self; fillButton.action = #selector(changeOptions)
         dashButton.target = self; dashButton.action = #selector(changeOptions)
         arrowPicker.target = self; arrowPicker.action = #selector(changeOptions)
@@ -217,9 +227,12 @@ import UniformTypeIdentifiers
         brushWidth.widthAnchor.constraint(equalToConstant: 90).isActive = true
         boldButton.target = self; boldButton.action = #selector(changeTextStyle)
         textBackground.target = self; textBackground.action = #selector(changeTextStyle)
-        backgroundWell.target = self; backgroundWell.action = #selector(changeTextStyle); backgroundWell.widthAnchor.constraint(equalToConstant:40).isActive = true
+        for control in [boldButton,textBackground] { control.setButtonType(.pushOnPushOff); control.bezelStyle = .rounded; control.heightAnchor.constraint(greaterThanOrEqualToConstant:28).isActive = true }
+        boldButton.font = .boldSystemFont(ofSize:18); boldButton.widthAnchor.constraint(equalToConstant:36).isActive = true
+        boldButton.toolTip = "加粗"; boldButton.setAccessibilityLabel("加粗")
+        textBackground.toolTip = "浅黄色底色"; textBackground.setAccessibilityLabel("文字底色")
         arrowPicker.setAccessibilityLabel("箭头样式")
-        for view in [boldButton, textBackground, backgroundWell, fillTitle, fillButton, lineTitle, dashButton, cornerLabel, cornerSlider, arrowTitle, arrowPicker, numberLabel, numberField, maskPicker, maskMode, brushLabel, brushWidth] as [NSView] { optionRow.addArrangedSubview(view) }
+        for view in [fillTitle, fillButton, lineTitle, dashButton, cornerLabel, cornerSlider, arrowTitle, arrowPicker, numberLabel, numberField, maskPicker, maskMode, brushLabel, brushWidth] as [NSView] { optionRow.addArrangedSubview(view) }
         for slider in [widthSlider, cornerSlider, brushWidth] {
             slider.beginTracking = { [weak self] in if self?.canvas.selected != nil { self?.annotationDocument.beginTransaction() } }
             slider.endTracking = { [weak self] in if self?.annotationDocument.inTransaction == true { self?.annotationDocument.endTransaction() } }
@@ -241,7 +254,11 @@ import UniformTypeIdentifiers
         }
         let solidMask = tool == .mask && style.maskEffect == .solid
         for control in [widthTitle,widthSlider,widthLabel] as [NSView] {control.isHidden=solidMask}
-        for control in presetButtons {control.isHidden=solidMask}
+        for control in presetButtons {control.isHidden=solidMask || tool == .text}
+        widthSlider.isHidden = solidMask || tool == .text; widthLabel.isHidden = widthSlider.isHidden
+        fontSizeField.isHidden = tool != .text
+        if window?.firstResponder !== fontSizeField.currentEditor() { fontSizeField.stringValue = "\(Int(style.fontSize))" }
+        paletteTray.isHidden = tool == .mask && !solidMask
         let width = tool == .text ? style.fontSize : tool == .mask ? style.maskStrength : style.width
         widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : tool == .number ? "大小" : "粗细"
         widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
@@ -262,8 +279,11 @@ import UniformTypeIdentifiers
          colorWell.color = style.color.nsColor
         finishTextButton.isHidden = canvas.textEditor == nil; cancelTextButton.isHidden = canvas.textEditor == nil
         boldButton.isHidden = tool != .text; textBackground.isHidden = tool != .text
-        backgroundWell.isHidden = tool != .text || !style.textBackground
-        boldButton.state = style.bold ? .on : .off; textBackground.state = style.textBackground ? .on : .off; backgroundWell.color = style.backgroundColor.nsColor
+        boldButton.state = style.bold ? .on : .off; textBackground.state = style.textBackground ? .on : .off
+        boldButton.bezelColor = style.bold ? CoreAppearance.accent : nil
+        boldButton.contentTintColor = style.bold ? .white : .labelColor
+        textBackground.bezelColor = style.textBackground ? NSColor(calibratedRed:1,green:0.96,blue:0.72,alpha:1) : nil
+        textBackground.contentTintColor = style.textBackground ? .black : .labelColor
         fillButton.selectedSegment = style.filled ? (style.fillOpacity < 1 ? 1 : 2) : 0; dashButton.selectedSegment = style.dashed ? 1 : 0
         cornerSlider.doubleValue = Double(style.cornerRadius)
         arrowPicker.selectedSegment = ArrowHead.allCases.firstIndex(of: style.arrowHead) ?? 0
@@ -275,7 +295,7 @@ import UniformTypeIdentifiers
         numberLabel.isHidden = tool != .number; numberField.isHidden = tool != .number
         numberLabel.stringValue = canvas.selected == nil ? "下一号" : "编号"
         if window?.firstResponder !== numberField.currentEditor() { numberField.stringValue = "\(canvas.selected?.number ?? annotationDocument.state.nextNumber)" }
-        optionRow.isHidden = styleRow.isHidden || [.pen,.highlight].contains(tool)
+        optionRow.isHidden = styleRow.isHidden || [.pen,.highlight,.text].contains(tool)
         let input = canvas.textEditor
         pinButton.isHidden = pinned || input != nil; saveButton.isHidden = input != nil; copyButton.isHidden = input != nil; donePinButton.isHidden = !pinned || input != nil
         if let input {
@@ -326,8 +346,16 @@ import UniformTypeIdentifiers
     }
     @objc private func finishText() { _ = canvas.finishTextEditing() }
     @objc private func cancelText() { canvas.cancelTextEditing() }
+    @objc private func changeFontSize() {
+        guard canvas.currentTool == .text else { return }
+        guard let size = Int(fontSizeField.stringValue), (8...200).contains(size) else {
+            fontSizeField.stringValue = "\(Int(canvas.currentStyle.fontSize))"
+            status.stringValue = "字号须为 8–200 的整数"; return
+        }
+        var style = canvas.currentStyle; style.fontSize = CGFloat(size); canvas.changeStyle(style)
+    }
     @objc private func changeTextStyle() {
-        var style = canvas.currentStyle; style.bold = boldButton.state == .on; style.textBackground = textBackground.state == .on; style.backgroundColor = AnnotationColor(backgroundWell.color); canvas.changeStyle(style)
+        var style = canvas.currentStyle; style.bold = boldButton.state == .on; style.textBackground = textBackground.state == .on; style.backgroundColor = AnnotationColor(red:1,green:0.96,blue:0.72); canvas.changeStyle(style)
     }
     @objc private func changeMask() {
         guard MaskEffect.allCases.indices.contains(maskPicker.selectedSegment) else {return}
@@ -352,6 +380,7 @@ import UniformTypeIdentifiers
     }
     func controlTextDidEndEditing(_ notification: Notification) {
         if notification.object as? NSTextField === numberField { changeNumber() }
+        if notification.object as? NSTextField === fontSizeField { changeFontSize() }
     }
     @objc private func toggleEditing() {
         guard pinned else { return }
@@ -535,6 +564,14 @@ extension ImageWindow {
         result["rectangle_selection_replaces_arrow_options"] = !styleRow.isHidden && arrowPicker.isHidden && !fillButton.isHidden && !cornerSlider.isHidden
         canvas.chooseTool(.text); root.layoutSubtreeIfNeeded()
         result["text_selection_reveals_font_options"] = !styleRow.isHidden && widthTitle.stringValue == "字号" && !boldButton.isHidden && !textBackground.isHidden && arrowPicker.isHidden
+        let originalTextStyle = canvas.currentStyle
+        fontSizeField.stringValue = "32"; fontSizeField.sendAction(fontSizeField.action,to:fontSizeField.target)
+        result["font_input_changes_size"] = canvas.currentStyle.fontSize == 32 && widthSlider.isHidden && presetButtons.allSatisfy { $0.isHidden } && !fontSizeField.isHidden
+        fontSizeField.stringValue = "abc"; changeFontSize()
+        result["invalid_font_size_keeps_value"] = canvas.currentStyle.fontSize == 32 && fontSizeField.stringValue == "32"
+        boldButton.performClick(nil); textBackground.performClick(nil)
+        result["compact_text_controls_change_style"] = canvas.currentStyle.bold != originalTextStyle.bold && canvas.currentStyle.textBackground != originalTextStyle.textBackground && optionRow.isHidden && !paletteTray.isHidden
+        canvas.changeStyle(originalTextStyle)
         canvas.chooseTool(.select); root.layoutSubtreeIfNeeded()
         result["selection_hides_irrelevant_style_controls"] = styleRow.isHidden && optionRow.isHidden
         copyButton.title = previousCopyTitle

@@ -130,6 +130,7 @@ def option(x,y,w,label,attrs,active=False,preview=None):
 def style_popover(selected='pointer', anchor=250):
     out=panel(0,0,512,116,10)
     out+=text(16,34,'颜色',14,MUTED)
+    out+=rect(52,10,132,40,'#eef2ec',8,'#d9dfd6')
     for i,color in enumerate(COLORS):
         xx=72+i*34
         out+=action(rect(xx-16,12,32,36,'transparent',6)+circle(xx,30,9,color)+circle(xx,30,13,'none',GREEN if i==0 else 'none',f'data-ring="{color}"'),f'标注颜色 {color}',f'data-color="{color}"')
@@ -147,7 +148,8 @@ def style_popover(selected='pointer', anchor=250):
     for name,label,xx in [('none','描边',246),('soft','半透',326),('solid','实心',406)]:
         rect_options+=option(xx,69,72,{'none':'描边','soft':'半透明填充','solid':'实心填充'}[name],f'data-fill="{name}"',name=='none',visual_option('fill-'+name))
     out+='<g data-rect-options="true" style="display:none">'+rect_options+'</g>'
-    out+='<g data-text-options="true" style="display:none">'+option(16,69,80,'加粗','data-action="bold"')+option(106,69,80,'底色','data-action="text-bg"')+'</g>'
+    out+='<g data-text-options="true" style="display:none">'+option(340,14,42,'B','data-action="bold"').replace('font-size="14"','font-size="20"').replace('font-weight="500"','font-weight="700"')+option(390,14,70,'底色','data-action="text-bg"')+'</g>'
+    out+='''<foreignObject x="274" y="14" width="58" height="34" data-font-input="true" style="display:none"><input xmlns="http://www.w3.org/1999/xhtml" type="number" min="8" max="200" value="24" aria-label="字号" style="box-sizing:border-box;width:56px;height:32px;border:1px solid #d9dfd6;border-radius:6px;text-align:center;font:16px system-ui;color:#282d2a;background:white"/></foreignObject>'''
     return f'<g data-popover="true" transform="translate({anchor},716)" style="display:{"none" if selected=="pointer" else "inline"}">'+out+'</g>'
 
 
@@ -183,7 +185,7 @@ SCENES=[('capture','截图',capture),('annotate','标注',annotate),('selection'
 SCRIPT=r'''
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-let current='capture', tool='pointer', markTool='arrow', color='#c64635', width=4, hasMark=false, canRedo=false, arrowHead='filled', dashed=false, rectFill='none', bold=false, textBackground=false;
+let current='capture', tool='pointer', markTool='arrow', color='#c64635', width=4, hasMark=false, canRedo=false, arrowHead='filled', dashed=false, rectFill='none', bold=false, textBackground=false, fontSize=24;
 const toolStyles={};
 const hints={capture:'常用工具已在第一排。点击工具后，相关参数自动出现在它下方；调整后直接输出。',annotate:'箭头下方直接调整颜色、粗细、线型和箭头样式；这里尚不支持自由绘制。',selection:'固定选字示例；复制会尝试写入这段示例文字，尚未接入 OCR。',pin:'钉图操作栏的显现状态。网页未连接系统置顶窗口。',settings:'只演示两项设置；切换值不会更改 macOS。'};
 const announce = message => { $('#status').textContent=message; };
@@ -200,7 +202,7 @@ function syncMarks() {
       mark.style.display=mark.dataset.mark===markTool && hasMark?'inline':'none';
       mark.setAttribute('color',color); mark.setAttribute('stroke-width',mark.dataset.mark==='highlight'?width*4:width);
       const text=mark.querySelector('text');
-      if(text) text.setAttribute('font-size',mark.dataset.mark==='number'?width*2+8:{2:18,4:24,8:32}[width]);
+      if(text) text.setAttribute('font-size',mark.dataset.mark==='number'?width*2+8:fontSize);
       if(mark.dataset.mark==='number') mark.querySelector('circle').setAttribute('r',width*2+8);
       if(mark.dataset.mark==='arrow'){
         mark.querySelector('[data-arrow-shaft]').setAttribute('stroke-dasharray',dashed?'12 8':'none');
@@ -231,7 +233,7 @@ function syncMarks() {
     $$(`[data-action="${name}"]`).forEach(el=>{el.setAttribute('aria-disabled',String(!enabled));el.setAttribute('opacity',enabled?'1':'.35');});
   }
   const styleTool=tool==='pointer'?markTool:tool, covered=styleTool==='cover';
-  const hasOptions=['arrow','rectangle','text'].includes(styleTool);
+  const hasOptions=['arrow','rectangle'].includes(styleTool);
   $$('[data-popover]').forEach(panel=>{
     const scene=panel.closest('.scene');panel.style.display=tool!=='pointer' && scene.dataset.sceneId===current?'inline':'none';
     const active=scene.querySelector(`[data-tool="${tool}"] rect`);
@@ -242,11 +244,13 @@ function syncMarks() {
     panel.querySelector('[data-arrow-options]').style.display=styleTool==='arrow'?'inline':'none';
     panel.querySelector('[data-rect-options]').style.display=styleTool==='rectangle'?'inline':'none';
     panel.querySelector('[data-text-options]').style.display=styleTool==='text'?'inline':'none';
-    const label=panel.querySelector('[data-param-label]');label.style.display=covered?'none':'inline';
+    panel.querySelector('[data-font-input]').style.display=styleTool==='text'?'inline':'none';
+    panel.querySelector('[data-font-input] input').value=fontSize;
+    const label=panel.querySelector('[data-param-label]');label.style.display=covered || styleTool==='text'?'none':'inline';
     label.textContent=styleTool==='text'?'字号':styleTool==='number'?'大小':'粗细';
     const value=panel.querySelector('[data-param-value]');value.style.display=['text','number','cover'].includes(styleTool)?'none':'inline';value.textContent=width+' px';
     panel.querySelectorAll('[data-width]').forEach((el,i)=>{
-      el.style.display=covered?'none':'inline';
+      el.style.display=covered || styleTool==='text'?'none':'inline';
       const label=styleTool==='text'?['18','24','32'][i]:styleTool==='number'?['小','中','大'][i]:['2 px','4 px','8 px'][i];
       el.querySelector('text').textContent=label;
       const description=panel.querySelector('[data-param-label]').textContent+' '+label;
@@ -321,6 +325,7 @@ async function activate(el) {
     }
   } catch(error) {announce('操作未完成：'+(error.message || '浏览器未允许此操作。'));}
 }
+document.addEventListener('change',event=>{if(!event.target.matches('[data-font-input] input'))return;const value=Number(event.target.value);if(Number.isInteger(value)&&value>=8&&value<=200){fontSize=value;syncMarks();}else{event.target.value=fontSize;announce('字号须为 8–200 的整数');}});
 document.addEventListener('click',event=>{const el=event.target.closest('[data-scene],[data-tool],[data-color],[data-width],[data-head],[data-dash],[data-fill],[data-action]');if(el) activate(el);});
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape' && tool!=='pointer') {chooseTool('pointer');return;}
