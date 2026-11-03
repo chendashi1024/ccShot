@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-03",
+  "source_revision": "f09def9c808633c633a44c09b4f64ac4b38df8d4",
+  "package_relative_path": "app/build/packages/f09def9c808633c633a44c09b4f64ac4b38df8d4/CcShot-0.1.0-dev-arm64.zip",
+  "package_sha256": "1f5f1e3b0a9ac6423f838bf9f60768802a80b0c7613f84b9a132c2335ed471b2",
+  "package_bytes": 431477,
+  "checks": {
+    "archive_sha256_matches": true,
+    "archive_size_matches": true,
+    "source_files_match_manifest": true,
+    "signature_verified": true,
+    "binary_matches_build": true,
+    "source_revision_matches": true,
+    "arm64_only": true,
+    "macos14_target": true,
+    "chinese_localization_declared": true,
+    "current_trial_guide_included": true
+  },
+  "passed": true,
+  "contains": [
+    "真实整屏Retina与Esc修复",
+    "本机性能测量显式入口",
+    "实心/马赛克/模糊三种遮挡及安全识字",
+    "样式自动显示与图形参数",
+    "保存失败提示及原会话重试验证对应代码"
+  ],
+  "functional_evidence": [
+    "verification-2026-11-03-display.json",
+    "verification-2026-11-03-performance.json",
+    "verification-2026-11-03-solid-mask.json",
+    "verification-2026-11-03-auto-style.json",
+    "verification-2026-11-03-save-retry.json"
+  ],
+  "installed_verified": false,
+  "public_release": false,
+  "new_permissions": false,
+  "clipboard_touched": false,
+  "unpacked_verification_copy_removed": true,
+  "remaining": [
+    "实体全局快捷键",
+    "真实中文输入法候选",
+    "混合1x/2x设备",
+    "新装与升级权限恢复",
+    "磁盘满与外置卷断开",
+    "首次识字超0.5秒的已知表现，不能宣称全场景性能达标"
+  ]
+}
