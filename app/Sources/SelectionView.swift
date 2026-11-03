@@ -43,10 +43,22 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
             actions.addArrangedSubview(button)
         }
         actions.spacing = 8
+        actions.edgeInsets = NSEdgeInsets(top:6,left:8,bottom:6,right:8)
+        actions.wantsLayer = true; actions.layer?.cornerRadius = 8
+        updateActionsAppearance()
         actions.isHidden = true
         addSubview(actions)
     }
     required init?(coder: NSCoder) { nil }
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance(); updateActionsAppearance()
+    }
+    private func updateActionsAppearance() {
+        // 原生按钮带半透明底色，需使用稳定底板，避免截图亮度降低文字对比。
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            actions.layer?.backgroundColor = CoreAppearance.surface.cgColor
+        }
+    }
     override var acceptsFirstResponder: Bool { true }
     override func resetCursorRects() { addCursorRect(bounds, cursor: .crosshair) }
     override func updateTrackingAreas() {

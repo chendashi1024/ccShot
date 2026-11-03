@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-04",
+  "scope": "实际框选到箭头/画框/文字的交接及浅深工具条对比修复",
+  "source_base": "5b5c836ae56cd71926d46dad078b4c123f893fa4",
+  "source_hashes": {
+    "app/Sources/SelectionView.swift": "309c850a1749f66f32c3db40388ce03fcd40892281fac6e4901f54500093fa13",
+    "app/Sources/CoreAppearance.swift": "7f394eecbfcbb7f0e0d377e62da8977befc96ae65406f4c676caa393601cce74",
+    "app/Sources/App.swift": "880c59a11a48317c1bef4f04ceb305b6a886bcceb8d3bc11e34b7745594cc8a9",
+    "app/check.sh": "0ff8730d34334e40e24d93c1de9a6d1d0febb0a08d80f37d8cc6a3587c3a4a89"
+  },
+  "native_cua_checks": {
+    "drag_selection_then_arrow_active": true,
+    "arrow_draw_creates_visible_object_and_undo": true,
+    "new_full_region_rectangle_active_and_1920_by_460": true,
+    "text_tool_active_with_native_text_view": true,
+    "escape_cancels_empty_text_and_keeps_image": true,
+    "dark_toolbar_fixed_with_readable_text": true,
+    "light_toolbar_readable": true,
+    "arrow_route_still_works_after_surface_fix": true
+  },
+  "targeted_tests": [
+    "SelectionOutputTests通过：八工具、三输出、像素、空区域与边缘布局",
+    "完整独立App构建通过"
+  ],
+  "investigation": [
+    "实际深色框选窗复现原生半透明按钮叠在灰色遮罩上，文字对比不足",
+    "主窗口资格单一假设未改善，已撤回；独立未激活探针结果被排除，不作为实际窗口状态证明",
+    "复用CoreAppearance.surface为工具条添加不透明底板，真实浅深窗口原图检查通过"
+  ],
+  "previews": {
+    "selection-flow-dark-2026-11-03.png": "app/previews/selection-flow-dark-2026-11-03.png",
+    "selection-flow-arrow-2026-11-03.png": "app/previews/selection-flow-arrow-2026-11-03.png",
+    "selection-flow-text-2026-11-03.png": "app/previews/selection-flow-text-2026-11-03.png",
+    "selection-flow-dark-fixed-2026-11-04.png": "app/previews/selection-flow-dark-fixed-2026-11-04.png",
+    "selection-flow-light-fixed-2026-11-04.png": "app/previews/selection-flow-light-fixed-2026-11-04.png"
+  },
+  "preview_hashes": {
+    "selection-flow-dark-2026-11-03.png": "5f95c45e8039bf66280be654b0dc00764f721a23b39bc1a7fe01d045a5626dd2",
+    "selection-flow-arrow-2026-11-03.png": "7c12f8922651ca63091eb4ef244180832e1c899087371854e93a4fd85962da6e",
+    "selection-flow-text-2026-11-03.png": "ff3181f155c41d8c9fae435436e265894910eeb6567c624f152f4d34ee8d9381",
+    "selection-flow-dark-fixed-2026-11-04.png": "2fa7d74b78dccec18b861b55ef37ebdb307cfc3601bc7655898ededbbf1d65a5",
+    "selection-flow-light-fixed-2026-11-04.png": "7b993f6d24da6fe0b5fc4e2039fb46e2e10c95a8e82a1482af93a42b33210409"
+  },
+  "fixture_only": true,
+  "main_app_unchanged": true,
+  "clipboard_output_invoked": false,
+  "new_permissions": false,
+  "installed_verified": false,
+  "limits": [
+    "只使用虚构夹具，不等于真实桌面热键端到端通过",
+    "未验证真实中文输入法候选、混合1x/2x和安装升级",
+    "点工具进入独立编辑器，不声称框选遮罩内原地OCR/绘制",
+    "新包在源码提交后生成并另行核验"
+  ]
+}
