@@ -76,9 +76,8 @@ extension ImageWindow {
         func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
         let buttons = descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }
         buttons.first(where: { $0.title == "画框" })?.performClick(nil)
-        buttons.first(where: { $0.title == "样式" })?.performClick(nil)
         editor.window!.contentView!.layoutSubtreeIfNeeded()
-        descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where: { $0.title == "16" })?.performClick(nil)
+        descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where: { $0.identifier?.rawValue == "style-width-16" })?.performClick(nil)
         result["style_buttons_route_to_current_tool"] = canvas.tool == .rectangle && preferences.annotationStyle(for: .rectangle).width == 16 && document.state.objects.first?.style.width == 12
         return result
     }
@@ -110,7 +109,7 @@ extension ImageWindow {
         func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
         if pinned && CommandLine.arguments.contains("--preview-edit") { if let root = editor.window?.contentView { descendants(root).compactMap { $0 as? NSButton }.first(where:{$0.title == "标注"})?.performClick(nil) } }
         if !pinned || CommandLine.arguments.contains("--preview-edit") { editor.canvas.chooseTool(.arrow) }
-        if CommandLine.arguments.contains("--show-style"), let root = editor.window?.contentView { descendants(root).compactMap { $0 as? NSButton }.first(where:{$0.title == "样式"})?.performClick(nil) }
+        // 样式随选中工具自动出现；旧 --show-style 参数保留兼容，不再额外点击。
         await editor.recognitionForVerification?.value
         guard CGPreflightScreenCaptureAccess(), let window = editor.window else { return false }
         window.title = pinned ? "CcShot · 钉图样本" : "CcShot · 标注样本"

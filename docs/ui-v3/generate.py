@@ -23,8 +23,12 @@ def control(x,y,w,label,symbol=None,attrs='',primary=False,active=False):
     color = '#fff' if primary else GREEN if active else INK
     body = rect(x,y,w,40,GREEN if primary else '#e6eee8' if active else 'transparent',8)
     if symbol:
-        body += icon(symbol,x+12,y+10,20,color)
-    body += text(x+(42 if symbol else w/2),y+26,label,15,color,500,'' if symbol else 'text-anchor="middle"')
+        label_width=sum(15 if ord(char)>127 else 8 for char in label)
+        start=x+(w-20-8-label_width)/2
+        body += icon(symbol,start,y+10,20,color)
+        body += text(start+28,y+26,label,15,color,500)
+    else:
+        body += text(x+w/2,y+26,label,15,color,500,'text-anchor="middle"')
     return action(body,label,attrs)
 
 
@@ -44,9 +48,9 @@ def image_content(annotated=False):
     out=rect(362,170,716,450,'#fffdf9')+base.note(380,188)
     if annotated:
         shapes={
-            'arrow':'<path d="M924 523Q861 472 767 480M782 469l-15 11 18 2" fill="none"/>',
+            'arrow':'<path data-arrow-shaft="true" d="M924 523Q861 472 767 480" fill="none"/><path data-arrow-head="filled" d="M767 480L784 469L786 485Z" fill="currentColor" stroke="none"/><path data-arrow-head="open" d="M782 469L767 480L785 483" fill="none" style="display:none"/><path data-arrow-head="double" d="M767 480L784 469L786 485ZM924 523L907 520L916 508Z" fill="currentColor" stroke="none" style="display:none"/>',
             'rectangle':'<rect x="434" y="465" width="335" height="35" rx="4" fill="none"/>',
-            'text':'<text x="832" y="489" font-size="22" fill="currentColor" stroke="none">这里补图</text>',
+            'text':'<rect data-text-background="true" x="826" y="463" width="116" height="34" rx="4" fill="#fff5d7" stroke="none" style="display:none"/><text x="832" y="489" font-size="22" fill="currentColor" stroke="none">这里补图</text>',
             'pencil':'<path d="M440 502Q478 492 512 502T584 502T656 502T730 502" fill="none"/>',
             'cover':'<rect x="438" y="466" width="329" height="32" rx="2" fill="currentColor" stroke="none"/>',
             'highlight':'<path d="M442 476H732" opacity=".35"/>',
@@ -67,23 +71,29 @@ def crop():
 
 
 def mainbar(selected_text=False, selected='pointer'):
-    x,y=156,648
-    out=panel(x,y,1128,56)
-    for i,(name,label) in enumerate(TOOLS):
-        out+=control(x+8+i*78,y+8,78,label,name,f'data-tool="{name}" aria-pressed="{str(name==selected).lower()}"',active=name==selected)
-    for offset,name,label,attrs in [(562,'pointer','选择与选字（V）','data-tool="pointer"'),(604,'undo','撤销示例标记','data-action="undo"'),(642,'redo','重做示例标记','data-action="redo"')]:
+    width=986 if selected_text else 956
+    # 复制文字会变宽，但已有工具的位置不跟着跳动。
+    x,y=242,648
+    out=panel(x,y,width,56)
+    cursor=x+8
+    for name,label in TOOLS:
+        out+=control(cursor,y+8,74,label,name,f'data-tool="{name}" aria-pressed="{str(name==selected).lower()}"',active=name==selected)
+        cursor+=74
+    cursor+=8
+    out+=line(cursor,y+15,cursor,y+41,'#d5dcd3');cursor+=9
+    for name,label,attrs in [('pointer','选择与选字（V）','data-tool="pointer"'),('undo','撤销示例标记','data-action="undo"'),('redo','重做示例标记','data-action="redo"')]:
         if name=='redo' or (name=='undo' and selected=='pointer'):
             attrs+=' aria-disabled="true" opacity=".35"'
-        out+=action(rect(x+offset,y+8,36,40,'#e6eee8' if name==selected else 'transparent',7)+icon(name,x+offset+8,y+18,20,INK),label,attrs)
-    out+=line(x+688,y+15,x+688,y+41,'#d5dcd3')
-    body=rect(x+696,y+8,90,40,'transparent',8)+circle(x+711,y+28,7,COLORS[0],extra='data-style-dot="true"')+text(x+727,y+34,'样式',14,INK)+icon('chevron',x+762,y+21,15,INK)
-    out+=action(body,'调整当前工具样式','data-action="style" aria-expanded="false"')
-    out+=line(x+794,y+15,x+794,y+41,'#d5dcd3')
-    out+=control(x+802,y+8,78,'钉住','pin','data-scene="pin"')
-    out+=control(x+880,y+8,78,'保存','save','data-action="save"')
-    out+=control(x+962,y+8,112,'复制文字' if selected_text else '复制','copy',f'data-action="{"copy-text" if selected_text else "copy"}"',True)
-    out+=action(rect(x+1080,y+8,40,40,'transparent',8)+icon('close',x+1090,y+18,20,INK),'结束截图','data-action="close"')
-    return out+style_popover()
+        out+=action(rect(cursor,y+8,36,40,'#e6eee8' if name==selected else 'transparent',7)+icon(name,cursor+8,y+18,20,INK),label,attrs)
+        cursor+=42
+    cursor+=3
+    out+=line(cursor,y+15,cursor,y+41,'#d5dcd3');cursor+=12
+    out+=control(cursor,y+8,74,'钉住','pin','data-scene="pin"');cursor+=74
+    out+=control(cursor,y+8,74,'保存','save','data-action="save"');cursor+=74
+    copy_width=110 if selected_text else 80
+    out+=control(cursor,y+8,copy_width,'复制文字' if selected_text else '复制','copy',f'data-action="{"copy-text" if selected_text else "copy"}"',True);cursor+=copy_width
+    out+=action(rect(cursor,y+8,36,40,'transparent',8)+icon('close',cursor+8,y+18,20,INK),'结束截图','data-action="close"')
+    return out+style_popover(selected,x+8)
 
 
 def capture():
@@ -96,17 +106,49 @@ def selection():
     return out+mainbar(True)
 
 
-def style_popover():
-    x,y=852,716
-    out=panel(x,y,232,148,10)+text(x+16,y+28,'颜色',13,MUTED)
+def visual_option(kind, width=2):
+    stroke=f'<path d="M6 12H38" stroke="currentColor" stroke-width="{width if kind=="width" else 2}" stroke-linecap="round"'+(' stroke-dasharray="4 3"' if kind=='dashed' else '')+'/>'
+    if kind.startswith('fill-'):
+        fill='none' if kind=='fill-none' else 'currentColor'
+        return f'<rect x="13" y="4" width="18" height="16" rx="1" fill="{fill}" fill-opacity="{0.25 if kind=="fill-soft" else 1}" stroke="currentColor" stroke-width="2"/>'
+    if kind=='open':
+        return stroke+'<path d="M30 6L39 12L30 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+    if kind in ['filled','double']:
+        stroke+='<path d="M39 12L30 6V18Z" fill="currentColor"/>'
+        if kind=='double':stroke+='<path d="M5 12L14 6V18Z" fill="currentColor"/>'
+    return stroke
+
+
+def option(x,y,w,label,attrs,active=False,preview=None):
+    color=GREEN if active else INK
+    body=rect(x,y,w,32,'#e6eee8' if active else '#fff',6,'#d9dfd6')+text(x+w/2,y+22,label,14,color,500,'text-anchor="middle"'+(' style="display:none"' if preview else ''))
+    if preview:
+        body+=f'<g data-option-preview="true" transform="translate({x+(w-44)/2},{y+4})" color="{color}">{preview}</g>'
+    return action(body,label,attrs+f' aria-pressed="{str(active).lower()}"')
+
+
+def style_popover(selected='pointer', anchor=250):
+    out=panel(0,0,512,116,10)
+    out+=text(16,34,'颜色',14,MUTED)
     for i,color in enumerate(COLORS):
-        xx=x+29+i*51
-        out+=action(rect(xx-20,y+36,40,34,'transparent',6)+circle(xx,y+53,10,color)+circle(xx,y+53,14,'none',GREEN if i==0 else 'none',f'data-ring="{color}"'),f'标注颜色 {color}',f'data-color="{color}"')
-    out+=line(x+16,y+80,x+216,y+80,'#e0e5dd',extra='data-param-rule="true"')+text(x+16,y+104,'粗细',13,MUTED,extra='data-param-label="true"')
-    for i,(width,label) in enumerate([(2,'细'),(4,'中'),(6,'粗')]):
-        xx=x+68+i*50
-        out+=action(rect(xx,y+87,42,43,'#e6eee8' if width==4 else 'transparent',7,extra=f'data-width-bg="{width}"')+text(xx+21,y+114,label,14,INK,500,'text-anchor="middle" data-width-text="true"'),label,f'data-width="{width}"')
-    return '<g data-popover="true" style="display:none">'+out+'</g>'
+        xx=72+i*34
+        out+=action(rect(xx-16,12,32,36,'transparent',6)+circle(xx,30,9,color)+circle(xx,30,13,'none',GREEN if i==0 else 'none',f'data-ring="{color}"'),f'标注颜色 {color}',f'data-color="{color}"')
+    out+=text(224,34,'粗细',14,MUTED,extra='data-param-label="true"')
+    for width,label,xx in [(2,'2 px',274),(4,'4 px',332),(8,'8 px',390)]:
+        out+=option(xx,14,50,label,f'data-width="{width}"',width==4,visual_option('width',width))
+    out+=text(454,35,'4 px',13,MUTED,extra='data-param-value="true"')
+    line_options=text(16,91,'线型',14,MUTED)+option(58,69,56,'实线','data-dash="false"',True,visual_option('solid'))+option(120,69,56,'虚线','data-dash="true"',preview=visual_option('dashed'))
+    out+='<g data-line-options="true">'+line_options+'</g>'
+    arrow_options=text(200,91,'箭头',14,MUTED)
+    for name,label,xx in [('filled','实心',246),('open','开口',326),('double','双头',406)]:
+        arrow_options+=option(xx,69,72,label+'箭头',f'data-head="{name}"',name=='filled',visual_option(name))
+    out+='<g data-arrow-options="true">'+arrow_options+'</g>'
+    rect_options=text(200,91,'填充',14,MUTED)
+    for name,label,xx in [('none','描边',246),('soft','半透',326),('solid','实心',406)]:
+        rect_options+=option(xx,69,72,{'none':'描边','soft':'半透明填充','solid':'实心填充'}[name],f'data-fill="{name}"',name=='none',visual_option('fill-'+name))
+    out+='<g data-rect-options="true" style="display:none">'+rect_options+'</g>'
+    out+='<g data-text-options="true" style="display:none">'+option(16,69,80,'加粗','data-action="bold"')+option(106,69,80,'底色','data-action="text-bg"')+'</g>'
+    return f'<g data-popover="true" transform="translate({anchor},716)" style="display:{"none" if selected=="pointer" else "inline"}">'+out+'</g>'
 
 
 def annotate():
@@ -141,12 +183,12 @@ SCENES=[('capture','截图',capture),('annotate','标注',annotate),('selection'
 SCRIPT=r'''
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-let current='capture', tool='pointer', markTool='arrow', color='#c64635', width=4, hasMark=false, canRedo=false;
-const hints={capture:'常用工具已在第一排。点击工具查看示例标记，再直接复制、保存或钉住。',annotate:'标注与输出保持同一排；点击工具或样式查看示例，这里尚不支持自由绘制。',selection:'固定选字示例；复制会尝试写入这段示例文字，尚未接入 OCR。',pin:'钉图操作栏的显现状态。网页未连接系统置顶窗口。',settings:'只演示两项设置；切换值不会更改 macOS。'};
+let current='capture', tool='pointer', markTool='arrow', color='#c64635', width=4, hasMark=false, canRedo=false, arrowHead='filled', dashed=false, rectFill='none', bold=false, textBackground=false;
+const toolStyles={};
+const hints={capture:'常用工具已在第一排。点击工具后，相关参数自动出现在它下方；调整后直接输出。',annotate:'箭头下方直接调整颜色、粗细、线型和箭头样式；这里尚不支持自由绘制。',selection:'固定选字示例；复制会尝试写入这段示例文字，尚未接入 OCR。',pin:'钉图操作栏的显现状态。网页未连接系统置顶窗口。',settings:'只演示两项设置；切换值不会更改 macOS。'};
 const announce = message => { $('#status').textContent=message; };
 function closeStyles() {
   $$('[data-popover]').forEach(el=>el.style.display='none');
-  $$('[data-action="style"]').forEach(el=>el.setAttribute('aria-expanded','false'));
 }
 function syncMarks() {
   $$('.scene [data-export-content]').forEach(group=>{
@@ -158,8 +200,25 @@ function syncMarks() {
       mark.style.display=mark.dataset.mark===markTool && hasMark?'inline':'none';
       mark.setAttribute('color',color); mark.setAttribute('stroke-width',mark.dataset.mark==='highlight'?width*4:width);
       const text=mark.querySelector('text');
-      if(text) text.setAttribute('font-size',mark.dataset.mark==='number'?width*2+8:{2:18,4:22,6:28}[width]);
+      if(text) text.setAttribute('font-size',mark.dataset.mark==='number'?width*2+8:{2:18,4:24,8:32}[width]);
       if(mark.dataset.mark==='number') mark.querySelector('circle').setAttribute('r',width*2+8);
+      if(mark.dataset.mark==='arrow'){
+        mark.querySelector('[data-arrow-shaft]').setAttribute('stroke-dasharray',dashed?'12 8':'none');
+        mark.querySelectorAll('[data-arrow-head]').forEach(head=>head.style.display=head.dataset.arrowHead===arrowHead?'inline':'none');
+      }
+      if(mark.dataset.mark==='rectangle'){
+        const box=mark.querySelector('rect');box.setAttribute('stroke-dasharray',dashed?'12 8':'none');
+        box.setAttribute('fill',rectFill==='none'?'none':'currentColor');box.setAttribute('fill-opacity',rectFill==='soft'?'.22':'1');
+      }
+      if(mark.dataset.mark==='text'){
+        text.setAttribute('font-weight',bold?'700':'400');
+        const bg=mark.querySelector('[data-text-background]');bg.style.display=textBackground?'inline':'none';
+        const fontSize=Number(text.getAttribute('font-size')), measured=text.getBBox();
+        const bounds=measured.width>0 && measured.height>0 ? measured : {x:Number(text.getAttribute('x')),y:Number(text.getAttribute('y'))-fontSize*.85,width:[...text.textContent].length*fontSize,height:fontSize};
+        bg.setAttribute('x',bounds.x-6);bg.setAttribute('y',bounds.y-6);
+        bg.setAttribute('width',bounds.width+12);bg.setAttribute('height',bounds.height+12);
+      }
+
     });
   });
   $$('[data-tool]').forEach(el=>{
@@ -172,17 +231,38 @@ function syncMarks() {
     $$(`[data-action="${name}"]`).forEach(el=>{el.setAttribute('aria-disabled',String(!enabled));el.setAttribute('opacity',enabled?'1':'.35');});
   }
   const styleTool=tool==='pointer'?markTool:tool, covered=styleTool==='cover';
+  const hasOptions=['arrow','rectangle','text'].includes(styleTool);
   $$('[data-popover]').forEach(panel=>{
-    panel.querySelector('rect').setAttribute('height',covered?84:148);
-    panel.querySelector('[data-param-rule]').style.display=covered?'none':'inline';
+    const scene=panel.closest('.scene');panel.style.display=tool!=='pointer' && scene.dataset.sceneId===current?'inline':'none';
+    const active=scene.querySelector(`[data-tool="${tool}"] rect`);
+    if(active)panel.setAttribute('transform',`translate(${active.getAttribute('x')},716)`);
+    panel.querySelector('rect').setAttribute('width',covered?208:512);
+    panel.querySelector('rect').setAttribute('height',hasOptions?116:60);
+    panel.querySelector('[data-line-options]').style.display=['arrow','rectangle'].includes(styleTool)?'inline':'none';
+    panel.querySelector('[data-arrow-options]').style.display=styleTool==='arrow'?'inline':'none';
+    panel.querySelector('[data-rect-options]').style.display=styleTool==='rectangle'?'inline':'none';
+    panel.querySelector('[data-text-options]').style.display=styleTool==='text'?'inline':'none';
     const label=panel.querySelector('[data-param-label]');label.style.display=covered?'none':'inline';
     label.textContent=styleTool==='text'?'字号':styleTool==='number'?'大小':'粗细';
+    const value=panel.querySelector('[data-param-value]');value.style.display=['text','number','cover'].includes(styleTool)?'none':'inline';value.textContent=width+' px';
     panel.querySelectorAll('[data-width]').forEach((el,i)=>{
       el.style.display=covered?'none':'inline';
-      const label=styleTool==='text'?['18','22','28'][i]:styleTool==='number'?['小','中','大'][i]:['细','中','粗'][i];
-      el.querySelector('[data-width-text]').textContent=label;el.setAttribute('aria-label',label);
+      const label=styleTool==='text'?['18','24','32'][i]:styleTool==='number'?['小','中','大'][i]:['2 px','4 px','8 px'][i];
+      el.querySelector('text').textContent=label;
+      const description=panel.querySelector('[data-param-label]').textContent+' '+label;
+      el.setAttribute('aria-label',description);el.querySelector('title').textContent=description;
+      el.querySelector('text').style.display=['text','number'].includes(styleTool)?'inline':'none';
+      el.querySelector('[data-option-preview]').style.display=['text','number'].includes(styleTool)?'none':'inline';
     });
   });
+  for(const [selector,key,value] of [['[data-width]','width',String(width)],['[data-head]','head',arrowHead],['[data-dash]','dash',String(dashed)],['[data-fill]','fill',rectFill]]) {
+    $$(selector).forEach(el=>{const active=el.dataset[key]===value;el.setAttribute('aria-pressed',String(active));el.querySelector('rect').setAttribute('fill',active?'#e6eee8':'#fff');el.querySelector('text').setAttribute('fill',active?'#285c53':'#282d2a');el.querySelector('[data-option-preview]')?.setAttribute('color',active?'#285c53':'#282d2a');});
+  }
+  for(const [name,active] of [['bold',bold],['text-bg',textBackground]]){
+    $$(`[data-action="${name}"]`).forEach(el=>{el.setAttribute('aria-pressed',String(active));el.querySelector('rect').setAttribute('fill',active?'#e6eee8':'#fff');});
+  }
+  $$('[data-ring]').forEach(el=>el.setAttribute('stroke',el.dataset.ring===color?'#285c53':'none'));
+
 }
 function show(scene) {
   current=scene; $$('.scene').forEach(el=>el.hidden=el.dataset.sceneId!==scene);
@@ -193,8 +273,9 @@ function show(scene) {
 }
 function chooseTool(name) {
   if(current==='selection' && name!=='pointer')show('capture');
+  if(tool!=='pointer')toolStyles[tool]={color,width};
   tool=name;
-  if(name!=='pointer'){markTool=name;hasMark=true;canRedo=false;}
+  if(name!=='pointer'){markTool=name;hasMark=true;canRedo=false;({color,width}=toolStyles[name] || {color:'#c64635',width:4});}
   syncMarks();
 }
 async function imageBlob() {
@@ -215,13 +296,14 @@ async function activate(el) {
   if(el.getAttribute('aria-disabled')==='true')return;
   if(el.dataset.scene) return show(el.dataset.scene);
   if(el.dataset.tool) return chooseTool(el.dataset.tool);
-  if(el.dataset.color) {
-    color=el.dataset.color; $$('[data-ring]').forEach(r=>r.setAttribute('stroke',r.dataset.ring===color?'#285c53':'none'));
-    $$('[data-style-dot]').forEach(dot=>dot.setAttribute('fill',color)); return syncMarks();
-  }
-  if(el.dataset.width) {width=Number(el.dataset.width); $$('[data-width-bg]').forEach(r=>r.setAttribute('fill',Number(r.dataset.widthBg)===width?'#e6eee8':'transparent'));return syncMarks();}
+  if(el.dataset.color) {color=el.dataset.color;return syncMarks();}
+  if(el.dataset.width) {width=Number(el.dataset.width);return syncMarks();}
+  if(el.dataset.head) {arrowHead=el.dataset.head;return syncMarks();}
+  if(el.dataset.dash) {dashed=el.dataset.dash==='true';return syncMarks();}
+  if(el.dataset.fill) {rectFill=el.dataset.fill;return syncMarks();}
   const name=el.dataset.action;
-  if(name==='style') {const open=el.getAttribute('aria-expanded')!=='true';closeStyles();el.setAttribute('aria-expanded',open);el.closest('.scene').querySelector('[data-popover]').style.display=open?'inline':'none';return;}
+  if(name==='bold'){bold=!bold;syncMarks();return;}
+  if(name==='text-bg'){textBackground=!textBackground;syncMarks();return;}
   if(name==='undo'){hasMark=false;canRedo=true;syncMarks();return;}
   if(name==='redo'){hasMark=true;canRedo=false;syncMarks();return;}
   if(name==='close') {show('capture');announce('演示已回到截图画面；网页不会关闭真实窗口。');return;}
@@ -239,13 +321,9 @@ async function activate(el) {
     }
   } catch(error) {announce('操作未完成：'+(error.message || '浏览器未允许此操作。'));}
 }
-document.addEventListener('click',event=>{const el=event.target.closest('[data-scene],[data-tool],[data-color],[data-width],[data-action]');if(el) activate(el);});
+document.addEventListener('click',event=>{const el=event.target.closest('[data-scene],[data-tool],[data-color],[data-width],[data-head],[data-dash],[data-fill],[data-action]');if(el) activate(el);});
 document.addEventListener('keydown',event=>{
-  if(event.key==='Escape') {
-    const panel=$(`[data-scene-id="${current}"] [data-popover]`);
-    if(panel && panel.style.display!=='none'){closeStyles();$(`[data-scene-id="${current}"] [data-action="style"]`).focus();}
-    else if(tool!=='pointer')chooseTool('pointer');return;
-  }
+  if(event.key==='Escape' && tool!=='pointer') {chooseTool('pointer');return;}
   if((event.key==='Enter'||event.key===' ') && event.target.matches('g[role="button"]')){event.preventDefault();activate(event.target);}
 });
 show('capture');

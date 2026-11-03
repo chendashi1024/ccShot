@@ -25,13 +25,11 @@ import UniformTypeIdentifiers
     private let status = NSTextField(labelWithString: "正在识别文字…")
     private let toolRow = NSStackView()
     private let viewerRow = NSStackView()
-    private var styleButton: NSButton!
     private var copyButton: NSButton!
     private var viewerCopyButton: NSButton!
     private var pinButton: NSButton!
     private var saveButton: NSButton!
     private var donePinButton: NSButton!
-    private var styleExpanded = false
     private var viewingFrame: CGRect?
     private let styleRow = NSStackView()
     private let optionRow = NSStackView()
@@ -47,10 +45,13 @@ import UniformTypeIdentifiers
     private let widthLabel = NSTextField(labelWithString: "4 px")
     private let colorWell = NSColorWell()
     private let fillButton = NSSegmentedControl(labels: ["描边", "半透明", "实心"], trackingMode: .selectOne, target: nil, action: nil)
-    private let dashButton = NSButton(checkboxWithTitle: "虚线", target: nil, action: nil)
+    private let dashButton = NSSegmentedControl(labels: ["实线", "虚线"], trackingMode: .selectOne, target: nil, action: nil)
+    private let lineTitle = NSTextField(labelWithString: "线型")
+    private let fillTitle = NSTextField(labelWithString: "填充")
     private let cornerSlider = StyleSlider(value: 0, minValue: 0, maxValue: 80, target: nil, action: nil)
     private let cornerLabel = NSTextField(labelWithString: "圆角")
     private let arrowPicker = NSSegmentedControl(labels: ["实心", "开口", "双头"], trackingMode: .selectOne, target: nil, action: nil)
+    private let arrowTitle = NSTextField(labelWithString: "箭头样式")
     private let numberLabel = NSTextField(labelWithString: "下一号")
     private let numberField = NSTextField(string: "1")
     private let boldButton = NSButton(checkboxWithTitle: "加粗", target: nil, action: nil)
@@ -97,16 +98,18 @@ import UniformTypeIdentifiers
         buildStyles()
         undoButton = iconButton("arrow.uturn.backward", "撤销（⌘Z）", #selector(undo(_:)))
         redoButton = iconButton("arrow.uturn.forward", "重做（⌘⇧Z）", #selector(redo(_:)))
-        styleButton = button("样式",#selector(toggleStyle)); styleButton.setAccessibilityLabel("样式")
-        toolRow.addArrangedSubview(styleButton); toolRow.addArrangedSubview(undoButton); toolRow.addArrangedSubview(redoButton)
+        toolRow.addArrangedSubview(undoButton); toolRow.addArrangedSubview(redoButton)
+        toolRow.setCustomSpacing(12,after:redoButton)
         let spacer = NSView(); spacer.setContentHuggingPriority(.defaultLow,for:.horizontal)
-        spacer.widthAnchor.constraint(greaterThanOrEqualToConstant:8).isActive = true; toolRow.addArrangedSubview(spacer)
+        spacer.widthAnchor.constraint(greaterThanOrEqualToConstant:8).isActive = true
         pinButton = button("钉住",#selector(pinImage)); saveButton = button("保存",#selector(saveImage)); copyButton = button("复制",#selector(copy(_:)))
         donePinButton = button("完成",#selector(toggleEditing))
         for value in [donePinButton,pinButton,saveButton,copyButton] { toolRow.addArrangedSubview(value!) }
         finishTextButton = button("完成文字",#selector(finishText)); cancelTextButton = button("取消",#selector(cancelText))
         finishTextButton.toolTip = "完成文字（⌘Return）"; cancelTextButton.toolTip = "取消文字（Esc）"
         toolRow.addArrangedSubview(finishTextButton); toolRow.addArrangedSubview(cancelTextButton)
+        // 弹性空白放到整组操作之后，避免把钉住与常用标注推得过远。
+        toolRow.addArrangedSubview(spacer)
         editButton.target = self; editButton.action = #selector(toggleEditing); editButton.bezelStyle = .rounded; editButton.font = .systemFont(ofSize:14)
         viewerCopyButton = button("复制",#selector(copy(_:)))
         viewerRow.spacing = 8
@@ -145,6 +148,39 @@ import UniformTypeIdentifiers
         let value = button("",action); value.image = NSImage(systemSymbolName:symbol,accessibilityDescription:title); value.imagePosition = .imageOnly
         value.toolTip = title; value.setAccessibilityLabel(title); value.widthAnchor.constraint(equalToConstant:28).isActive = true; return value
     }
+    private func stylePreview(_ kind: String, width: CGFloat = 2) -> NSImage {
+        let image = NSImage(size: NSSize(width:44,height:24),flipped:false) { _ in
+            guard let context = NSGraphicsContext.current?.cgContext else { return false }
+            context.setStrokeColor(NSColor.black.cgColor); context.setFillColor(NSColor.black.cgColor)
+            let previewWidth = kind == "width" ? min(16,width) : 2
+            context.setLineWidth(previewWidth); context.setLineCap(.round); context.setLineJoin(.round)
+            if kind.hasPrefix("fill-") {
+                let box = CGRect(x:13,y:4,width:18,height:16)
+                if kind != "fill-none" { context.setAlpha(kind == "fill-soft" ? 0.3 : 1); context.fill(box); context.setAlpha(1) }
+                context.stroke(box); return true
+            }
+            if kind == "dashed" { context.setLineDash(phase:0,lengths:[4,3]) }
+            // 圆端点也占半个线宽，保持预设的外边界在 4…40，最粗档不会削平。
+            let startX = kind == "width" ? 4+previewWidth/2 : 6
+            let endX = kind == "width" ? 40-previewWidth/2 : 38
+            context.move(to:CGPoint(x:startX,y:12)); context.addLine(to:CGPoint(x:endX,y:12)); context.strokePath()
+            if kind == "open" {
+                context.move(to:CGPoint(x:30,y:18)); context.addLine(to:CGPoint(x:39,y:12)); context.addLine(to:CGPoint(x:30,y:6)); context.strokePath()
+            } else if kind == "filled" || kind == "double" {
+                context.move(to:CGPoint(x:39,y:12)); context.addLine(to:CGPoint(x:30,y:18)); context.addLine(to:CGPoint(x:30,y:6)); context.closePath(); context.fillPath()
+                if kind == "double" { context.move(to:CGPoint(x:5,y:12)); context.addLine(to:CGPoint(x:14,y:18)); context.addLine(to:CGPoint(x:14,y:6)); context.closePath(); context.fillPath() }
+            }
+            return true
+        }
+        image.isTemplate = true; return image
+    }
+    private func configurePreviews(_ control: NSSegmentedControl, labels: [String], kinds: [String], name: String) {
+        control.setAccessibilityLabel(name)
+        for index in labels.indices {
+            control.setLabel("",forSegment:index); control.setImage(stylePreview(kinds[index]),forSegment:index)
+            control.setWidth(48,forSegment:index); control.setToolTip(labels[index],forSegment:index)
+        }
+    }
     private func buildStyles() {
         toolRow.spacing = 4; styleRow.spacing = 8; optionRow.spacing = 10
         for tool in [AnnotationTool.select,.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
@@ -169,6 +205,9 @@ import UniformTypeIdentifiers
         fillButton.target = self; fillButton.action = #selector(changeOptions)
         dashButton.target = self; dashButton.action = #selector(changeOptions)
         arrowPicker.target = self; arrowPicker.action = #selector(changeOptions)
+        configurePreviews(fillButton,labels:["描边","半透明填充","实心填充"],kinds:["fill-none","fill-soft","fill-solid"],name:"填充方式")
+        configurePreviews(dashButton,labels:["实线","虚线"],kinds:["solid","dashed"],name:"线型")
+        configurePreviews(arrowPicker,labels:["实心箭头","开口箭头","双头箭头"],kinds:["filled","open","double"],name:"箭头样式")
         cornerSlider.target = self; cornerSlider.action = #selector(changeCorner(_:)); cornerSlider.isContinuous = true
         cornerSlider.widthAnchor.constraint(equalToConstant: 90).isActive = true
         numberField.delegate = self; numberField.target = self; numberField.action = #selector(changeNumber); numberField.widthAnchor.constraint(equalToConstant: 62).isActive = true
@@ -179,7 +218,8 @@ import UniformTypeIdentifiers
         boldButton.target = self; boldButton.action = #selector(changeTextStyle)
         textBackground.target = self; textBackground.action = #selector(changeTextStyle)
         backgroundWell.target = self; backgroundWell.action = #selector(changeTextStyle); backgroundWell.widthAnchor.constraint(equalToConstant:40).isActive = true
-        for view in [boldButton, textBackground, backgroundWell, fillButton, dashButton, cornerLabel, cornerSlider, arrowPicker, numberLabel, numberField, maskPicker, maskMode, brushLabel, brushWidth] as [NSView] { optionRow.addArrangedSubview(view) }
+        arrowPicker.setAccessibilityLabel("箭头样式")
+        for view in [boldButton, textBackground, backgroundWell, fillTitle, fillButton, lineTitle, dashButton, cornerLabel, cornerSlider, arrowTitle, arrowPicker, numberLabel, numberField, maskPicker, maskMode, brushLabel, brushWidth] as [NSView] { optionRow.addArrangedSubview(view) }
         for slider in [widthSlider, cornerSlider, brushWidth] {
             slider.beginTracking = { [weak self] in if self?.canvas.selected != nil { self?.annotationDocument.beginTransaction() } }
             slider.endTracking = { [weak self] in if self?.annotationDocument.inTransaction == true { self?.annotationDocument.endTransaction() } }
@@ -189,12 +229,12 @@ import UniformTypeIdentifiers
         let tool = canvas.currentTool, style = canvas.currentStyle
         canvas.editingEnabled = editing
         toolRow.isHidden = !editing
-        styleRow.isHidden = !editing || tool == .select || !styleExpanded
+        styleRow.isHidden = !editing || tool == .select
         viewerRow.isHidden = !pinned || editing
         window?.minSize = CGSize(width:editing ? 880 : 420,height:styleRow.isHidden ? (editing ? 300 : 260) : 480)
-        styleButton.isEnabled = editing && tool != .select
-        styleButton.title = "样式"
-        styleButton.toolTip = "\(tool.title)样式"
+        if !styleRow.isHidden, let window, window.frame.height < 480 {
+            var frame = window.frame; frame.origin.y -= 480-frame.height; frame.size.height = 480; setVisibleFrame(frame)
+        }
         for (tool, button) in toolButtons {
             let selected = tool == canvas.tool; button.state = selected ? .on : .off
             button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor
@@ -203,11 +243,18 @@ import UniformTypeIdentifiers
         for control in [widthTitle,widthSlider,widthLabel] as [NSView] {control.isHidden=solidMask}
         for control in presetButtons {control.isHidden=solidMask}
         let width = tool == .text ? style.fontSize : tool == .mask ? style.maskStrength : style.width
-        widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : "粗细"
+        widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : tool == .number ? "大小" : "粗细"
         widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
         widthSlider.doubleValue = Double(width); widthLabel.stringValue = "\(Int(width)) px";
         let presetWidths = tool == .text ? [16,24,32,48] : tool == .mask ? [8,16,32,64] : [2,4,8,16]
-        for (button, value) in zip(presetButtons,presetWidths) { button.title = "\(value)"; button.tag = value }
+        let strokeWidth = [.rectangle,.ellipse,.arrow,.line,.pen,.highlight].contains(tool)
+        for (button, value) in zip(presetButtons,presetWidths) {
+            button.title = strokeWidth ? "" : "\(value)"; button.tag = value
+            button.image = strokeWidth ? stylePreview("width",width:CGFloat(value)) : nil
+            button.imagePosition = strokeWidth ? .imageOnly : .noImage
+            button.identifier = NSUserInterfaceItemIdentifier("style-width-\(value)")
+            button.toolTip = "\(widthTitle.stringValue) \(value) px"; button.setAccessibilityLabel(button.toolTip)
+        }
         for control in colorControls { control.isHidden = tool == .mask && !solidMask }
         maskPicker.isHidden = tool != .mask; maskMode.isHidden = tool != .mask || canvas.selected != nil
         maskPicker.selectedSegment = MaskEffect.allCases.firstIndex(of:style.maskEffect) ?? 0; maskMode.selectedSegment = style.maskBrush ? 1 : 0
@@ -217,13 +264,14 @@ import UniformTypeIdentifiers
         boldButton.isHidden = tool != .text; textBackground.isHidden = tool != .text
         backgroundWell.isHidden = tool != .text || !style.textBackground
         boldButton.state = style.bold ? .on : .off; textBackground.state = style.textBackground ? .on : .off; backgroundWell.color = style.backgroundColor.nsColor
-        fillButton.selectedSegment = style.filled ? (style.fillOpacity < 1 ? 1 : 2) : 0; dashButton.state = style.dashed ? .on : .off
+        fillButton.selectedSegment = style.filled ? (style.fillOpacity < 1 ? 1 : 2) : 0; dashButton.selectedSegment = style.dashed ? 1 : 0
         cornerSlider.doubleValue = Double(style.cornerRadius)
         arrowPicker.selectedSegment = ArrowHead.allCases.firstIndex(of: style.arrowHead) ?? 0
         fillButton.isHidden = ![.rectangle, .ellipse].contains(tool)
         dashButton.isHidden = ![.rectangle, .ellipse, .arrow, .line].contains(tool) || style.filled && [.rectangle, .ellipse].contains(tool)
+        fillTitle.isHidden = fillButton.isHidden; lineTitle.isHidden = dashButton.isHidden
         cornerLabel.isHidden = tool != .rectangle; cornerSlider.isHidden = tool != .rectangle
-        arrowPicker.isHidden = tool != .arrow
+        arrowPicker.isHidden = tool != .arrow; arrowTitle.isHidden = tool != .arrow
         numberLabel.isHidden = tool != .number; numberField.isHidden = tool != .number
         numberLabel.stringValue = canvas.selected == nil ? "下一号" : "编号"
         if window?.firstResponder !== numberField.currentEditor() { numberField.stringValue = "\(canvas.selected?.number ?? annotationDocument.state.nextNumber)" }
@@ -262,11 +310,6 @@ import UniformTypeIdentifiers
         return menu
     }
     func textSelectionDidChange(_ overlayView: ImageAnalysisOverlayView) { updateCopyTitle() }
-    @objc private func toggleStyle() {
-        styleExpanded.toggle()
-        if styleExpanded, let window, window.frame.height < 480 { var frame = window.frame; frame.origin.y -= 480-frame.height; frame.size.height = 480; setVisibleFrame(frame) }
-        updateControls()
-    }
     @objc private func closeImage() { close() }
     @objc private func opacityPreset(_ sender: NSMenuItem) { window?.alphaValue = Double(sender.tag)/100 }
     @objc private func chooseTool(_ sender: NSButton) { canvas.chooseTool(AnnotationTool.allCases[sender.tag]); if canvas.textEditor == nil { window?.makeFirstResponder(canvas) } }
@@ -292,7 +335,7 @@ import UniformTypeIdentifiers
     }
     @objc private func changeBrush(_ sender: NSSlider) { var style = canvas.currentStyle; style.width = CGFloat(sender.doubleValue.rounded()); canvas.changeStyle(style) }
     @objc private func changeOptions() {
-        var style = canvas.currentStyle; style.filled = fillButton.selectedSegment > 0; style.fillOpacity = fillButton.selectedSegment == 1 ? 0.25 : 1; style.dashed = dashButton.state == .on
+        var style = canvas.currentStyle; style.filled = fillButton.selectedSegment > 0; style.fillOpacity = fillButton.selectedSegment == 1 ? 0.25 : 1; style.dashed = dashButton.selectedSegment == 1
         if arrowPicker.selectedSegment >= 0 { style.arrowHead = ArrowHead.allCases[arrowPicker.selectedSegment] }
         canvas.changeStyle(style)
     }
@@ -313,7 +356,7 @@ import UniformTypeIdentifiers
     @objc private func toggleEditing() {
         guard pinned else { return }
         guard canvas.finishTextEditing() else { return }
-        window?.makeFirstResponder(canvas); canvas.cancelGesture(); canvas.chooseTool(.select); styleExpanded = false
+        window?.makeFirstResponder(canvas); canvas.cancelGesture(); canvas.chooseTool(.select)
         if !editing, let window {
             viewingFrame = window.frame; window.minSize = CGSize(width:880,height:300)
             var frame = window.frame; frame.size.width = max(880,frame.width); frame.size.height = max(360,frame.height); setVisibleFrame(frame)
@@ -480,9 +523,21 @@ extension ImageWindow {
             return root.bounds.contains(root.convert(value.bounds,from:value)) && rect.minX >= -0.5 && rect.maxX <= toolRow.bounds.maxX+0.5 && rect.minY >= -0.5 && rect.maxY <= toolRow.bounds.maxY+0.5 && value.frame.width >= value.intrinsicContentSize.width-1
         }
         var result = ["core_tools_share_first_row":toolButtons.count == 8 && toolButtons.values.allSatisfy { $0.superview === toolRow && !$0.isHidden },"minimum_window_keeps_primary_controls":contained,"minimum_window_keeps_canvas":canvas.bounds.height >= 160]
-        canvas.chooseTool(.rectangle); toggleStyle(); root.layoutSubtreeIfNeeded()
+        canvas.chooseTool(.arrow); root.layoutSubtreeIfNeeded()
+        result["arrow_selection_reveals_style_without_extra_click"] = !styleRow.isHidden && !optionRow.isHidden && !arrowPicker.isHidden && !arrowTitle.isHidden
+        let initialArrowStyle = canvas.currentStyle
+        arrowPicker.selectedSegment = 1; arrowPicker.sendAction(arrowPicker.action,to:arrowPicker.target)
+        dashButton.selectedSegment = 1; dashButton.sendAction(dashButton.action,to:dashButton.target)
+        result["style_preview_controls_change_arrow_and_line"] = canvas.currentStyle.arrowHead == .open && canvas.currentStyle.dashed && arrowPicker.image(forSegment:1) != nil && dashButton.image(forSegment:1) != nil
+        canvas.changeStyle(initialArrowStyle)
         result["style_panel_stays_in_window"] = !styleRow.isHidden && root.bounds.contains(root.convert(styleRow.bounds,from:styleRow)) && root.bounds.contains(root.convert(optionRow.bounds,from:optionRow))
-        toggleStyle(); canvas.chooseTool(.select); copyButton.title = previousCopyTitle
+        canvas.chooseTool(.rectangle); root.layoutSubtreeIfNeeded()
+        result["rectangle_selection_replaces_arrow_options"] = !styleRow.isHidden && arrowPicker.isHidden && !fillButton.isHidden && !cornerSlider.isHidden
+        canvas.chooseTool(.text); root.layoutSubtreeIfNeeded()
+        result["text_selection_reveals_font_options"] = !styleRow.isHidden && widthTitle.stringValue == "字号" && !boldButton.isHidden && !textBackground.isHidden && arrowPicker.isHidden
+        canvas.chooseTool(.select); root.layoutSubtreeIfNeeded()
+        result["selection_hides_irrelevant_style_controls"] = styleRow.isHidden && optionRow.isHidden
+        copyButton.title = previousCopyTitle
         window.setFrame(original,display:true); root.layoutSubtreeIfNeeded()
         return result
     }

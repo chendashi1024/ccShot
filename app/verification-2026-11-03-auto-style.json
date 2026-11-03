@@ -1,0 +1,113 @@
+{
+  "date": "2026-11-03",
+  "scope": "样式随工具自动显示、几何参数图形化、原生工具与输出分组",
+  "source": {
+    "base_revision": "5baa6ffe718ffff90fb83e0ea2252d0ac84b3440",
+    "state": "在基线提交上应用本轮尚未提交的两份 Swift 修改；由下列文件哈希绑定",
+    "files": {
+      "CcShot/app/Sources/ImageWindow.swift": "a5403982505fa724e0e4ce1be5f12240c85b15a24a157bc3866fb2235d2bd4e1",
+      "CcShot/app/Sources/AnnotationVerification.swift": "123c4aa436e5a3a40f01b03e9112fe881c3559c86a381ebe86ed1aef05abe9fd"
+    },
+    "binary_sha256": "d45c06d8f4c1d8917e7f5f89c046b4fb76dcbd8541aae2e7399e7d39f9fd92df"
+  },
+  "validation": {
+    "build": "通过",
+    "consumer": "--fixture 配合 --smoke-test；调用 AppKit 控件事件与现有消费者",
+    "result": {
+      "annotations": {
+        "arrow_selection_reveals_style_without_extra_click": true,
+        "cancel_gesture_keeps_document": true,
+        "composite_contains_annotation": true,
+        "context_copy_uses_composite": true,
+        "core_tools_share_first_row": true,
+        "draft_blocks_export": true,
+        "draw_event_creates_object": true,
+        "minimum_window_keeps_canvas": true,
+        "minimum_window_keeps_primary_controls": true,
+        "move_event_updates_object": true,
+        "move_redo": true,
+        "move_undo": true,
+        "number_sequence": true,
+        "number_undo_restores_next": true,
+        "pin_copy_uses_composite": true,
+        "pin_edit_independent": true,
+        "pin_initial_space_enters_editing": true,
+        "pin_keeps_editable_objects": true,
+        "pin_opacity_menu_changes_view_only": true,
+        "rectangle_selection_replaces_arrow_options": true,
+        "resize_event_updates_object": true,
+        "selected_style_keeps_tool_default": true,
+        "selection_hides_irrelevant_style_controls": true,
+        "style_buttons_route_to_current_tool": true,
+        "style_panel_stays_in_window": true,
+        "style_preview_controls_change_arrow_and_line": true,
+        "text_selection_reveals_font_options": true,
+        "transaction_blocks_export": true
+      },
+      "cancel_window_pick": true,
+      "closed_windows_removed": true,
+      "copy_closes_editor_only": true,
+      "escape_clears_then_cancels": true,
+      "escape_restores_drag": true,
+      "fixture_only": true,
+      "hex_key_clipboard": true,
+      "hotkey_conflict_keeps_old_bindings": true,
+      "hotkey_fallback_as_primary": true,
+      "hotkey_reapply": true,
+      "jpeg_roundtrip": true,
+      "passed": true,
+      "png_roundtrip": true,
+      "resize_event_callback": true,
+      "rgb_key_clipboard": true,
+      "selection_callback_crop": true,
+      "settings_recorder": {
+        "close_stops_recording": true,
+        "escape_stops_recording": true,
+        "failed_change_keeps_value": true,
+        "recording_accepts_key": true,
+        "recording_pause_resume_balanced": true
+      },
+      "two_windows_and_pin_level": true,
+      "window_click_target": true,
+      "window_drag_is_region": true
+    },
+    "visual": "主代理查看最终浅色、深色真实窗口原图；最粗预设圆端完整。图像来自本进程受控样本窗口。"
+  },
+  "previews": [
+    {
+      "path": "previews/arrow-auto-style-light-2026-11-03.png",
+      "sha256": "9f6e76c5bd1c4465d653b18cc3384a66cb3c0f42c28243152ff1c87b6a4b99d9",
+      "size": [
+        2000,
+        1216
+      ],
+      "appearance": "light"
+    },
+    {
+      "path": "previews/arrow-auto-style-dark-2026-11-03.png",
+      "sha256": "9c598f10603efc8561320b64aeeea341a8b646659a83b50ac5a708e1f5af3ee6",
+      "size": [
+        2000,
+        1216
+      ],
+      "appearance": "dark"
+    }
+  ],
+  "review": {
+    "reviewers": 2,
+    "delivered_reports": 5,
+    "visual_reviewer_reports": 3,
+    "native_reviewer_reports": 2,
+    "resolved": [
+      "选字后常用工具横向跳动",
+      "小字号文字底色左右留白不等",
+      "原生 16px 线宽预设圆端裁切"
+    ],
+    "final_rounding_fix": "达到审查上限后由主代理修复并重建、复跑消费者、查看最终浅深图；未再调用子代理"
+  },
+  "limitations": [
+    "网页 SVG/HTML 仅静态与导出图检查，浏览器控制被 Work settings 禁用，未绕过。",
+    "未安装或重新打包试用版；旧安装包不含本轮修改。",
+    "原生箭头窗口已查看；填充图形本轮按源码与事件映射检查，未逐个捕获全部工具、状态、硬件及 VoiceOver。"
+  ]
+}
