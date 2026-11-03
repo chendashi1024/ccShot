@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-03",
+  "os": "macOS 15.4.1",
+  "sdk": "macOS 15.4",
+  "architecture": "arm64",
+  "deployment_target": "macOS 14",
+  "source_sha256": {
+    "app/Sources/SelectionView.swift": "2238d3502d33afad718ee6d0aa0745c96b1a05ccd9b0349e0ddcbe0db9dc1a20",
+    "app/Sources/CaptureGeometry.swift": "d6ade6417e2211c9e23b1acddb4cf2161c36dd985d1fbb24fa8eb08516d27908",
+    "app/Sources/App.swift": "3b8bda17443eae28241a94b628bd1063814ecfa8004ad3d005d823f92e26369b",
+    "app/Sources/ImageWindow.swift": "96e20b066768d666c3569e22a4c1f9201fea4d5fa5946013015b59598442e9b2",
+    "app/build.sh": "5661a9a67ccbff0f3248bf5cd0af1d03049f3bdab9ab4464bce74b5a989fb531",
+    "app/check.sh": "2407ce190bff3f1606165361dd9493aea20a5fbc0d6b18fe493fa7197b5f1a29",
+    "app/Tests/GeometryTests.swift": "d95024d9fd1ec847d60c60e0808c196a960a05365e0d7ce911c268b2dc932254"
+  },
+  "geometry_checks": "通过：2x、1x、Y翻转、边界裁剪、无效选区、可见框与像素框往返",
+  "consumer_smoke": {
+    "closed_windows_removed": true,
+    "copy_closes_editor_only": true,
+    "fixture_only": true,
+    "jpeg_roundtrip": true,
+    "passed": true,
+    "png_roundtrip": true,
+    "selection_callback_crop": true,
+    "two_windows_and_pin_level": true
+  },
+  "actual_ui_observation": "CUA打开开发版样本窗口，OCR完成、主要按钮可见；截图入口能打开选择窗口",
+  "not_verified": [
+    "鼠标框选到输出完整回归",
+    "保存对话框",
+    "真实全局按键",
+    "权限拒绝与升级恢复",
+    "混合多屏",
+    "完整44项MVP"
+  ]
+}

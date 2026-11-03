@@ -1,0 +1,231 @@
+import AppKit
+import Carbon
+import ScreenCaptureKit
+
+@MainActor final class AppController: NSObject, NSApplicationDelegate {
+    private var statusItem: NSStatusItem!
+    private var selectionWindow: SelectionWindow?
+    private var imageWindows: [UUID: ImageWindow] = [:]
+    private var hotkeys: [EventHotKeyRef] = []
+    private var handler: EventHandlerRef?
+    private var captureTask: Task<Void, Never>?
+    private var fixture: CGImage?
+    private var captureGeneration = 0
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
+        let menu = NSMenu()
+        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("退出 CcShot", #selector(quit), "q")] {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.target = self
+            menu.addItem(item)
+        }
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem.button?.title = "CcShot"
+        statusItem.menu = menu
+        let main = NSMenu()
+        let appMenu = NSMenuItem(); appMenu.submenu = menu.copy() as? NSMenu; main.addItem(appMenu)
+        let edit = NSMenuItem(); edit.submenu = NSMenu(title: "编辑")
+        for (title, selector, key) in [("复制", #selector(ImageWindow.copy(_:)), "c"), ("全选", #selector(NSResponder.selectAll(_:)), "a"), ("保存", #selector(ImageWindow.saveDocument(_:)), "s")] {
+            edit.submenu?.addItem(withTitle: title, action: selector, keyEquivalent: key)
+        }
+        main.addItem(edit); NSApp.mainMenu = main
+        registerHotkeys()
+        if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
+            fixture = image
+            if argument("--smoke-test") != nil { runSmokeTest(image) }
+            else if CommandLine.arguments.contains("--select") { capture() }
+            else { showImage(image, pinned: false) }
+        }
+        NotificationCenter.default.addObserver(self, selector: #selector(screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+    }
+    private func argument(_ flag: String) -> String? {
+        let args = CommandLine.arguments
+        guard let index = args.firstIndex(of: flag), index + 1 < args.count else { return nil }
+        return args[index + 1]
+    }
+    private func registerHotkeys() {
+        var type = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
+        let target = GetApplicationEventTarget()
+        let result = InstallEventHandler(target, { _, event, context in
+            guard let event, let context else { return OSStatus(eventNotHandledErr) }
+            var identifier = EventHotKeyID()
+            guard GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &identifier) == noErr else { return OSStatus(eventNotHandledErr) }
+            let controller = Unmanaged<AppController>.fromOpaque(context).takeUnretainedValue()
+            Task { @MainActor in
+                if identifier.id == 3 { controller.pinCurrentOrClipboard() } else { controller.capture() }
+            }
+            return noErr
+        }, 1, &type, Unmanaged.passUnretained(self).toOpaque(), &handler)
+        guard result == noErr else { return }
+        for (id, key, modifiers) in [(UInt32(1), UInt32(kVK_F1), UInt32(0)), (2, UInt32(kVK_ANSI_S), UInt32(controlKey | optionKey)), (3, UInt32(kVK_F3), UInt32(0))] {
+            var reference: EventHotKeyRef?
+            if RegisterEventHotKey(key, modifiers, EventHotKeyID(signature: 0x43435348, id: id), target, 0, &reference) == noErr, let reference { hotkeys.append(reference) }
+        }
+    }
+    @objc func capture() {
+        cancelCapture()
+        let point = NSEvent.mouseLocation
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }) ?? NSScreen.main else { return }
+        if let fixture { presentSelection(fixture, on: screen); return }
+        guard CGPreflightScreenCaptureAccess() else {
+            showError("需要屏幕录制权限", detail: "请在系统设置的隐私与安全性中允许 CcShot 屏幕录制，再重新打开应用。")
+            return
+        }
+        guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return }
+        let displayID = number.uint32Value
+        let token = captureGeneration
+        captureTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+                guard !Task.isCancelled, token == captureGeneration,
+                      let display = content.displays.first(where: { $0.displayID == displayID }) else { return }
+                let ownApps = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
+                let filter = SCContentFilter(display: display, excludingApplications: ownApps, exceptingWindows: [])
+                let config = SCStreamConfiguration()
+                config.width = CGDisplayPixelsWide(displayID); config.height = CGDisplayPixelsHigh(displayID)
+                config.showsCursor = false
+                let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+                guard !Task.isCancelled, token == captureGeneration,
+                      NSScreen.screens.contains(where: { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == displayID }) else { return }
+                presentSelection(image, on: screen)
+            } catch {
+                guard !Task.isCancelled, token == captureGeneration else { return }
+                showError("无法截取屏幕", detail: "请检查屏幕录制权限后重试。")
+            }
+        }
+    }
+    private func presentSelection(_ image: CGImage, on screen: NSScreen) {
+        let window = SelectionWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.level = .screenSaver
+        window.isOpaque = true
+        window.isReleasedWhenClosed = false
+        window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        let view = SelectionView(image: image, frame: CGRect(origin: .zero, size: screen.frame.size))
+        view.onConfirm = { [weak self] image, _, action in
+            guard let self else { return }
+            self.cancelCapture()
+            switch action {
+            case .edit: self.showImage(image, pinned: false)
+            case .pin: self.showImage(image, pinned: true)
+            case .save: self.showImage(image, pinned: false).saveImage()
+            case .copy:
+                guard let data = ImageWindow.encoded(image, type: .png) else {
+                    self.showImage(image, pinned: false)
+                    self.showError("图片编码失败", detail: "截图仍然保留，请重试。")
+                    return
+                }
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                if !pasteboard.setData(data, forType: .png) {
+                    self.showImage(image, pinned: false)
+                    self.showError("复制失败", detail: "截图仍然保留，请重试。")
+                }
+            }
+        }
+        view.onCancel = { [weak self] in self?.cancelCapture() }
+        window.contentView = view
+        selectionWindow = window
+        window.makeKeyAndOrderFront(nil); window.makeFirstResponder(view)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    private func cancelCapture() {
+        captureGeneration += 1
+        captureTask?.cancel(); captureTask = nil
+        selectionWindow?.close(); selectionWindow = nil
+    }
+    @objc private func screenChanged() {
+        let hadSelection = selectionWindow != nil
+        cancelCapture()
+        if hadSelection { showError("屏幕已变化", detail: "请重新开始截图。") }
+    }
+    @discardableResult private func showImage(_ image: CGImage, pinned: Bool) -> ImageWindow {
+        let id = UUID()
+        let controller = ImageWindow(image: image, pinned: pinned)
+        controller.onClose = { [weak self] in self?.imageWindows.removeValue(forKey: id) }
+        controller.onPin = { [weak self] image in self?.showImage(image, pinned: true) }
+        imageWindows[id] = controller
+        return controller
+    }
+    @objc private func pinClipboard() {
+        let pasteboard = NSPasteboard.general
+        if let data = pasteboard.data(forType: .png) ?? pasteboard.data(forType: .tiff), let image = Self.loadImage(data) {
+            showImage(image, pinned: true)
+        } else if let text = pasteboard.string(forType: .string), !text.isEmpty {
+            let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.systemFont(ofSize: 18), .foregroundColor: NSColor.labelColor]
+            let attributed = NSAttributedString(string: text, attributes: attributes)
+            let box = attributed.boundingRect(with: NSSize(width: 650, height: 4000), options: [.usesLineFragmentOrigin, .usesFontLeading])
+            let size = NSSize(width: max(180, min(700, ceil(box.width) + 40)), height: max(80, min(4040, ceil(box.height) + 40)))
+            let rendered = NSImage(size: size)
+            rendered.lockFocus()
+            NSColor.textBackgroundColor.setFill(); NSRect(origin: .zero, size: size).fill()
+            attributed.draw(with: NSRect(x: 20, y: 20, width: size.width - 40, height: size.height - 40), options: [.usesLineFragmentOrigin, .usesFontLeading])
+            rendered.unlockFocus()
+            if let image = rendered.cgImage(forProposedRect: nil, context: nil, hints: nil) { showImage(image, pinned: true) }
+        } else { showError("剪贴板中没有图片或文字", detail: "先复制内容，再使用钉图。") }
+    }
+    private func pinCurrentOrClipboard() {
+        if let selection = selectionWindow?.contentView as? SelectionView { selection.pinSelection() }
+        else if let editor = imageWindows.values.first(where: { $0.window?.isKeyWindow == true }) { showImage(editor.image, pinned: true) }
+        else { pinClipboard() }
+    }
+    private func showError(_ title: String, detail: String) {
+        let alert = NSAlert(); alert.messageText = title; alert.informativeText = detail
+        alert.addButton(withTitle: "好")
+        NSApp.activate(ignoringOtherApps: true); alert.runModal()
+    }
+    private static func loadImage(_ url: URL) -> CGImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    }
+    private static func loadImage(_ data: Data) -> CGImage? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    }
+    private func runSmokeTest(_ image: CGImage) {
+        let selector = SelectionView(image: image, frame: NSRect(x: 0, y: 0, width: 960, height: 230))
+        var selected: CGImage?
+        selector.onConfirm = { image, _, _ in selected = image }
+        selector.selectRegion(NSRect(x: 0, y: 115, width: 480, height: 115))
+        selector.confirm()
+        let cropPassed = selected?.width == image.width / 2 && selected?.height == image.height / 2
+        let editor = showImage(image, pinned: false)
+        let pin = showImage(image, pinned: true)
+        let twoWindows = imageWindows.count == 2 && pin.window?.level == .floating
+        let pasteboard = NSPasteboard.general
+        let saved = pasteboard.pasteboardItems?.map { item -> NSPasteboardItem in
+            let copy = NSPasteboardItem()
+            for type in item.types { if let data = item.data(forType: type) { copy.setData(data, forType: type) } }
+            return copy
+        } ?? []
+        editor.copyImage()
+        let writtenCount = pasteboard.changeCount
+        let copyClosedEditorOnly = imageWindows.count == 1
+        let png = pasteboard.data(forType: .png).flatMap(Self.loadImage)
+        let jpeg = ImageWindow.encoded(image, type: .jpeg).flatMap(Self.loadImage)
+        let passed = cropPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
+        if pasteboard.changeCount == writtenCount { pasteboard.clearContents(); pasteboard.writeObjects(saved) }
+        editor.close(); pin.close()
+        let result: [String: Any] = ["fixture_only": true, "selection_callback_crop": cropPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
+        if let path = argument("--smoke-test"), let data = try? JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]) { try? data.write(to: URL(fileURLWithPath: path)) }
+        exit(passed && imageWindows.isEmpty ? 0 : 1)
+    }
+    @objc private func quit() { NSApp.terminate(nil) }
+    func applicationWillTerminate(_ notification: Notification) {
+        cancelCapture()
+        for controller in Array(imageWindows.values) { controller.close() }
+        for key in hotkeys { UnregisterEventHotKey(key) }
+        if let handler { RemoveEventHandler(handler) }
+        NotificationCenter.default.removeObserver(self)
+    }
+}
+
+@main struct CcShot {
+    @MainActor static func main() {
+        let app = NSApplication.shared
+        let delegate = AppController()
+        app.delegate = delegate
+        withExtendedLifetime(delegate) { app.run() }
+    }
+}
