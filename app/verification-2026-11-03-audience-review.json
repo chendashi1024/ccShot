@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-03",
+  "scope": "最多五轮独立观众视角复评，主代理修正既有交互并收紧范围",
+  "base_revision": "5956d73d6ea89c3f816bc4d027384b18599db286",
+  "source_state": "在上述基线上修改以下源码，按哈希绑定",
+  "source_sha256": {
+    "CcShot/app/Sources/AnnotationCanvas.swift": "910f4523001f51b7fbec52adfb557bb9f779768d888d89816e364e4a7ab3999c",
+    "CcShot/app/Sources/ImageWindow.swift": "0843b11a8194fa309118403b054d4236653152b9cc76356d0f6bf59cb4f0ed21",
+    "CcShot/app/Sources/AnnotationVerification.swift": "53e33d1bfcf1f07dc5f0ec6ccb2cdfd4dc27f7f76477917cc71c16a866bbd00f"
+  },
+  "binary_sha256": "d7372b3baf27535b82305fa6f6c1de578d1ba09ee20ad78403def2b3c2f9072f",
+  "review_rounds": 4,
+  "stop_reason": "第4轮无新增实质问题，提前停止",
+  "reviewers": [
+    "audience_compare_round1",
+    "audience_compare_round2",
+    "audience_compare_round3",
+    "audience_compare_round4"
+  ],
+  "resolved": [
+    "可见控制点直接操作",
+    "已选几何主体移动而不新增对象",
+    "绘图模式不误导拖选文字",
+    "粗细三档预设和数值输入，移除重复滑块",
+    "合法数值清自身旧错误，保留无关错误与新排版错误"
+  ],
+  "scope_reductions": [
+    "标注后裁剪后置",
+    "完整画布缩放按实际大图任务障碍触发",
+    "恢复100%属于便利性"
+  ],
+  "validation": {
+    "build": "通过",
+    "method": "受控样本，AppKit直接事件与既有消费者；非实体鼠标键盘全过程",
+    "smoke": {
+      "annotations": {
+        "arrow_selection_reveals_style_without_extra_click": true,
+        "cancel_gesture_keeps_document": true,
+        "compact_stroke_controls": true,
+        "compact_text_controls_change_style": true,
+        "composite_contains_annotation": true,
+        "context_copy_uses_composite": true,
+        "core_tools_share_first_row": true,
+        "corrected_font_size_clears_own_error": true,
+        "corrected_range_keeps_new_layout_error": true,
+        "corrected_stroke_width_clears_own_error": true,
+        "direct_arrow_move_undo": true,
+        "draft_blocks_export": true,
+        "draw_event_creates_object": true,
+        "drawing_does_not_offer_text_selection": true,
+        "empty_canvas_still_draws_arrow": true,
+        "font_input_changes_size": true,
+        "invalid_font_size_keeps_value": true,
+        "invalid_stroke_width_keeps_value": true,
+        "minimum_window_keeps_canvas": true,
+        "minimum_window_keeps_primary_controls": true,
+        "move_event_updates_object": true,
+        "move_redo": true,
+        "move_undo": true,
+        "number_sequence": true,
+        "number_undo_restores_next": true,
+        "pin_copy_uses_composite": true,
+        "pin_edit_independent": true,
+        "pin_initial_space_enters_editing": true,
+        "pin_keeps_editable_objects": true,
+        "pin_opacity_menu_changes_view_only": true,
+        "rectangle_selection_replaces_arrow_options": true,
+        "resize_event_updates_object": true,
+        "selected_arrow_body_moves_without_new_object": true,
+        "selected_style_keeps_tool_default": true,
+        "selection_hides_irrelevant_style_controls": true,
+        "stroke_input_keeps_unrelated_error": true,
+        "style_buttons_route_to_current_tool": true,
+        "style_panel_stays_in_window": true,
+        "style_preview_controls_change_arrow_and_line": true,
+        "text_selection_reveals_font_options": true,
+        "transaction_blocks_export": true,
+        "visible_endpoint_edits_in_arrow_mode": true
+      },
+      "cancel_window_pick": true,
+      "closed_windows_removed": true,
+      "copy_closes_editor_only": true,
+      "escape_clears_then_cancels": true,
+      "escape_restores_drag": true,
+      "fixture_only": true,
+      "hex_key_clipboard": true,
+      "hotkey_conflict_keeps_old_bindings": true,
+      "hotkey_fallback_as_primary": true,
+      "hotkey_reapply": true,
+      "jpeg_roundtrip": true,
+      "passed": true,
+      "png_roundtrip": true,
+      "resize_event_callback": true,
+      "rgb_key_clipboard": true,
+      "selection_callback_crop": true,
+      "settings_recorder": {
+        "close_stops_recording": true,
+        "escape_stops_recording": true,
+        "failed_change_keeps_value": true,
+        "recording_accepts_key": true,
+        "recording_pause_resume_balanced": true
+      },
+      "two_windows_and_pin_level": true,
+      "window_click_target": true,
+      "window_drag_is_region": true
+    }
+  },
+  "previews": [
+    {
+      "path": "previews/audience-arrow-light-2026-11-03.png",
+      "sha256": "97e2a3fde0762cdb64e79bda272af37c7614e6c93a11afd23bdfa46c1f7c1e5c",
+      "stage": "第1轮修正后捕获；后续事件/错误修正不改布局；主代理及后续审查者均实际查看"
+    },
+    {
+      "path": "previews/audience-text-dark-2026-11-03.png",
+      "sha256": "ccf1b72b75da73246771cd93f13e3ac7fd2c996f008599856a3201a5264f933c",
+      "stage": "第1轮修正后捕获；后续事件/错误修正不改布局；主代理及后续审查者均实际查看"
+    }
+  ],
+  "remaining": [
+    "框选完成中转与输出入口",
+    "椭圆直线可见入口",
+    "Shift正形",
+    "文字输入时输出入口"
+  ],
+  "limitations": [
+    "模拟观众评价，不是真人测试",
+    "未重发安装包或安装",
+    "未宣称全部功能、硬件或输入法验收通过"
+  ]
+}

@@ -115,21 +115,26 @@ import AppKit
         guard editingEnabled, let point = canonical(convert(event.locationInWindow, from: nil)) else { return }
         if textEditor != nil { _ = finishTextEditing(); return }
         window?.makeFirstResponder(self)
+        // 已显示的控制点在当前工具下也应可拖动；空白区域继续绘制。
+        if let object = selected {
+            if object.tool == .line || object.tool == .arrow {
+                if hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
+                if hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
+            } else if let handle = SelectionHandle.allCases.first(where: { hypot(point.x-$0.point(in: object.bounds).x, point.y-$0.point(in: object.bounds).y) <= tolerance }) {
+                begin(.resize(object, handle), at: point, object: object); return
+            }
+        }
         if tool == .text {
             if let object = object(at: point), object.tool == .text { beginTextEditing(object, at: point) }
             else { beginTextEditing(nil, at: point) }
             return
         }
+        // 已选几何对象可直接挪动；画笔、遮挡和连续编号仍保留原来的绘制方式。
+        if [.arrow,.line,.rectangle,.ellipse].contains(tool), let object = selected, object.hit(point,tolerance:tolerance) {
+            begin(.move(object),at:point,object:object); return
+        }
         if tool == .select {
             if event.clickCount >= 2, let object = object(at: point), object.tool == .text { beginTextEditing(object, at: point); return }
-            if let object = selected {
-                if object.tool == .line || object.tool == .arrow {
-                    if hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
-                    if hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
-                } else if let handle = SelectionHandle.allCases.first(where: { hypot(point.x-$0.point(in: object.bounds).x, point.y-$0.point(in: object.bounds).y) <= tolerance }) {
-                    begin(.resize(object, handle), at: point, object: object); return
-                }
-            }
             guard let object = object(at: point) else { deselect(); return }
             selectedID = object.id; onSelectionChanged?(); begin(.move(object), at: point, object: object)
         } else {

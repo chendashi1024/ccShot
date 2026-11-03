@@ -77,8 +77,27 @@ extension ImageWindow {
         let buttons = descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }
         buttons.first(where: { $0.title == "画框" })?.performClick(nil)
         editor.window!.contentView!.layoutSubtreeIfNeeded()
-        descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where: { $0.identifier?.rawValue == "style-width-16" })?.performClick(nil)
-        result["style_buttons_route_to_current_tool"] = canvas.tool == .rectangle && preferences.annotationStyle(for: .rectangle).width == 16 && document.state.objects.first?.style.width == 12
+        descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where: { $0.identifier?.rawValue == "style-width-8" })?.performClick(nil)
+        result["style_buttons_route_to_current_tool"] = canvas.tool == .rectangle && preferences.annotationStyle(for: .rectangle).width == 8 && document.state.objects.first?.style.width == 12
+        canvas.chooseTool(.arrow)
+        canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 100,y:100)))
+        canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 250,y:150)))
+        canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 250,y:150)))
+        let arrowCount = document.state.objects.count
+        canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 250,y:150)))
+        canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 300,y:180)))
+        canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 300,y:180)))
+        result["visible_endpoint_edits_in_arrow_mode"] = document.state.objects.count == arrowCount && document.state.objects.last?.end == CGPoint(x:300,y:180) && canvas.tool == .arrow
+        canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 200,y:140)))
+        canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 240,y:160)))
+        canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 240,y:160)))
+        result["selected_arrow_body_moves_without_new_object"] = document.state.objects.count == arrowCount && document.state.objects.last?.start == CGPoint(x:140,y:120) && document.state.objects.last?.end == CGPoint(x:340,y:200)
+        editor.undo(nil)
+        result["direct_arrow_move_undo"] = document.state.objects.last?.start == CGPoint(x:100,y:100) && document.state.objects.last?.end == CGPoint(x:300,y:180)
+        canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 20,y:300)))
+        canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 70,y:340)))
+        canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 70,y:340)))
+        result["empty_canvas_still_draws_arrow"] = document.state.objects.count == arrowCount+1
         return result
     }
     static func annotationPreview(_ image: CGImage, to path: String) async -> Bool {

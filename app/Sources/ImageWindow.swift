@@ -43,6 +43,7 @@ import UniformTypeIdentifiers
     private let brushWidth = StyleSlider(value: 32, minValue: 1, maxValue: 80, target: nil, action: nil)
     private let brushLabel = NSTextField(labelWithString: "笔宽")
     private let widthLabel = NSTextField(labelWithString: "4 px")
+    private let strokeWidthField = NSTextField(string: "4")
     private let colorWell = NSColorWell()
     private let fillButton = NSSegmentedControl(labels: ["描边", "半透明", "实心"], trackingMode: .selectOne, target: nil, action: nil)
     private let dashButton = NSSegmentedControl(labels: ["实线", "虚线"], trackingMode: .selectOne, target: nil, action: nil)
@@ -200,6 +201,10 @@ import UniformTypeIdentifiers
         styleRow.addArrangedSubview(fontSizeField)
         styleRow.addArrangedSubview(boldButton); styleRow.addArrangedSubview(textBackground)
         for width in [2, 4, 8, 16] { let value = button("\(width)", #selector(widthPreset(_:))); value.tag = width; presetButtons.append(value); styleRow.addArrangedSubview(value) }
+        strokeWidthField.target = self; strokeWidthField.action = #selector(changeStrokeWidth); strokeWidthField.delegate = self
+        strokeWidthField.alignment = .center; strokeWidthField.widthAnchor.constraint(equalToConstant:50).isActive = true
+        strokeWidthField.toolTip = "线宽：1–80 px"; strokeWidthField.setAccessibilityLabel("线宽（像素）")
+        styleRow.addArrangedSubview(strokeWidthField)
         paletteTray.spacing = 4; paletteTray.edgeInsets = NSEdgeInsets(top:4,left:6,bottom:4,right:6)
         paletteTray.wantsLayer = true; paletteTray.layer?.cornerRadius = 8
         paletteTray.layer?.borderWidth = 1; paletteTray.layer?.borderColor = NSColor.separatorColor.cgColor
@@ -252,10 +257,13 @@ import UniformTypeIdentifiers
             let selected = tool == canvas.tool; button.state = selected ? .on : .off
             button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor
         }
+        let strokeWidth = [.rectangle,.ellipse,.arrow,.line,.pen,.highlight].contains(tool)
         let solidMask = tool == .mask && style.maskEffect == .solid
         for control in [widthTitle,widthSlider,widthLabel] as [NSView] {control.isHidden=solidMask}
         for control in presetButtons {control.isHidden=solidMask || tool == .text}
-        widthSlider.isHidden = solidMask || tool == .text; widthLabel.isHidden = widthSlider.isHidden
+        widthSlider.isHidden = solidMask || tool == .text || strokeWidth; widthLabel.isHidden = widthSlider.isHidden
+        strokeWidthField.isHidden = !strokeWidth
+        if window?.firstResponder !== strokeWidthField.currentEditor() { strokeWidthField.stringValue = "\(Int(style.width))" }
         fontSizeField.isHidden = tool != .text
         if window?.firstResponder !== fontSizeField.currentEditor() { fontSizeField.stringValue = "\(Int(style.fontSize))" }
         paletteTray.isHidden = tool == .mask && !solidMask
@@ -264,8 +272,8 @@ import UniformTypeIdentifiers
         widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
         widthSlider.doubleValue = Double(width); widthLabel.stringValue = "\(Int(width)) px";
         let presetWidths = tool == .text ? [16,24,32,48] : tool == .mask ? [8,16,32,64] : [2,4,8,16]
-        let strokeWidth = [.rectangle,.ellipse,.arrow,.line,.pen,.highlight].contains(tool)
         for (button, value) in zip(presetButtons,presetWidths) {
+            button.isHidden = solidMask || tool == .text || strokeWidth && value == 16
             button.title = strokeWidth ? "" : "\(value)"; button.tag = value
             button.image = strokeWidth ? stylePreview("width",width:CGFloat(value)) : nil
             button.imagePosition = strokeWidth ? .imageOnly : .noImage
@@ -306,8 +314,14 @@ import UniformTypeIdentifiers
             redoButton.isEnabled = annotationDocument.canRedo && !canvas.hasDraft && !annotationDocument.inTransaction
         }
         overlay.isHidden = canvas.hasDraft || canvas.tool != .select || canvas.selected != nil
+        if status.stringValue.hasPrefix("拖选文字后") || status.stringValue.hasPrefix("没有发现文字") || status.stringValue == imageDimensions { status.stringValue = contextualStatus }
         updateCopyTitle()
         canvas.needsDisplay = true
+    }
+    private var imageDimensions: String { "\(annotationDocument.baseImage.width) × \(annotationDocument.baseImage.height) px" }
+    private var contextualStatus: String {
+        guard !overlay.isHidden else { return imageDimensions }
+        return overlay.text.isEmpty ? "没有发现文字 · \(imageDimensions)" : "拖选文字后 ⌘C 复制 · \(imageDimensions)"
     }
     private func updateCopyTitle() {
         let title = !overlay.isHidden && overlay.hasActiveTextSelection && !overlay.selectedText.isEmpty ? "复制文字" : "复制"
@@ -346,13 +360,24 @@ import UniformTypeIdentifiers
     }
     @objc private func finishText() { _ = canvas.finishTextEditing() }
     @objc private func cancelText() { canvas.cancelTextEditing() }
+    @objc private func changeStrokeWidth() {
+        guard [.rectangle,.ellipse,.arrow,.line,.pen,.highlight].contains(canvas.currentTool) else { return }
+        guard let value = Int(strokeWidthField.stringValue), (1...80).contains(value) else {
+            strokeWidthField.stringValue = "\(Int(canvas.currentStyle.width))"; status.stringValue = "线宽须为 1–80 的整数"; return
+        }
+        let clearsOwnError = status.stringValue == "线宽须为 1–80 的整数"
+        var style = canvas.currentStyle; style.width = CGFloat(value); canvas.changeStyle(style)
+        if clearsOwnError && status.stringValue == "线宽须为 1–80 的整数" { status.stringValue = contextualStatus }
+    }
     @objc private func changeFontSize() {
         guard canvas.currentTool == .text else { return }
         guard let size = Int(fontSizeField.stringValue), (8...200).contains(size) else {
             fontSizeField.stringValue = "\(Int(canvas.currentStyle.fontSize))"
             status.stringValue = "字号须为 8–200 的整数"; return
         }
+        let clearsOwnError = status.stringValue == "字号须为 8–200 的整数"
         var style = canvas.currentStyle; style.fontSize = CGFloat(size); canvas.changeStyle(style)
+        if clearsOwnError && status.stringValue == "字号须为 8–200 的整数" { status.stringValue = contextualStatus }
     }
     @objc private func changeTextStyle() {
         var style = canvas.currentStyle; style.bold = boldButton.state == .on; style.textBackground = textBackground.state == .on; style.backgroundColor = AnnotationColor(red:1,green:0.96,blue:0.72); canvas.changeStyle(style)
@@ -381,6 +406,7 @@ import UniformTypeIdentifiers
     func controlTextDidEndEditing(_ notification: Notification) {
         if notification.object as? NSTextField === numberField { changeNumber() }
         if notification.object as? NSTextField === fontSizeField { changeFontSize() }
+        if notification.object as? NSTextField === strokeWidthField { changeStrokeWidth() }
     }
     @objc private func toggleEditing() {
         guard pinned else { return }
@@ -447,7 +473,7 @@ import UniformTypeIdentifiers
                 let result = try await ImageAnalyzer().analyze(input, orientation: .up, configuration: config)
                 guard let self, !Task.isCancelled, !closed, token == generation, revision == annotationDocument.revision else { return }
                 overlay.analysis = result; overlay.setContentsRectNeedsUpdate(); updateCopyTitle()
-                status.stringValue = result.transcript.isEmpty ? "没有发现文字" : "拖选文字后 ⌘C 复制 · \(image.width) × \(image.height) px"
+                status.stringValue = contextualStatus
             } catch {
                 guard let self, !closed, !Task.isCancelled, token == generation else { return }
                 if !occlusions.isEmpty { baseRegionsTask = nil }
@@ -554,7 +580,17 @@ extension ImageWindow {
         var result = ["core_tools_share_first_row":toolButtons.count == 8 && toolButtons.values.allSatisfy { $0.superview === toolRow && !$0.isHidden },"minimum_window_keeps_primary_controls":contained,"minimum_window_keeps_canvas":canvas.bounds.height >= 160]
         canvas.chooseTool(.arrow); root.layoutSubtreeIfNeeded()
         result["arrow_selection_reveals_style_without_extra_click"] = !styleRow.isHidden && !optionRow.isHidden && !arrowPicker.isHidden && !arrowTitle.isHidden
+        status.stringValue = "拖选文字后 ⌘C 复制"; updateControls()
+        result["drawing_does_not_offer_text_selection"] = !status.stringValue.contains("拖选文字")
         let initialArrowStyle = canvas.currentStyle
+        strokeWidthField.stringValue = "12"; changeStrokeWidth()
+        result["compact_stroke_controls"] = widthSlider.isHidden && !strokeWidthField.isHidden && presetButtons.filter { !$0.isHidden }.count == 3 && canvas.currentStyle.width == 12
+        strokeWidthField.stringValue = "0"; changeStrokeWidth()
+        result["invalid_stroke_width_keeps_value"] = canvas.currentStyle.width == 12 && strokeWidthField.stringValue == "12"
+        strokeWidthField.stringValue = "12"; changeStrokeWidth()
+        result["corrected_stroke_width_clears_own_error"] = !status.stringValue.contains("线宽须为")
+        status.stringValue = "保存失败，请重试"; changeStrokeWidth()
+        result["stroke_input_keeps_unrelated_error"] = status.stringValue == "保存失败，请重试"
         arrowPicker.selectedSegment = 1; arrowPicker.sendAction(arrowPicker.action,to:arrowPicker.target)
         dashButton.selectedSegment = 1; dashButton.sendAction(dashButton.action,to:dashButton.target)
         result["style_preview_controls_change_arrow_and_line"] = canvas.currentStyle.arrowHead == .open && canvas.currentStyle.dashed && arrowPicker.image(forSegment:1) != nil && dashButton.image(forSegment:1) != nil
@@ -569,10 +605,25 @@ extension ImageWindow {
         result["font_input_changes_size"] = canvas.currentStyle.fontSize == 32 && widthSlider.isHidden && presetButtons.allSatisfy { $0.isHidden } && !fontSizeField.isHidden
         fontSizeField.stringValue = "abc"; changeFontSize()
         result["invalid_font_size_keeps_value"] = canvas.currentStyle.fontSize == 32 && fontSizeField.stringValue == "32"
+        fontSizeField.stringValue = "24"; changeFontSize()
+        result["corrected_font_size_clears_own_error"] = canvas.currentStyle.fontSize == 24 && !status.stringValue.contains("字号须为")
         boldButton.performClick(nil); textBackground.performClick(nil)
         result["compact_text_controls_change_style"] = canvas.currentStyle.bold != originalTextStyle.bold && canvas.currentStyle.textBackground != originalTextStyle.textBackground && optionRow.isHidden && !paletteTray.isHidden
         canvas.changeStyle(originalTextStyle)
-        canvas.chooseTool(.select); root.layoutSubtreeIfNeeded()
+        let originalState = annotationDocument.state
+        var textState = originalState
+        let longText = AnnotationObject(tool:.text,style:.initial(.text),start:CGPoint(x:20,y:20),end:CGPoint(x:220,y:120),text:"第一行\n第二行\n第三行",textLayoutWidth:200)
+        textState.objects.append(longText); annotationDocument.commit(textState)
+        canvas.chooseTool(.select)
+        let imagePoint = CGPoint(x:50,y:50), rect = canvas.contentRect
+        let viewPoint = CGPoint(x:rect.minX+imagePoint.x/CGFloat(annotationDocument.baseImage.width)*rect.width,y:rect.minY+imagePoint.y/CGFloat(annotationDocument.baseImage.height)*rect.height)
+        func selectionEvent(_ type: NSEvent.EventType) -> NSEvent { NSEvent.mouseEvent(with:type,location:canvas.convert(viewPoint,to:nil),modifierFlags:[],timestamp:0,windowNumber:window.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:1)! }
+        canvas.mouseDown(with:selectionEvent(.leftMouseDown)); canvas.mouseUp(with:selectionEvent(.leftMouseUp))
+        fontSizeField.stringValue = "0"; changeFontSize()
+        fontSizeField.stringValue = "200"; changeFontSize()
+        result["corrected_range_keeps_new_layout_error"] = canvas.selected?.id == longText.id && canvas.currentStyle.fontSize == 24 && status.stringValue == "文字超出截图，请调小字号"
+        canvas.chooseTool(.select); annotationDocument.commit(originalState)
+        root.layoutSubtreeIfNeeded()
         result["selection_hides_irrelevant_style_controls"] = styleRow.isHidden && optionRow.isHidden
         copyButton.title = previousCopyTitle
         window.setFrame(original,display:true); root.layoutSubtreeIfNeeded()
