@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 # 其它会话的文档变更不影响打包；应用的构建输入必须已经提交。
-if [ -n "$(git status --porcelain -- Sources Tests build.sh check.sh check-displays.sh package.sh 试用说明.md)" ]; then
+if [ -n "$(git status --porcelain -- Sources Tests build.sh check.sh check-displays.sh check-performance.sh package.sh 试用说明.md)" ]; then
   echo "应用构建输入尚未提交，请先精确提交后打包。" >&2
   exit 1
 fi

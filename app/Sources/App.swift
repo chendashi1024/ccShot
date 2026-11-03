@@ -63,7 +63,29 @@ import QuartzCore
         }
         if fixture == nil && CommandLine.arguments.contains("--capture-now") { capture() }
         NotificationCenter.default.addObserver(self, selector: #selector(screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        if let path=argument("--benchmark-report"),let mode=argument("--benchmark-mode"),let fixtures=argument("--benchmark-fixtures") {
+            Task { @MainActor in
+                let result=await PerformanceVerification.run(mode:mode,reportPath:path,fixtureDirectory:fixtures,controller:self,displayHost:argument("--benchmark-display-host"))
+                hotkeys.shutdown();exit(result)
+            }
+        }
     }
+    func performanceReadyState() -> [String:Any] {
+        statusItem.button?.window?.displayIfNeeded();CATransaction.flush()
+        let ready=statusItem.button?.window != nil && statusItem.menu != nil && hotkeys.activeCount>0 && hotkeyWarning==nil
+        return ["ready":ready,"status_button_attached":statusItem.button?.window != nil,"registered_hotkeys":hotkeys.activeCount,"hotkey_warning":hotkeyWarning != nil]
+    }
+    func performanceSelectionObservation() -> [String:Any]? {
+        guard let window=selectionWindow,let view=window.contentView as? SelectionView else {return nil}
+        window.displayIfNeeded();CATransaction.flush()
+        let submitted=ProcessInfo.processInfo.systemUptime
+        let image=view.image,sx=CGFloat(image.width)/view.bounds.width,sy=CGFloat(image.height)/view.bounds.height
+        func pixel(_ x:CGFloat,_ y:CGFloat)->SampledColor? {PixelSampler.color(in:image,x:Int(x*sx),y:image.height-1-Int(y*sy))}
+        let a=pixel(25,25),b=pixel(view.bounds.width-25,25),c=pixel(25,view.bounds.height-25),d=pixel(view.bounds.width-25,view.bounds.height-25)
+        let fixture=(a.map{$0.red>180 && $0.green<130 && $0.blue<130} ?? false) && (b.map{$0.green>180 && $0.red<130 && $0.blue<130} ?? false) && (c.map{$0.blue>180 && $0.red<130 && $0.green<130} ?? false) && (d.map{$0.red>180 && $0.green>180 && $0.blue<130} ?? false)
+        return ["ready":window.isVisible && window.isKeyWindow && window.firstResponder === view,"submitted_uptime":submitted,"width":image.width,"height":image.height,"fixture_corners_valid":fixture]
+    }
+    func performanceCloseSelection() {cancelCapture()}
     private func argument(_ flag: String) -> String? {
         let args = CommandLine.arguments
         guard let index = args.firstIndex(of: flag), index + 1 < args.count else { return nil }
