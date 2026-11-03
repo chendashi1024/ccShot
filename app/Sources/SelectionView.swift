@@ -30,7 +30,7 @@ enum SelectionAction { case edit, copy, save, pin }
     init(image: CGImage, frame: NSRect) {
         self.image = image
         super.init(frame: frame)
-        for (title, action) in [("重新选择", #selector(reset)), ("取消", #selector(cancel)), ("完成", #selector(confirm))] {
+        for (title, action) in [("重新选择", #selector(reset)), ("取消", #selector(cancel)), ("完成", #selector(confirm)), ("复制", #selector(copy(_:))), ("保存", #selector(saveDocument(_:))), ("钉住", #selector(pinSelection))] {
             let button = NSButton(title: title, target: self, action: action)
             button.bezelStyle = .rounded
             actions.addArrangedSubview(button)
@@ -216,7 +216,7 @@ enum SelectionAction { case edit, copy, save, pin }
     }
     @objc func copy(_ sender: Any?) { finish(.copy) }
     @objc func saveDocument(_ sender: Any?) { finish(.save) }
-    func pinSelection() { finish(.pin) }
+    @objc func pinSelection() { finish(.pin) }
     @objc func confirm() { finish(.edit) }
     private func finish(_ action: SelectionAction) {
         guard let pixels = selectionPixels,

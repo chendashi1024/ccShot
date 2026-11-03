@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-03",
+  "scope": "补齐框选条复制/保存/钉住可见入口，基础交互对标07局部修复",
+  "source_base": "635ea356e405ace4ef6dc6c8fa46daffc8a62b59",
+  "source_hashes": {
+    "app/Sources/SelectionView.swift": "6a25e7744189870e4b7feb815bea1b5863b3199b0b0aa042a667b8762ce13d7c",
+    "app/Tests/SelectionOutputTests.swift": "511dbb9032ffa8a5943ad7d85b30cc6c5c21c178dc5d3c1d2dae258cb81dc378",
+    "app/check.sh": "61682f8f7ef9a172d87bd5d5ce9956257f34c6154f220d763c7f84a8ca42a1b0",
+    "app/previews/selection-outputs-2026-11-03.png": "ab829b130965cad3b0d9b46f16092c044a025766b1cd6444d0871255814ed403"
+  },
+  "red": "未改生产代码时检查以退出码1报告框选后缺少可见的复制按钮",
+  "checks": {
+    "native_buttons_dispatch_distinct_current_selection_actions": true,
+    "crop_dimensions_are_120_by_96_for_hand_checked_fixture_region": true,
+    "three_sampled_pixels_match_current_source_region": true,
+    "cleared_selection_never_outputs_previous_image": true,
+    "edge_selection_keeps_toolbar_inside_canvas": true,
+    "existing_geometry_and_window_target_regression": true,
+    "independent_app_build": true,
+    "check_script_syntax": true
+  },
+  "visual": "已查看原生SelectionView渲染原图，六按钮无裁切；使用虚构样本，非真实桌面或实体输入证据",
+  "preview": "previews/selection-outputs-2026-11-03.png",
+  "main_app_rebuilt_or_restarted": false,
+  "new_package": false,
+  "clipboard_touched": false,
+  "new_permissions": false,
+  "limits": [
+    "按钮触发检查停在真实SelectionView的输出回调，不声称本轮实际写入剪贴板/保存文件",
+    "已确认的选区像素生产和App端既有输出消费者不变",
+    "框选后直达具体标注工具、形状可见入口和Shift正形等其他已知缺口继续保留",
+    "当前运行App未替换，本次源码修改尚不在已交付312e12da试用包"
+  ]
+}

@@ -6,6 +6,8 @@ xcrun swiftc Sources/CaptureGeometry.swift Sources/SelectionHandle.swift Sources
 build/geometry-tests
 xcrun swiftc Sources/AppPreferences.swift Tests/PreferencesTests.swift -o build/preferences-tests
 build/preferences-tests
+xcrun swiftc Sources/CaptureGeometry.swift Sources/SelectionHandle.swift Sources/PixelSampler.swift Sources/WindowTarget.swift Sources/SelectionView.swift Tests/SelectionOutputTests.swift -o build/selection-output-tests
+build/selection-output-tests
 xcrun swiftc Sources/AnnotationModel.swift Sources/AnnotationTextLayout.swift Sources/AnnotationRenderer.swift Sources/AnnotationPreferences.swift Sources/AppPreferences.swift Sources/PixelSampler.swift Tests/AnnotationTests.swift -o build/annotation-tests
 xcrun swiftc Sources/AnnotationModel.swift Sources/AnnotationTextLayout.swift Sources/AnnotationRenderer.swift Sources/PixelSampler.swift Tests/SolidMaskTests.swift -o build/solid-mask-tests
 build/solid-mask-tests
