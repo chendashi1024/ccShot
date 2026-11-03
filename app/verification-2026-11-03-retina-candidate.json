@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-03",
+  "source_revision": "6b579339262edc95fed882e43f95140a5995a1e8",
+  "package_relative_path": "app/build/packages/6b579339262edc95fed882e43f95140a5995a1e8/CcShot-0.1.0-dev-arm64.zip",
+  "package_sha256": "41d20637d6ff621af0a8571a445d2500f8d31a2042b620122a51e1c7ad250521",
+  "package_bytes": 378254,
+  "checks": {
+    "archive_sha256_matches": true,
+    "signature_verified": true,
+    "binary_matches_build": true,
+    "source_revision_matches": true,
+    "arm64_only": true,
+    "macos14_target": true
+  },
+  "passed": true,
+  "supersedes": "efc4fd10的试用包存在整屏截图Retina半分辨率及选字Esc关窗问题；本包对应修复源码",
+  "functional_evidence": "verification-2026-11-03-display.json",
+  "installed_verified": false,
+  "public_release": false,
+  "new_permissions": false,
+  "remaining": [
+    "实体全局键",
+    "真实中文输入法候选",
+    "混合1x/2x设备",
+    "新装/升级权限",
+    "规范性能/稳定性基准",
+    "异常卷保存恢复",
+    "用户整体视觉确认"
+  ]
+}
