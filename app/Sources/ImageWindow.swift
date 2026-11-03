@@ -3,6 +3,7 @@ import VisionKit
 import UniformTypeIdentifiers
 
 @MainActor final class AnnotationWindow: NSWindow {
+    override var canBecomeKey: Bool {true}
     var handleCanvasKey: ((NSEvent) -> Bool)?
     override func keyDown(with event: NSEvent) {
         if handleCanvasKey?(event) != true { super.keyDown(with: event) }
@@ -22,7 +23,15 @@ import UniformTypeIdentifiers
     let pinned: Bool
     let canvas: AnnotationCanvas
     private let overlay = ImageAnalysisOverlayView()
-    private let status = NSTextField(labelWithString: "正在识别文字…")
+    private let status = ScreenshotStatus(labelWithString: "正在识别文字…")
+    private let screenshot:ScreenshotPresentation?
+    private var screenshotView:ScreenshotView?
+    private var toolbarPanel:CoreSurfaceView?
+    private var parametersPanel:CoreSurfaceView?
+    private var toolbarContent:NSStackView?
+    private var parametersContent:NSStackView?
+    var onReselect:((CGRect)->Bool)?
+    var isScreenshot:Bool {screenshot != nil}
     private let toolRow = NSStackView()
     private let viewerRow = NSStackView()
     private var copyButton: NSButton!
@@ -44,7 +53,7 @@ import UniformTypeIdentifiers
     private let brushLabel = NSTextField(labelWithString: "笔宽")
     private let widthLabel = NSTextField(labelWithString: "4 px")
     private let strokeWidthField = NSTextField(string: "4")
-    private let colorWell = NSColorWell()
+    private let colorWell = ScreenshotColorWell()
     private let fillButton = NSSegmentedControl(labels: ["描边", "半透明", "实心"], trackingMode: .selectOne, target: nil, action: nil)
     private let dashButton = NSSegmentedControl(labels: ["实线", "虚线"], trackingMode: .selectOne, target: nil, action: nil)
     private let lineTitle = NSTextField(labelWithString: "线型")
@@ -76,22 +85,27 @@ import UniformTypeIdentifiers
     convenience init(image: CGImage, pinned: Bool, preferences: AppPreferences = .shared) {
         self.init(annotationDocument: AnnotationDocument(image: image), pinned: pinned, preferences: preferences)
     }
-    init(annotationDocument: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared) {
-        self.annotationDocument = annotationDocument; self.pinned = pinned; self.preferences = preferences
+    init(annotationDocument: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared, screenshot:ScreenshotPresentation? = nil) {
+        self.annotationDocument = annotationDocument; self.pinned = pinned; self.preferences = preferences; self.screenshot = pinned ? nil : screenshot
         canvas = AnnotationCanvas(document: annotationDocument, preferences: preferences)
         editing = !pinned
         let ratio = CGFloat(annotationDocument.baseImage.height) / CGFloat(annotationDocument.baseImage.width)
         let width: CGFloat = min(pinned ? 900 : 1040, max(pinned ? 420 : 880, CGFloat(annotationDocument.baseImage.width)))
         let height = min(780, max(pinned ? 260 : 360, width * ratio + 100))
-        let window = AnnotationWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height), styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
+        let window = AnnotationWindow(contentRect: screenshot?.screenFrame ?? NSRect(x:0,y:0,width:width,height:height),styleMask:screenshot == nil ? [.titled,.closable,.resizable,.miniaturizable] : [.borderless],backing:.buffered,defer:false)
         window.title = pinned ? "CcShot · 钉图" : "CcShot"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: pinned ? 420 : 880, height: pinned ? 260 : 300)
         window.backgroundColor = CoreAppearance.surface
+        if screenshot != nil {window.level = .screenSaver;window.collectionBehavior=[.canJoinAllSpaces,.fullScreenAuxiliary]}
         if pinned { window.level = .floating; window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] }
         super.init(window: window)
         window.delegate = self
-        let root = CoreSurfaceView(); window.contentView = root
+        let root:NSView
+        if let screenshot {
+            let view=ScreenshotView(presentation:screenshot,imagePixels:CGSize(width:annotationDocument.baseImage.width,height:annotationDocument.baseImage.height));screenshotView=view;root=view
+        } else {root=CoreSurfaceView()}
+        window.contentView = root
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         overlay.delegate = self; overlay.trackingImageView = canvas
@@ -104,7 +118,7 @@ import UniformTypeIdentifiers
         toolRow.setCustomSpacing(12,after:redoButton)
         let spacer = NSView(); spacer.setContentHuggingPriority(.defaultLow,for:.horizontal)
         spacer.widthAnchor.constraint(greaterThanOrEqualToConstant:8).isActive = true
-        pinButton = button("钉住",#selector(pinImage)); saveButton = button("保存",#selector(saveImage)); copyButton = button("复制",#selector(copy(_:)))
+        pinButton = button("钉住",#selector(pinImage)); saveButton = button("保存",#selector(saveImage)); copyButton = button("复制",screenshot == nil ? #selector(copy(_:)) : #selector(toolbarCopy))
         donePinButton = button("完成",#selector(toggleEditing))
         for value in [donePinButton,pinButton,saveButton,copyButton] { toolRow.addArrangedSubview(value!) }
         finishTextButton = button("完成文字",#selector(finishText)); cancelTextButton = button("取消",#selector(cancelText))
@@ -118,6 +132,7 @@ import UniformTypeIdentifiers
         for view in [editButton,viewerCopyButton,button("关闭",#selector(closeImage))] { viewerRow.addArrangedSubview(view!) }
         canvas.menu = makeContextMenu()
         status.textColor = .labelColor; status.font = .systemFont(ofSize:13)
+        if screenshot != nil {configureScreenshot(root:root)} else {
         let stack = NSStackView(views:[toolRow,viewerRow,styleRow,optionRow,canvas,status])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(stack)
@@ -126,6 +141,7 @@ import UniformTypeIdentifiers
             stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 12), stack.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -12),
             toolRow.widthAnchor.constraint(equalTo:stack.widthAnchor), canvas.widthAnchor.constraint(equalTo: stack.widthAnchor), canvas.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
         ])
+        }
         canvas.onError = { [weak self] message in self?.status.stringValue = message }
         canvas.onPreviewBegin = { [weak self] in self?.invalidateRecognition() }
         canvas.onDocumentChanged = { [weak self] in self?.updateControls(); self?.recognize() }
@@ -135,16 +151,93 @@ import UniformTypeIdentifiers
         canvas.onSpace = { [weak self] in if self?.pinned == true { self?.toggleEditing() } else { self?.copyImage() } }
         canvas.onExit = { [weak self] in self?.cancelOperation(nil) }
         canvas.onZoom = { [weak self] factor in self?.zoom(factor) }
-        updateControls(); window.center(); showWindow(nil); window.makeKeyAndOrderFront(nil)
+        screenshotView?.onLayout = { [weak self] in self?.layoutScreenshot() }
+        screenshotView?.onAdjustmentBegin = { [weak self] in self?.invalidateRecognition() }
+        screenshotView?.onAdjustmentCancel = { [weak self] in self?.recognize() }
+        screenshotView?.onRegionChange = { [weak self] rect in self?.onReselect?(rect) ?? false }
+        status.onChange = { [weak self] in if self?.screenshot != nil {self?.layoutScreenshot()} }
+        updateControls(); if screenshot == nil {window.center()} else if let screenshot {window.setFrame(screenshot.screenFrame,display:false)}
+        showWindow(nil); window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
-        window.handleCanvasKey = { [weak self] event in self?.canvas.handleKey(event) ?? false }
+        window.handleCanvasKey = { [weak self] event in guard self?.screenshotView?.isAdjusting != true else {return false}; return self?.canvas.handleKey(event) ?? false }
         window.makeFirstResponder(canvas)
         root.layoutSubtreeIfNeeded(); overlay.frame = canvas.bounds; overlay.setContentsRectNeedsUpdate()
         recognize()
     }
     required init?(coder: NSCoder) { nil }
+    private func configureScreenshot(root:NSView) {
+        guard let root=root as? ScreenshotView else {return}
+        root.addSubview(canvas);root.imageView=canvas;root.installBorder()
+        func panel(_ rows:[NSView])->(CoreSurfaceView,NSStackView) {
+            let panel=CoreSurfaceView();panel.wantsLayer=true;panel.layer?.cornerRadius=10;panel.layer?.masksToBounds=true
+            panel.layer?.borderWidth=1;panel.layer?.borderColor=NSColor.separatorColor.cgColor
+            let content=NSStackView(views:rows);content.orientation = .vertical;content.alignment = .leading;content.spacing=10
+            content.translatesAutoresizingMaskIntoConstraints=false;panel.addSubview(content)
+            NSLayoutConstraint.activate([content.leadingAnchor.constraint(equalTo:panel.leadingAnchor,constant:8),content.trailingAnchor.constraint(equalTo:panel.trailingAnchor,constant:-8),content.topAnchor.constraint(equalTo:panel.topAnchor,constant:8),content.bottomAnchor.constraint(equalTo:panel.bottomAnchor,constant:-8)])
+            root.addSubview(panel);return(panel,content)
+        }
+        for view in toolRow.arrangedSubviews {toolRow.removeArrangedSubview(view);view.removeFromSuperview()}
+        let symbols:[AnnotationTool:String]=[.arrow:"arrow.up.right",.rectangle:"rectangle",.text:"textformat",.pen:"pencil",.mask:"rectangle.fill",.highlight:"highlighter",.number:"number.circle",.select:"cursorarrow"]
+        for tool in [AnnotationTool.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
+            guard let button=toolButtons[tool] else {continue}
+            if tool == .text {
+                let icon=NSImage(size:NSSize(width:16,height:20),flipped:false) {_ in
+                    ("T" as NSString).draw(at:CGPoint(x:2,y:0),withAttributes:[.font:NSFont.systemFont(ofSize:19,weight:.medium),.foregroundColor:NSColor.black]);return true
+                };icon.isTemplate=true;button.image=icon
+            } else {button.image=NSImage(systemSymbolName:symbols[tool]!,accessibilityDescription:tool.title)}
+            toolRow.addArrangedSubview(button)
+        }
+        func separator() {let line=NSBox();line.boxType = .separator;line.widthAnchor.constraint(equalToConstant:1).isActive=true;line.heightAnchor.constraint(equalToConstant:24).isActive=true;toolRow.addArrangedSubview(line);toolRow.setCustomSpacing(8,after:line)}
+        separator()
+        if let select=toolButtons[.select] {select.title="";select.image=NSImage(systemSymbolName:"cursorarrow",accessibilityDescription:"选择文字或对象");toolRow.addArrangedSubview(select)}
+        toolRow.addArrangedSubview(undoButton);toolRow.addArrangedSubview(redoButton);separator()
+        for (button,symbol) in [(pinButton!,"pin"),(saveButton!,"square.and.arrow.down"),(copyButton!,"square.on.square")] {button.image=NSImage(systemSymbolName:symbol,accessibilityDescription:button.title);toolRow.addArrangedSubview(button)}
+        (copyButton as? ToolbarButton)?.primary=true
+        toolRow.addArrangedSubview(iconButton("xmark","关闭（Esc）",#selector(closeImage)))
+        toolRow.spacing=4
+        for button in toolRow.arrangedSubviews.compactMap({$0 as? ToolbarButton}) {button.refreshAppearance()}
+        (toolbarPanel,toolbarContent)=panel([toolRow])
+        (parametersPanel,parametersContent)=panel([styleRow,optionRow])
+        viewerRow.isHidden=true
+        root.addSubview(status);root.chrome=[toolbarPanel!,parametersPanel!,status]
+        paletteTray.setContentHuggingPriority(.required,for:.horizontal)
+        for view in paletteTray.arrangedSubviews {
+            for constraint in view.constraints where constraint.firstAttribute == .width && constraint.relation == .equal {constraint.constant=view === colorWell ? 28 : 22}
+            if let button=view as? NSButton {button.attributedTitle=NSAttributedString(string:"●",attributes:[.foregroundColor:AnnotationColor.palette[button.tag].nsColor,.font:NSFont.systemFont(ofSize:18)])}
+        }
+        for button in presetButtons {if let value=button as? ToolbarButton {value.compact=true}}
+        status.font = .systemFont(ofSize:13)
+    }
+    private func layoutScreenshot() {
+        guard let root=screenshotView,let toolbarPanel,let parametersPanel,let toolbarContent,let parametersContent else {return}
+        let primary=toolbarContent.fittingSize
+        let options=parametersContent.fittingSize
+        let parameterSize=styleRow.isHidden ? CGSize.zero : CGSize(width:options.width+16,height:options.height+16)
+        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:CGSize(width:primary.width+16,height:56),parameters:parameterSize,toolbarAnchorWidth:primary.width+16-(copyButton.title == "复制文字" ? 28 : 0)) else {
+            canvas.isHidden=true;toolbarPanel.isHidden=true;parametersPanel.isHidden=true;root.placement=nil;return
+        }
+        root.placement=placement;canvas.frame=placement.image;overlay.frame=canvas.bounds;overlay.setContentsRectNeedsUpdate()
+        canvas.isHidden=root.isAdjusting;toolbarPanel.isHidden=root.isAdjusting;parametersPanel.isHidden=root.isAdjusting || placement.parameters == nil
+        toolbarPanel.frame=placement.toolbar
+        if let frame=placement.parameters {parametersPanel.frame=frame}
+        root.canAdjust=root.presentation.allowsAdjustment && root.sourceGeometryAvailable && annotationDocument.state.objects.isEmpty && !canvas.hasDraft
+        let message=status.stringValue
+        status.isHidden=root.isAdjusting || message == imageDimensions || message.hasPrefix("拖选文字后") || message == "正在编辑…"
+        status.sizeToFit();status.frame.origin=CGPoint(x:placement.toolbar.minX+8,y:max(8,(placement.parameters?.minY ?? placement.toolbar.minY)-status.frame.height-8))
+        root.refreshBorder()
+    }
+    func suspendScreenshotForSettings() {
+        guard screenshot != nil else {return}
+        colorWell.suspend();window?.orderOut(nil)
+    }
+    func preserveScreenshotAfterScreenChange() {
+        guard let root=screenshotView,let window else {return}
+        colorWell.suspend();root.sourceGeometryAvailable=false
+        if let screen=window.screen ?? NSScreen.main {window.setFrame(screen.frame,display:true)}
+        layoutScreenshot()
+    }
     private func button(_ title: String, _ action: Selector) -> NSButton {
-        let button = NSButton(title:title,target:self,action:action); button.bezelStyle = .rounded; button.font = .systemFont(ofSize:14); button.heightAnchor.constraint(greaterThanOrEqualToConstant:28).isActive = true; return button
+        let button = screenshot == nil ? NSButton(title:title,target:self,action:action) : ToolbarButton(title:title,target:self,action:action); button.bezelStyle = .rounded; button.font = .systemFont(ofSize:14); button.heightAnchor.constraint(greaterThanOrEqualToConstant:28).isActive = true; return button
     }
     private func iconButton(_ symbol: String, _ title: String, _ action: Selector) -> NSButton {
         let value = button("",action); value.image = NSImage(systemSymbolName:symbol,accessibilityDescription:title); value.imagePosition = .imageOnly
@@ -249,13 +342,13 @@ import UniformTypeIdentifiers
         toolRow.isHidden = !editing
         styleRow.isHidden = !editing || tool == .select
         viewerRow.isHidden = !pinned || editing
-        window?.minSize = CGSize(width:editing ? 880 : 420,height:styleRow.isHidden ? (editing ? 300 : 260) : 480)
-        if !styleRow.isHidden, let window, window.frame.height < 480 {
+        if screenshot == nil {window?.minSize = CGSize(width:editing ? 880 : 420,height:styleRow.isHidden ? (editing ? 300 : 260) : 480)}
+        if screenshot == nil, !styleRow.isHidden, let window, window.frame.height < 480 {
             var frame = window.frame; frame.origin.y -= 480-frame.height; frame.size.height = 480; setVisibleFrame(frame)
         }
         for (tool, button) in toolButtons {
             let selected = tool == canvas.tool; button.state = selected ? .on : .off
-            button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor
+            button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor; (button as? ToolbarButton)?.refreshAppearance()
         }
         let strokeWidth = [.rectangle,.ellipse,.arrow,.line,.pen,.highlight].contains(tool)
         let solidMask = tool == .mask && style.maskEffect == .solid
@@ -305,7 +398,7 @@ import UniformTypeIdentifiers
         if window?.firstResponder !== numberField.currentEditor() { numberField.stringValue = "\(canvas.selected?.number ?? annotationDocument.state.nextNumber)" }
         optionRow.isHidden = styleRow.isHidden || [.pen,.highlight,.text].contains(tool)
         let input = canvas.textEditor
-        pinButton.isHidden = pinned || input != nil; saveButton.isHidden = input != nil; copyButton.isHidden = input != nil; donePinButton.isHidden = !pinned || input != nil
+        pinButton.isHidden = pinned || (input != nil && screenshot == nil); saveButton.isHidden = input != nil && screenshot == nil; copyButton.isHidden = input != nil && screenshot == nil; donePinButton.isHidden = !pinned || input != nil
         if let input {
             undoButton.isEnabled = input.undoManager?.canUndo == true && !input.hasMarkedText()
             redoButton.isEnabled = input.undoManager?.canRedo == true && !input.hasMarkedText()
@@ -316,6 +409,7 @@ import UniformTypeIdentifiers
         overlay.isHidden = canvas.hasDraft || canvas.tool != .select || canvas.selected != nil
         if status.stringValue.hasPrefix("拖选文字后") || status.stringValue.hasPrefix("没有发现文字") || status.stringValue == imageDimensions { status.stringValue = contextualStatus }
         updateCopyTitle()
+        if screenshot != nil {layoutScreenshot()}
         canvas.needsDisplay = true
     }
     private var imageDimensions: String { "\(annotationDocument.baseImage.width) × \(annotationDocument.baseImage.height) px" }
@@ -325,9 +419,10 @@ import UniformTypeIdentifiers
     }
     private func updateCopyTitle() {
         let title = !overlay.isHidden && overlay.hasActiveTextSelection && !overlay.selectedText.isEmpty ? "复制文字" : "复制"
-        copyButton?.title = title; viewerCopyButton?.title = title
+        copyButton?.title = title; viewerCopyButton?.title = title; (copyButton as? ToolbarButton)?.refreshAppearance()
         let help = title == "复制文字" ? "复制选中的文字" : "复制当前图片"; copyButton?.toolTip = help; viewerCopyButton?.toolTip = help
         canvas.menu = makeContextMenu()
+        if screenshot != nil {layoutScreenshot()}
     }
     private func makeContextMenu() -> NSMenu {
         let menu = NSMenu()
@@ -492,7 +587,7 @@ import UniformTypeIdentifiers
     var selectedTextForVerification: String { overlay.selectedText }
     func overlayView(_ overlayView: ImageAnalysisOverlayView, updatedMenuFor menu: NSMenu, for event: NSEvent, at point: CGPoint) -> NSMenu { makeContextMenu() }
     func stableImage() -> CGImage? {
-        guard !canvas.hasDraft, !annotationDocument.inTransaction else { status.stringValue = "请先完成当前编辑"; return nil }
+        guard !closed, screenshotView?.isAdjusting != true, !canvas.hasDraft, !annotationDocument.inTransaction else { status.stringValue = "请先完成当前编辑"; return nil }
         guard let image = canvas.previewImage else { status.stringValue = "图片合成失败，请撤销后重试"; return nil }
         return image
     }
@@ -515,7 +610,16 @@ import UniformTypeIdentifiers
         if menuItem.action == #selector(redo(_:)) { return annotationDocument.canRedo && !canvas.hasDraft && !annotationDocument.inTransaction }
         return true
     }
+    private func prepareOutput()->Bool {
+        if screenshot != nil,canvas.textEditor != nil {return canvas.finishTextEditing()}
+        return true
+    }
+    @objc private func toolbarCopy() {
+        guard prepareOutput() else {return}
+        copy(nil)
+    }
     @objc func copyImage() {
+        guard prepareOutput() else {return}
         guard let image = stableImage() else { return }
         guard let png = Self.encoded(image, type: .png) else { status.stringValue = "图片编码失败"; return }
         let pasteboard = NSPasteboard.general; pasteboard.clearContents()
@@ -535,6 +639,7 @@ import UniformTypeIdentifiers
     }
     @objc func saveDocument(_ sender: Any?) { saveImage() }
     @objc func saveImage() {
+        guard prepareOutput() else {return}
         guard stableImage() != nil, let window, window.attachedSheet == nil else { return }
         let panel = NSSavePanel(); panel.prompt = "保存"; panel.nameFieldLabel = "文件名："; panel.directoryURL = preferences.usableSaveDirectory
         panel.nameFieldStringValue = "CcShot-\(Int(Date().timeIntervalSince1970)).png"
@@ -551,7 +656,7 @@ import UniformTypeIdentifiers
     static func encoded(_ image: CGImage, type: UTType) -> Data? {
         ImageEncoding.data(image,type:type)
     }
-    @objc func pinImage() { guard stableImage() != nil else { return }; onPin?(annotationDocument.copied()) }
+    @objc func pinImage() { guard prepareOutput(),stableImage() != nil else { return }; onPin?(annotationDocument.copied());if screenshot != nil {close()} }
     @objc private func changeOpacity(_ sender: NSSlider) { window?.alphaValue = sender.doubleValue }
     override func cancelOperation(_ sender: Any?) {
         if overlay.hasActiveTextSelection { overlay.resetSelection() }
@@ -562,11 +667,59 @@ import UniformTypeIdentifiers
         else { close() }
     }
     func windowWillClose(_ notification: Notification) {
+        colorWell.suspend()
         closed = true; generation += 1; recognition?.cancel(); recognition = nil; baseRegionsTask?.cancel(); baseRegionsTask = nil; overlay.analysis = nil; annotationDocument.onChange = nil; onClose?()
     }
 }
 
 extension ImageWindow {
+    func inlineLayoutChecks()->[String:Bool] {
+        guard let root=screenshotView,let toolbarPanel,let parametersPanel else {return [:]}
+        root.layoutSubtreeIfNeeded();layoutScreenshot()
+        var checks:[String:Bool]=[:]
+        let original=root.region
+        checks["canvas_keeps_original_region"] = canvas.frame == original && canvas.contentRect == canvas.bounds
+        let image=stableImage()
+        checks["output_contains_only_crop"] = image?.width == 716 && image?.height == 450 && image.flatMap {PixelSampler.color(in:$0,x:20,y:420)?.hex} == "#FF0000"
+        checks["output_png_excludes_chrome_and_background"] = image.flatMap {Self.encoded($0,type:.png)}.flatMap {CGImageSourceCreateWithData($0 as CFData,nil)}.flatMap {CGImageSourceCreateImageAtIndex($0,0,nil)}.map {$0.width==716 && $0.height==450} == true
+        let primaryFrame=toolbarPanel.frame
+        checks["toolbar_is_below_region"] = primaryFrame.maxY < original.minY
+        checks["all_tools_and_outputs_fit_toolbar"] = toolRow.arrangedSubviews.filter{!$0.isHidden}.allSatisfy {toolbarPanel.bounds.contains(toolbarPanel.convert($0.bounds,from:$0))}
+        for tool in [AnnotationTool.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
+            canvas.chooseTool(tool);root.layoutSubtreeIfNeeded();layoutScreenshot()
+            checks["compact_parameters_\(tool.title)"] = !parametersPanel.isHidden && parametersPanel.frame.maxY<toolbarPanel.frame.minY && parametersPanel.frame.width<700 && root.bounds.contains(parametersPanel.frame)
+            checks["stable_region_\(tool.title)"] = canvas.frame==original && toolbarPanel.frame==primaryFrame
+        }
+        let colorPoint=root.convert(CGPoint(x:colorWell.bounds.midX,y:colorWell.bounds.midY),from:colorWell)
+        checks["custom_color_click_hits_control"] = root.hitTest(colorPoint) === colorWell
+        let previousColorLevel=NSColorPanel.shared.level
+        colorWell.activate(true)
+        checks["custom_color_panel_above_editor"] = NSColorPanel.shared.level.rawValue > window!.level.rawValue
+        colorWell.deactivate();NSColorPanel.shared.orderOut(nil)
+        checks["color_panel_restores_level"] = NSColorPanel.shared.level == previousColorLevel
+        canvas.chooseTool(.text)
+        let point=CGPoint(x:100,y:230)
+        let event=NSEvent.mouseEvent(with:.leftMouseDown,location:canvas.convert(point,to:nil),modifierFlags:[],timestamp:0,windowNumber:window!.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:1)!
+        canvas.mouseDown(with:event)
+        checks["text_keeps_direct_outputs"] = canvas.textEditor != nil && !copyButton.isHidden && !saveButton.isHidden && !pinButton.isHidden
+        if let input=canvas.textEditor {
+            input.setMarkedText("zhongwen",selectedRange:NSRange(location:8,length:0),replacementRange:NSRange(location:NSNotFound,length:0))
+            checks["candidate_blocks_output_commit"] = !prepareOutput() && canvas.textEditor === input && annotationDocument.state.objects.isEmpty
+            input.insertText("中文",replacementRange:input.markedRange());input.unmarkText()
+            checks["confirmed_text_commits_for_output"] = prepareOutput() && annotationDocument.state.objects.first?.text == "中文" && stableImage()?.width==716
+        }
+        checks["annotations_disable_crop_handles"] = !root.canAdjust
+        annotationDocument.undo();canvas.chooseTool(.select);layoutScreenshot()
+        checks["undo_restores_crop_handles"] = root.canAdjust && annotationDocument.state.objects.isEmpty
+        let down=NSEvent.mouseEvent(with:.leftMouseDown,location:CGPoint(x:original.maxX,y:original.minY),modifierFlags:[],timestamp:0,windowNumber:window!.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:1)!
+        root.mouseDown(with:down)
+        checks["adjustment_blocks_old_output"] = root.isAdjusting && stableImage()==nil && overlay.analysis==nil
+        root.cancelOperation(nil)
+        checks["cancel_adjustment_preserves_image"] = !root.isAdjusting && root.region==original && stableImage()?.width==716 && !canvas.isHidden
+        preserveScreenshotAfterScreenChange()
+        checks["screen_change_preserves_crop_and_disables_recrop"] = !root.sourceGeometryAvailable && !root.canAdjust && stableImage()?.width==716 && stableImage()?.height==450
+        return checks
+    }
     func coreLayoutChecks() -> [String:Bool] {
         guard let window, let root = window.contentView, !pinned else { return [:] }
         let original = window.frame

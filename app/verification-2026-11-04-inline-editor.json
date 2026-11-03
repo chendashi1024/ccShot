@@ -1,0 +1,267 @@
+{
+  "schema": "ccshot.inline-editor-module.v1",
+  "date": "2026-11-04",
+  "base_revision": "5e47550a45470c1ee53afdd0d0fe839ee194e4a7",
+  "scope": "区域截图原位编辑模块；完整五场景和最终包未完成",
+  "runtime": {
+    "os": "15.4.1",
+    "architecture": "arm64",
+    "bundle_id": "com.ccshot.inline-check",
+    "bundle_path": "app/build/inline-check/CcShotInlineCheck.app",
+    "build": "Swift原生独立QA调试构建；非发行包",
+    "binary_sha256": "381ada95189410141804146c8e93c7ca158cb494f591d71e3cbddd0d944640a3",
+    "info_sha256": "18e7ed499e98fe321e97c58522b22399f9fdf4d62d9a6ed1e7fde5c21e79c4ec"
+  },
+  "source_sha256": {
+    "app/Sources/AnnotationCanvas.swift": "db1f45794a76ba9f004e060fe4c692625932578694bd6071c88e313950a9a65a",
+    "app/Sources/AnnotationModel.swift": "85813e487ecdebf86a7785c59bdb0f2617ea6e7d26ab6ce30282b5e94c2d28ee",
+    "app/Sources/AnnotationPreferences.swift": "9be69d87f8ba189cf2dba1a774e67c34c5ac17d0d269f90902eefe58003ae791",
+    "app/Sources/AnnotationRenderer.swift": "d77374aa1be65e62849464b0e37f72f5ab14c63c25dd79dab541e4e7bc5166d6",
+    "app/Sources/AnnotationTextLayout.swift": "8aedde98ee991022bb5b2c901c320646b26bae1377d7015c7786658e518d5b04",
+    "app/Sources/AnnotationVerification.swift": "0bb852274173b8af3fcfe59739ef9eb88dd44010f2411ea34ff0b2162fc1f9a5",
+    "app/Sources/App.swift": "fbfa06ce6c78c3bade24ad4eeb6142fe1e0dd02e762f9da06e8cb9ad88a77f49",
+    "app/Sources/AppPreferences.swift": "46b1fcfd42d54f6ea408e0217f22a4306384d13a00178b5dab767ea32100ab65",
+    "app/Sources/CaptureGeometry.swift": "88dbab5df62c170e2029d075150a8d9ae23b7ee10596c3f5197b76a4dd8db1f8",
+    "app/Sources/CoreAppearance.swift": "7f394eecbfcbb7f0e0d377e62da8977befc96ae65406f4c676caa393601cce74",
+    "app/Sources/DisplayCapture.swift": "28bac2083b8b99080895f6144a8dee03433006e15ac604eaa5d0113055790548",
+    "app/Sources/DisplayVerification.swift": "6f891b2fbc2e95f08085cf5a59f66659e1f72b467ef06ad71a68378e29ce046d",
+    "app/Sources/HotkeyManager.swift": "6e974ad45b23616cd9cc3ae3b87d61c21d6477328be86d17261df0ef9aa831a5",
+    "app/Sources/ImageEncoding.swift": "4aadeef8666e58b2fd3a9c5d80588dcb5bc3d50439e807c2326e18f6acdfc762",
+    "app/Sources/ImageWindow.swift": "c4ccab8893f6362d69d82e669f4a4adf2cabf7c7ba181f4a1e7be5a210cbd2d7",
+    "app/Sources/InlineVerification.swift": "9693d6772294fe934f29932a9e60f126fba614fe92b550b12340035a1239709d",
+    "app/Sources/PerformanceVerification.swift": "822f10e94acd408fee94a4a58f5006178d5d4c320a338c7a3eb3f9cab619c03c",
+    "app/Sources/PixelSampler.swift": "0bac310684a4e4145b00b8fad1a3c47593c947e7ac0b0b0154f2ad7c785ecb0c",
+    "app/Sources/PrivacyVerification.swift": "36b965ac076f745b8c2dd06e9518f69f3a4d6764f05ec7227f6085c98b8e3f5d",
+    "app/Sources/SafeTextImage.swift": "fd41022848b053fd88a1cc1c8c5b550c9be52fe59712e3c0d901c079ef8189a5",
+    "app/Sources/SaveFormatAccessory.swift": "4cd5179dbceb28b6eadbc8257ff1269385b36938c1a39f40a2a277c33e4af46e",
+    "app/Sources/ScreenVerification.swift": "a1d1ea7080307c9904d5fbe04853c405e4fa44f34502f29f352f156ebfae3b07",
+    "app/Sources/ScreenshotColorWell.swift": "3425ccdaabaa999df5cda5c469f7cf72c5bdfc08e4758c3e384cf223a76340a5",
+    "app/Sources/ScreenshotLayout.swift": "3296f8e2d7c6b3f08e749956046794d6b2c1a96a58f35008713b860fa7dbe860",
+    "app/Sources/ScreenshotView.swift": "4ca5db89155e7dbc4b7e6f5c773e0e5321c72628ad91935f97d342b72feb54cf",
+    "app/Sources/SelectionHandle.swift": "a27742ad44edb2c9b3fe2f3f3c6c8a36d244fa906e776a7eff3aa97146262d95",
+    "app/Sources/SelectionView.swift": "c7570a69cb82a9442b9244dbd8053149c060cc837a9c6ab6ab7b28ddbff0e0cb",
+    "app/Sources/SettingsWindow.swift": "a16323e9b9882c714e98e899091c4e156bea85f682e3abadf600f5ca16c83bca",
+    "app/Sources/TextVerification.swift": "c0e896db53dc8cba8405beeb9dbc0fb7ca49cc8a279a9dccc584c9ddcb2117d6",
+    "app/Sources/ToolbarButton.swift": "cdbe303cd55961ff5fc3a8884f51a78d59408d4668aa63c171376cb322f8ea04",
+    "app/Sources/WindowCapture.swift": "ba63b78b70b90aae8b4e8dd66842d22bf60355217a8899879be3caea40ad6106",
+    "app/Sources/WindowTarget.swift": "897ca7c5587aacba8fd11178384f461496cfc562690260e8dd6a843a66bc0fc7"
+  },
+  "automated": {
+    "inline": {
+      "checks": {
+        "adjustment_blocks_old_output": true,
+        "all_tools_and_outputs_fit_toolbar": true,
+        "annotations_disable_crop_handles": true,
+        "cancel_adjustment_preserves_image": true,
+        "candidate_blocks_output_commit": true,
+        "canvas_keeps_original_region": true,
+        "color_panel_restores_level": true,
+        "compact_parameters_序号": true,
+        "compact_parameters_文字": true,
+        "compact_parameters_画笔": true,
+        "compact_parameters_矩形": true,
+        "compact_parameters_箭头": true,
+        "compact_parameters_遮挡": true,
+        "compact_parameters_高亮": true,
+        "confirmed_text_commits_for_output": true,
+        "custom_color_click_hits_control": true,
+        "custom_color_panel_above_editor": true,
+        "output_contains_only_crop": true,
+        "output_png_excludes_chrome_and_background": true,
+        "screen_change_preserves_crop_and_disables_recrop": true,
+        "stable_region_序号": true,
+        "stable_region_文字": true,
+        "stable_region_画笔": true,
+        "stable_region_矩形": true,
+        "stable_region_箭头": true,
+        "stable_region_遮挡": true,
+        "stable_region_高亮": true,
+        "text_keeps_direct_outputs": true,
+        "toolbar_is_below_region": true,
+        "undo_restores_crop_handles": true
+      },
+      "clipboard_written": false,
+      "passed": true,
+      "schema": "ccshot.inline-editor.v1",
+      "system_input_method_verified": false
+    },
+    "safe_ocr": {
+      "checks": {
+        "baseline_recognizes_both_lines": true,
+        "blur_brush_composite_changed": true,
+        "blur_brush_old_text_cleared_immediately": true,
+        "blur_brush_selection_matches_safe_text": true,
+        "blur_brush_suppresses_entire_private_unit": true,
+        "blur_rectangle_composite_changed": true,
+        "blur_rectangle_old_text_cleared_immediately": true,
+        "blur_rectangle_selection_matches_safe_text": true,
+        "blur_rectangle_suppresses_entire_private_unit": true,
+        "closed_window_has_no_old_analysis": true,
+        "filled_shape_also_suppresses_private_unit": true,
+        "moving_mask_restores_visible_text": true,
+        "pixelate_brush_composite_changed": true,
+        "pixelate_brush_old_text_cleared_immediately": true,
+        "pixelate_brush_selection_matches_safe_text": true,
+        "pixelate_brush_suppresses_entire_private_unit": true,
+        "pixelate_rectangle_composite_changed": true,
+        "pixelate_rectangle_old_text_cleared_immediately": true,
+        "pixelate_rectangle_selection_matches_safe_text": true,
+        "pixelate_rectangle_suppresses_entire_private_unit": true,
+        "redo_restores_visible_text": true,
+        "solid_brush_composite_changed": true,
+        "solid_brush_old_text_cleared_immediately": true,
+        "solid_brush_selection_matches_safe_text": true,
+        "solid_brush_suppresses_entire_private_unit": true,
+        "solid_rectangle_composite_changed": true,
+        "solid_rectangle_old_text_cleared_immediately": true,
+        "solid_rectangle_selection_matches_safe_text": true,
+        "solid_rectangle_suppresses_entire_private_unit": true,
+        "undo_clears_old_text": true,
+        "undo_restores_suppression": true
+      },
+      "clipboard_tested": false,
+      "fixture_only": true,
+      "passed": true,
+      "test_data": "两行虚构英文，仅局部遮挡第一行；不记录私人截图或OCR"
+    },
+    "layout_test": "通过：原位、紧凑参数、上下边缘/整屏避让、等比视口映射",
+    "selection_consumer": "通过：八工具/输出当前裁剪、松手与⌘A自动交接、空区域拒绝",
+    "shell_syntax": "bash -n app/check.sh 返回0",
+    "full_check_sh_run": false
+  },
+  "native_observations": {
+    "release_enters_inline": true,
+    "arrow_drawing_enables_undo": true,
+    "text_drag_changes_copy_title": true,
+    "resize_changes_pixels_from": [
+      1700,
+      700
+    ],
+    "resize_changes_pixels_to": [
+      1880,
+      740
+    ],
+    "empty_text_escape_keeps_image": true,
+    "settings_hide_and_restore_editor": true,
+    "save_dialog_cancel_keeps_document": true,
+    "custom_color_window": {
+      "pid": 86704,
+      "title": "颜色",
+      "on_screen": true,
+      "layer": 1001,
+      "editor_layer": 1000,
+      "evidence": "CUA点击颜色池后，只读查询本QA进程窗口；主窗口截图接口不包含颜色附属面板"
+    },
+    "appearance": [
+      "light",
+      "dark"
+    ],
+    "clipboard_output_exercised": false
+  },
+  "previews": [
+    {
+      "path": "app/previews/inline-arrow-dark-2026-11-04.png",
+      "sha256": "ca8817942f820d43d5d974baeb9cb4dc739f7a2ccd4f13342b65904a6c9240f3",
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "source": "CUA原生QA窗口原图，虚构识字样本",
+      "binary_sha256": "381ada95189410141804146c8e93c7ca158cb494f591d71e3cbddd0d944640a3"
+    },
+    {
+      "path": "app/previews/inline-arrow-light-2026-11-04.png",
+      "sha256": "90906f73ba437ce0303ece68c025d21c365828b62ea355adb265165955081618",
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "source": "CUA原生QA窗口原图，虚构识字样本",
+      "binary_sha256": "381ada95189410141804146c8e93c7ca158cb494f591d71e3cbddd0d944640a3"
+    },
+    {
+      "path": "app/previews/inline-resized-light-2026-11-04.png",
+      "sha256": "6b133ed0d707f3d325f04f4a7055b29e36a5f9804be3c8fa846bdfcb9bd205f3",
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "source": "CUA原生QA窗口原图，虚构识字样本",
+      "binary_sha256": "381ada95189410141804146c8e93c7ca158cb494f591d71e3cbddd0d944640a3"
+    },
+    {
+      "path": "app/previews/inline-selection-light-2026-11-04.png",
+      "sha256": "7b199a86c13230fd67aeb4257fe4b763d88ac452ee72ec9907553144d9459ee8",
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "source": "CUA原生QA窗口原图，虚构识字样本",
+      "binary_sha256": "381ada95189410141804146c8e93c7ca158cb494f591d71e3cbddd0d944640a3"
+    },
+    {
+      "path": "app/previews/inline-text-dark-2026-11-04.png",
+      "sha256": "637c3c890db8a3a7c385b028e7b35bf4ea1f89aaedf5f98a8687674fba341731",
+      "pixels": [
+        4718592,
+        4292935744
+      ],
+      "source": "CUA原生QA窗口原图，虚构识字样本",
+      "binary_sha256": "381ada95189410141804146c8e93c7ca158cb494f591d71e3cbddd0d944640a3"
+    }
+  ],
+  "color_layer_regression_before": {
+    "checks": {
+      "adjustment_blocks_old_output": true,
+      "all_tools_and_outputs_fit_toolbar": true,
+      "annotations_disable_crop_handles": true,
+      "cancel_adjustment_preserves_image": true,
+      "candidate_blocks_output_commit": true,
+      "canvas_keeps_original_region": true,
+      "color_panel_restores_level": true,
+      "compact_parameters_序号": true,
+      "compact_parameters_文字": true,
+      "compact_parameters_画笔": true,
+      "compact_parameters_矩形": true,
+      "compact_parameters_箭头": true,
+      "compact_parameters_遮挡": true,
+      "compact_parameters_高亮": true,
+      "confirmed_text_commits_for_output": true,
+      "custom_color_panel_above_editor": false,
+      "output_contains_only_crop": true,
+      "output_png_excludes_chrome_and_background": true,
+      "screen_change_preserves_crop_and_disables_recrop": true,
+      "stable_region_序号": true,
+      "stable_region_文字": true,
+      "stable_region_画笔": true,
+      "stable_region_矩形": true,
+      "stable_region_箭头": true,
+      "stable_region_遮挡": true,
+      "stable_region_高亮": true,
+      "text_keeps_direct_outputs": true,
+      "toolbar_is_below_region": true,
+      "undo_restores_crop_handles": true
+    },
+    "clipboard_written": false,
+    "passed": false,
+    "schema": "ccshot.inline-editor.v1",
+    "system_input_method_verified": false
+  },
+  "main_app_unchanged": {
+    "binary_sha256": "a1bed932bacc70bf0ff8675cd6c2063f3b4a891878b05a08751bdd3a787a739f",
+    "info_sha256": "5a232a7db84156869f5e3cda729665f45693afd9464af454a8ac69208ff2ef89",
+    "installed_or_replaced": false
+  },
+  "remaining": [
+    "窗口捕获原位接入",
+    "内容优先钉图与完整五场景视觉验收",
+    "最终同版候选包",
+    "实体全局热键",
+    "真实拼音输入候选",
+    "混合1x/2x设备",
+    "安装与升级"
+  ],
+  "goal_complete": false,
+  "native_reconstruction_complete": false,
+  "paid_or_public_release": false
+}

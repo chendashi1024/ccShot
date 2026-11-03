@@ -10,6 +10,7 @@ import QuartzCore
     private let hotkeys = HotkeyManager()
     private let preferences = AppPreferences.shared
     private var settings: SettingsWindow?
+    private var editorsHiddenForSettings:[UUID]=[]
     private var hotkeyWarning: NSMenuItem?
     private var captureTask: Task<Void, Never>?
     private var fixture: CGImage?
@@ -52,6 +53,7 @@ import QuartzCore
                 store.setVolatileDomain([AppPreferences.directoryKey:path],forName:UserDefaults.argumentDomain)
                 showDocument(AnnotationDocument(image:image),pinned:false,preferences:AppPreferences(store:store))
             }
+            else if let path=argument("--inline-smoke-test") {Task { @MainActor in exit(await InlineVerification.run(reportPath:path) ? 0 : 1) }}
             else if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
             else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview"),checkClipboard:!CommandLine.arguments.contains("--no-clipboard")) ? 0 : 1) } }
             else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
@@ -117,6 +119,10 @@ import QuartzCore
         captureGeneration += 1
         captureTask?.cancel(); captureTask = nil
         selectionWindow?.orderOut(nil)
+        for (id,controller) in imageWindows where controller.isScreenshot && controller.window?.isVisible == true {
+            if !editorsHiddenForSettings.contains(id) {editorsHiddenForSettings.append(id)}
+            controller.suspendScreenshotForSettings()
+        }
         if settings == nil {
             settings = SettingsWindow(preferences: preferences, applyShortcuts: { [weak self] capture, pin in
                 guard let self else { return "应用已关闭" }
@@ -131,7 +137,10 @@ import QuartzCore
                 return error
             })
             settings?.onClose = { [weak self] in
-                guard let window = self?.selectionWindow else { return }
+                guard let self else {return}
+                for id in self.editorsHiddenForSettings {self.imageWindows[id]?.window?.makeKeyAndOrderFront(nil)}
+                self.editorsHiddenForSettings=[]
+                guard let window = self.selectionWindow else { return }
                 window.makeKeyAndOrderFront(nil)
                 window.makeFirstResponder(window.contentView)
             }
@@ -142,7 +151,7 @@ import QuartzCore
         cancelCapture()
         let point = NSEvent.mouseLocation
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }) ?? NSScreen.main else { return }
-        if let fixture { presentSelection(fixture, on: screen); return }
+        if let fixture { presentSelection(Self.fixtureBackground(fixture,on:screen), on: screen); return }
         guard CGPreflightScreenCaptureAccess() else {
             showPermissionGuide()
             return
@@ -160,6 +169,15 @@ import QuartzCore
             }
         }
     }
+    // 测试样本按屏幕等比排版，避免宽幅识字样本被拉伸，真实屏幕捕获不经过这里。
+    private static func fixtureBackground(_ image:CGImage,on screen:NSScreen)->CGImage {
+        let size=screen.frame.size,scale=screen.backingScaleFactor
+        guard let context=CGContext(data:nil,width:Int(size.width*scale),height:Int(size.height*scale),bitsPerComponent:8,bytesPerRow:0,space:CGColorSpace(name:CGColorSpace.sRGB)!,bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue) else {return image}
+        context.scaleBy(x:scale,y:scale);context.setFillColor(NSColor(srgbRed:0.84,green:0.88,blue:0.85,alpha:1).cgColor);context.fill(CGRect(origin:.zero,size:size))
+        let ratio=min(size.width/CGFloat(image.width),size.height/CGFloat(image.height))
+        let frame=CGRect(x:(size.width-CGFloat(image.width)*ratio)/2,y:(size.height-CGFloat(image.height)*ratio)/2,width:CGFloat(image.width)*ratio,height:CGFloat(image.height)*ratio)
+        context.draw(image,in:frame);return context.makeImage() ?? image
+    }
     private func presentSelection(_ image: CGImage, on screen: NSScreen, targets: [WindowTarget] = []) {
         let window = SelectionWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.title = "CcShot · 框选"
@@ -169,9 +187,9 @@ import QuartzCore
         window.isReleasedWhenClosed = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let view = SelectionView(image: image, frame: CGRect(origin: .zero, size: screen.frame.size))
-        view.windowTargets = targets
-        view.onWindowPick = { [weak self, weak view] target in
-            guard let self, let view else { return }
+        view.windowTargets = targets;view.automaticallyEdit=true
+        view.onWindowPick = { [weak self, weak view,weak window] target in
+            guard let self,let view,let window,self.selectionWindow === window else { return }
             view.showWindowStatus("正在捕获窗口…")
             self.captureTask?.cancel()
             let token = self.captureGeneration
@@ -188,14 +206,18 @@ import QuartzCore
                 }
             }
         }
-        view.onConfirm = { [weak self] image, _, action in
-            guard let self else { return }
+        view.onConfirm = { [weak self,weak window] selected, rect, action in
+            guard let self,let window,self.selectionWindow === window else {return}
+            let local=rect.offsetBy(dx:-screen.frame.minX,dy:-screen.frame.minY)
+            let displayID=(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
+            let context=ScreenshotPresentation(background:image,screenFrame:screen.frame,region:local,displayID:displayID,allowsAdjustment:true)
+            let image=selected
             self.cancelCapture()
             switch action {
-            case .edit: self.showImage(image, pinned: false)
-            case .annotate(let tool): self.showImage(image, pinned:false).canvas.chooseTool(tool)
+            case .edit: self.showDocument(AnnotationDocument(image:image),pinned:false,screenshot:context)
+            case .annotate(let tool): self.showDocument(AnnotationDocument(image:image),pinned:false,screenshot:context).canvas.chooseTool(tool)
             case .pin: self.showImage(image, pinned: true)
-            case .save: self.showImage(image, pinned: false).saveImage()
+            case .save: self.showDocument(AnnotationDocument(image:image),pinned:false,screenshot:context).saveImage()
             case .copy:
                 guard let data = ImageWindow.encoded(image, type: .png) else {
                     self.showImage(image, pinned: false)
@@ -210,7 +232,7 @@ import QuartzCore
                 }
             }
         }
-        view.onCancel = { [weak self] in self?.cancelCapture() }
+        view.onCancel = { [weak self,weak window] in guard let self,let window,self.selectionWindow === window else {return};self.cancelCapture() }
         window.contentView = view
         selectionWindow = window
         window.makeKeyAndOrderFront(nil); window.makeFirstResponder(view)
@@ -224,16 +246,27 @@ import QuartzCore
     @objc private func screenChanged() {
         let hadSelection = selectionWindow != nil
         cancelCapture()
+        for controller in imageWindows.values {controller.preserveScreenshotAfterScreenChange()}
         if hadSelection { showError("屏幕已变化", detail: "请重新开始截图。") }
     }
     @discardableResult private func showImage(_ image: CGImage, pinned: Bool) -> ImageWindow {
         return showDocument(AnnotationDocument(image: image), pinned: pinned)
     }
-    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared) -> ImageWindow {
+    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared, screenshot:ScreenshotPresentation?=nil) -> ImageWindow {
         let id = UUID()
-        let controller = ImageWindow(annotationDocument: document, pinned: pinned, preferences:preferences)
+        let controller = ImageWindow(annotationDocument: document, pinned:pinned,preferences:preferences,screenshot:screenshot)
         controller.onClose = { [weak self] in self?.imageWindows.removeValue(forKey: id) }
         controller.onPin = { [weak self] document in self?.showDocument(document, pinned: true) }
+        controller.onReselect = { [weak self,weak controller] rect in
+            guard let self,let controller,self.imageWindows[id] === controller,let screenshot,
+                  screenshot.allowsAdjustment,controller.annotationDocument.state.objects.isEmpty,!controller.canvas.hasDraft,
+                  NSScreen.screens.contains(where:{($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == screenshot.displayID && $0.frame == screenshot.screenFrame}),
+                  let pixels=CaptureGeometry.pixelRect(rect,canvas:screenshot.captureSize,image:CGSize(width:screenshot.background.width,height:screenshot.background.height)),
+                  let image=screenshot.background.cropping(to:pixels) else {return false}
+            controller.close()
+            self.showDocument(AnnotationDocument(image:image),pinned:false,preferences:preferences,screenshot:screenshot.replacingRegion(rect))
+            return true
+        }
         imageWindows[id] = controller
         return controller
     }

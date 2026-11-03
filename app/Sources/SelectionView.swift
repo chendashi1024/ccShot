@@ -8,6 +8,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
 
 @MainActor final class SelectionView: NSView {
     let image: CGImage
+    var automaticallyEdit=false
     var onConfirm: ((CGImage, NSRect, SelectionAction) -> Void)?
     var onCancel: (() -> Void)?
     var onWindowPick: ((WindowTarget) -> Void)?
@@ -67,7 +68,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
         addTrackingArea(tracking); mouseTracking = tracking
         super.updateTrackingAreas()
     }
-    override func selectAll(_ sender: Any?) { selectRegion(bounds) }
+    override func selectAll(_ sender: Any?) { selectRegion(bounds);if automaticallyEdit {finish(.edit)} }
 
     func selectRegion(_ rect: CGRect) { updateSelection(rect); showActions() }
     func showWindowStatus(_ message: String?) { windowStatus = message; needsDisplay = true }
@@ -198,7 +199,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
             return
         }
         pendingWindow = nil
-        showActions()
+        if automaticallyEdit,!selection.isEmpty {finish(.edit)} else {showActions()}
     }
     private func showActions() {
         actions.isHidden = selection.isEmpty

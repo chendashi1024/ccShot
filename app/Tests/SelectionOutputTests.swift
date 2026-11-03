@@ -53,6 +53,18 @@ import AppKit
         view.selectRegion(CGRect(x:900,y:550,width:100,height:50))
         let row=actions[0].superview!
         precondition(view.bounds.insetBy(dx:7,dy:7).contains(row.frame),"屏边选区不能把输出按钮推到屏幕外")
+        let direct=SelectionView(image:source,frame:CGRect(x:0,y:0,width:1000,height:600))
+        direct.automaticallyEdit=true
+        var automatic:[(CGImage,SelectionAction)]=[]
+        direct.onConfirm={image,_,action in automatic.append((image,action))}
+        direct.selectAll(nil)
+        precondition(automatic.count==1 && automatic[0].0.width==400 && automatic[0].0.height==240 && automatic[0].1 == .edit,"全屏选区应直接进入可选字编辑，不必再点完成")
+        direct.selectRegion(CGRect(x:100,y:120,width:300,height:240))
+        let release=NSEvent.mouseEvent(with:.leftMouseUp,location:CGPoint(x:400,y:360),modifierFlags:[],timestamp:0,windowNumber:0,context:nil,eventNumber:1,clickCount:1,pressure:0)!
+        direct.mouseUp(with:release)
+        precondition(automatic.count==2 && automatic[1].0.width==120 && automatic[1].0.height==96 && automatic[1].1 == .edit,"框选松手直接交付当前裁剪")
+        direct.selectRegion(.zero);direct.mouseUp(with:release)
+        precondition(automatic.count==2,"空选区松手不能交付旧图")
         print("通过：框选直接选择八个常用工具、复制/保存/钉住、当前裁剪像素与空选区拒绝")
     }
 }
