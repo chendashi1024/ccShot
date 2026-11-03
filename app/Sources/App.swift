@@ -42,7 +42,8 @@ import QuartzCore
         registerHotkeys()
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
-            if let path = argument("--screen-smoke-test") { Task { @MainActor in exit(await ScreenVerification.run(image,reportPath:path)) } }
+            if let path = argument("--display-smoke-test"),let host=argument("--display-fixture-host") {Task { @MainActor in exit(await DisplayVerification.run(fixture:argument("--fixture")!,host:host,reportPath:path)) }}
+            else if let path = argument("--screen-smoke-test") { Task { @MainActor in exit(await ScreenVerification.run(image,reportPath:path)) } }
             else if CommandLine.arguments.contains("--permission-guide") { showPermissionGuide(); showImage(image,pinned:false) }
             else if let path = argument("--fixture-save-directory") {
                 let store = UserDefaults(suiteName:"com.ccshot.save-check.\(UUID().uuidString)")!
@@ -60,6 +61,7 @@ import QuartzCore
             else if CommandLine.arguments.contains("--select") { capture() }
             else { showImage(image, pinned: false) }
         }
+        if fixture == nil && CommandLine.arguments.contains("--capture-now") { capture() }
         NotificationCenter.default.addObserver(self, selector: #selector(screenChanged), name: NSApplication.didChangeScreenParametersNotification, object: nil)
     }
     private func argument(_ flag: String) -> String? {
@@ -121,25 +123,13 @@ import QuartzCore
             showPermissionGuide()
             return
         }
-        guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return }
-        let displayID = number.uint32Value
         let token = captureGeneration
         captureTask = Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
-                guard !Task.isCancelled, token == captureGeneration,
-                      let display = content.displays.first(where: { $0.displayID == displayID }) else { return }
-                let ownApps = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
-                let filter = SCContentFilter(display: display, excludingApplications: ownApps, exceptingWindows: [])
-                let config = SCStreamConfiguration()
-                config.width = CGDisplayPixelsWide(displayID); config.height = CGDisplayPixelsHigh(displayID)
-                config.showsCursor = false
-                let targets = WindowCapture.targets(in: content, screen: screen)
-                let image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
-                guard !Task.isCancelled, token == captureGeneration,
-                      NSScreen.screens.contains(where: { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == displayID }) else { return }
-                presentSelection(image, on: screen, targets: targets)
+                let snapshot = try await DisplayCapture.capture(screen:screen)
+                guard !Task.isCancelled, token == captureGeneration else { return }
+                presentSelection(snapshot.image, on:screen, targets:snapshot.targets)
             } catch {
                 guard !Task.isCancelled, token == captureGeneration else { return }
                 showError("无法截取屏幕", detail: "请检查屏幕录制权限后重试。")

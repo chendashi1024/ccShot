@@ -381,7 +381,8 @@ import UniformTypeIdentifiers
     }
     func overlayView(_ overlayView: ImageAnalysisOverlayView, shouldBeginAt point: CGPoint, forAnalysisType analysisType: ImageAnalysisOverlayView.InteractionTypes) -> Bool { canvas.canSelectText(at: canvas.convert(point, from: overlayView)) }
     func overlayView(_ overlayView: ImageAnalysisOverlayView, shouldHandleKeyDownEvent event: NSEvent) -> Bool {
-        if event.keyCode == 53 && overlay.hasActiveTextSelection { overlay.resetSelection(); return false }
+        // 让原生选字层独自消费Esc；手动清除再向外转发会继续触发关窗。
+        if event.keyCode == 53 && overlay.hasActiveTextSelection { return true }
         return !canvas.handleKey(event)
     }
     var recognitionForVerification: Task<Void, Never>? { recognition }

@@ -1,0 +1,352 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS15.4.1/arm64/SDK15.4",
+  "sources": {
+    "app/Sources/App.swift": "ba7df814237009f489ae3bad50522a31178548872fdba02b821e95c649bcee2c",
+    "app/Sources/ImageWindow.swift": "5250d0c388797954058137f22b79245a4ba3953c7cc81207aacd6849c21a51b6",
+    "app/Sources/DisplayCapture.swift": "28bac2083b8b99080895f6144a8dee03433006e15ac604eaa5d0113055790548",
+    "app/Sources/DisplayVerification.swift": "6f891b2fbc2e95f08085cf5a59f66659e1f72b467ef06ad71a68378e29ce046d",
+    "app/Tests/DisplayFixtureHost.swift": "1270cf72ab4807909889b55349349bf951c30e517e90188cc412c5c21c6ddfcb",
+    "app/Tests/ClipboardCopyProbe.swift": "06798e1cf0e97389ef9bfd241bcd92c5018bc125d7144c7e9a16411d7ce17649",
+    "app/check-displays.sh": "61f1b82e54b7240c19f1a779d3ad1c32f9d4c3d6d7ca735e611c964cead96a8d"
+  },
+  "before_fix": {
+    "checks": {
+      "screen_0_annotation_changes_output": true,
+      "screen_0_captured_chinese_text_recognized": true,
+      "screen_0_drag_crop_native_pixels": true,
+      "screen_0_four_corners_and_orientation": true,
+      "screen_0_native_display_resolution": false,
+      "screen_0_own_visible_window_excluded": true,
+      "screen_0_own_window_not_pickable": true,
+      "screen_0_pin_preserves_current_composite": true,
+      "screen_0_select_all_current_screen": true,
+      "screen_0_select_all_exact_current_text": true,
+      "screen_0_undo_restores_captured_source": false,
+      "screen_0_undo_restores_empty_model": true,
+      "screen_0_undo_restores_initial_composite": true,
+      "screen_1_annotation_changes_output": true,
+      "screen_1_captured_chinese_text_recognized": true,
+      "screen_1_drag_crop_native_pixels": true,
+      "screen_1_four_corners_and_orientation": true,
+      "screen_1_native_display_resolution": false,
+      "screen_1_own_visible_window_excluded": true,
+      "screen_1_own_window_not_pickable": true,
+      "screen_1_pin_preserves_current_composite": true,
+      "screen_1_select_all_current_screen": true,
+      "screen_1_select_all_exact_current_text": true,
+      "screen_1_undo_restores_captured_source": false,
+      "screen_1_undo_restores_empty_model": true,
+      "screen_1_undo_restores_initial_composite": true
+    },
+    "fixture_only": true,
+    "new_permissions": false,
+    "passed": false,
+    "scope": "真实ScreenCaptureKit整屏捕获独立样本进程，生产DisplayCapture函数与SelectionView/ImageWindow消费者；受控AppKit事件，不等同实体鼠标/键盘或首次安装。只保存已验证样本的区域合成，不保存整屏。",
+    "screens": [
+      {
+        "capture_attempts": 1,
+        "capture_with_enumeration_ms": 162.87829168140888,
+        "composite_color_space": "kCGColorSpaceSRGB",
+        "display_pixels": [
+          1470,
+          956
+        ],
+        "filter_content_size": [
+          1470,
+          956
+        ],
+        "filter_scale": 2,
+        "framebuffer_pixels": [
+          2940,
+          1912
+        ],
+        "index": 0,
+        "region_pixels": [
+          1040,
+          300
+        ],
+        "safe_ocr_ms": 367.5704166525975,
+        "screen_scale": 2,
+        "source_color_space": "kCGColorSpaceDeviceRGB"
+      },
+      {
+        "capture_attempts": 1,
+        "capture_with_enumeration_ms": 85.31254163244739,
+        "composite_color_space": "kCGColorSpaceSRGB",
+        "display_pixels": [
+          1920,
+          1080
+        ],
+        "filter_content_size": [
+          1920,
+          1080
+        ],
+        "filter_scale": 2,
+        "framebuffer_pixels": [
+          3840,
+          2160
+        ],
+        "index": 1,
+        "region_pixels": [
+          1040,
+          300
+        ],
+        "safe_ocr_ms": 120.7859999849461,
+        "screen_scale": 2,
+        "source_color_space": "kCGColorSpaceDeviceRGB"
+      }
+    ]
+  },
+  "after_fix": {
+    "checks": {
+      "cancelled_capture_rejected": true,
+      "screen_0_annotation_changes_output": true,
+      "screen_0_captured_chinese_text_recognized": true,
+      "screen_0_drag_crop_native_pixels": true,
+      "screen_0_four_corners_and_orientation": true,
+      "screen_0_native_display_resolution": true,
+      "screen_0_own_visible_window_excluded": true,
+      "screen_0_own_window_not_pickable": true,
+      "screen_0_pin_preserves_current_composite": true,
+      "screen_0_select_all_current_screen": true,
+      "screen_0_select_all_exact_current_text": true,
+      "screen_0_undo_restores_empty_model": true,
+      "screen_0_undo_restores_initial_composite": true,
+      "screen_1_annotation_changes_output": true,
+      "screen_1_captured_chinese_text_recognized": true,
+      "screen_1_drag_crop_native_pixels": true,
+      "screen_1_four_corners_and_orientation": true,
+      "screen_1_native_display_resolution": true,
+      "screen_1_own_visible_window_excluded": true,
+      "screen_1_own_window_not_pickable": true,
+      "screen_1_pin_preserves_current_composite": true,
+      "screen_1_select_all_current_screen": true,
+      "screen_1_select_all_exact_current_text": true,
+      "screen_1_undo_restores_empty_model": true,
+      "screen_1_undo_restores_initial_composite": true
+    },
+    "fixture_only": true,
+    "new_permissions": false,
+    "passed": true,
+    "scope": "真实ScreenCaptureKit整屏捕获独立样本进程，生产DisplayCapture函数与SelectionView/ImageWindow消费者；受控AppKit事件，不等同实体鼠标/键盘或首次安装。只保存已验证样本的区域合成，不保存整屏。",
+    "screens": [
+      {
+        "capture_attempts": 1,
+        "capture_with_enumeration_ms": 136.35891664307564,
+        "composite_color_space": "kCGColorSpaceSRGB",
+        "display_pixels": [
+          2940,
+          1912
+        ],
+        "filter_content_size": [
+          1470,
+          956
+        ],
+        "filter_scale": 2,
+        "framebuffer_pixels": [
+          2940,
+          1912
+        ],
+        "index": 0,
+        "raw_png_equal_srgb_baseline": false,
+        "region_pixels": [
+          2080,
+          600
+        ],
+        "safe_ocr_ms": 284.1759583679959,
+        "screen_scale": 2,
+        "source_color_space": "kCGColorSpaceDeviceRGB"
+      },
+      {
+        "capture_attempts": 1,
+        "capture_with_enumeration_ms": 84.11220833659172,
+        "composite_color_space": "kCGColorSpaceSRGB",
+        "display_pixels": [
+          3840,
+          2160
+        ],
+        "filter_content_size": [
+          1920,
+          1080
+        ],
+        "filter_scale": 2,
+        "framebuffer_pixels": [
+          3840,
+          2160
+        ],
+        "index": 1,
+        "raw_png_equal_srgb_baseline": false,
+        "region_pixels": [
+          2080,
+          600
+        ],
+        "safe_ocr_ms": 138.00024997908622,
+        "screen_scale": 2,
+        "source_color_space": "kCGColorSpaceDeviceRGB"
+      }
+    ]
+  },
+  "first_fixed_run": {
+    "checks": {
+      "screen_0_annotation_changes_output": true,
+      "screen_0_captured_chinese_text_recognized": true,
+      "screen_0_drag_crop_native_pixels": true,
+      "screen_0_four_corners_and_orientation": true,
+      "screen_0_native_display_resolution": true,
+      "screen_0_own_visible_window_excluded": true,
+      "screen_0_own_window_not_pickable": true,
+      "screen_0_pin_preserves_current_composite": true,
+      "screen_0_select_all_current_screen": true,
+      "screen_0_select_all_exact_current_text": true,
+      "screen_0_undo_restores_empty_model": true,
+      "screen_0_undo_restores_initial_composite": true,
+      "screen_1_annotation_changes_output": true,
+      "screen_1_captured_chinese_text_recognized": true,
+      "screen_1_drag_crop_native_pixels": true,
+      "screen_1_four_corners_and_orientation": true,
+      "screen_1_native_display_resolution": true,
+      "screen_1_own_visible_window_excluded": true,
+      "screen_1_own_window_not_pickable": true,
+      "screen_1_pin_preserves_current_composite": true,
+      "screen_1_select_all_current_screen": true,
+      "screen_1_select_all_exact_current_text": true,
+      "screen_1_undo_restores_empty_model": true,
+      "screen_1_undo_restores_initial_composite": true
+    },
+    "fixture_only": true,
+    "new_permissions": false,
+    "passed": true,
+    "scope": "真实ScreenCaptureKit整屏捕获独立样本进程，生产DisplayCapture函数与SelectionView/ImageWindow消费者；受控AppKit事件，不等同实体鼠标/键盘或首次安装。只保存已验证样本的区域合成，不保存整屏。",
+    "screens": [
+      {
+        "capture_attempts": 1,
+        "capture_with_enumeration_ms": 157.24229166517034,
+        "composite_color_space": "kCGColorSpaceSRGB",
+        "display_pixels": [
+          2940,
+          1912
+        ],
+        "filter_content_size": [
+          1470,
+          956
+        ],
+        "filter_scale": 2,
+        "framebuffer_pixels": [
+          2940,
+          1912
+        ],
+        "index": 0,
+        "raw_png_equal_srgb_baseline": false,
+        "region_pixels": [
+          2080,
+          600
+        ],
+        "safe_ocr_ms": 3851.7838332918473,
+        "screen_scale": 2,
+        "source_color_space": "kCGColorSpaceDeviceRGB"
+      },
+      {
+        "capture_attempts": 1,
+        "capture_with_enumeration_ms": 91.29579167347401,
+        "composite_color_space": "kCGColorSpaceSRGB",
+        "display_pixels": [
+          3840,
+          2160
+        ],
+        "filter_content_size": [
+          1920,
+          1080
+        ],
+        "filter_scale": 2,
+        "framebuffer_pixels": [
+          3840,
+          2160
+        ],
+        "index": 1,
+        "raw_png_equal_srgb_baseline": false,
+        "region_pixels": [
+          2080,
+          600
+        ],
+        "safe_ocr_ms": 153.1683749635704,
+        "screen_scale": 2,
+        "source_color_space": "kCGColorSpaceDeviceRGB"
+      }
+    ]
+  },
+  "regression": {
+    "consumer": true,
+    "privacy": true,
+    "text": true
+  },
+  "native_ui": {
+    "actual_capture_entry": "--capture-now（没有--fixture，实际执行AppController.capture）",
+    "real_selection_pixels": [
+      2080,
+      600
+    ],
+    "mouse_drag_and_complete": true,
+    "eight_character_copy": {
+      "exact_match": true,
+      "original_clipboard_logged": false,
+      "passed": true,
+      "previous_clipboard_restored": true
+    },
+    "single_character_copy": {
+      "exact_match": true,
+      "original_clipboard_logged": false,
+      "passed": true,
+      "previous_clipboard_restored": true
+    },
+    "escape_before_fix": [
+      "overlay active=true count=8",
+      "cancel active=false count=0",
+      "窗口关闭"
+    ],
+    "escape_after_fix": "复制后第一次Esc清除选区并保留窗口；第二次Esc后读取本进程普通可见窗口数为0，进程仍存活",
+    "scope": "CUA原生操作，自制独立进程铺满屏幕；未授予权限，不等同实体键盘或首次安装"
+  },
+  "probe_incident": {
+    "first_single_character_assertion": {
+      "exact_match": false,
+      "original_clipboard_logged": false,
+      "passed": false,
+      "previous_clipboard_restored": false
+    },
+    "cause": "测试起点落在相邻字内，实际高亮两个字；旧测试工具仅在断言匹配时恢复剪贴板。此次任务开始前剪贴板未能自动恢复，原内容未记录。",
+    "fix": "复制内容属于固定虚构样本时，即使断言失败也恢复此次探针启动前的剪贴板；外部未知内容不覆盖。",
+    "negative_assertion_expected_failure": {
+      "exact_match": false,
+      "original_clipboard_logged": false,
+      "passed": false,
+      "previous_clipboard_restored": true
+    }
+  },
+  "findings": [
+    "原CGDisplayPixelsWide/High返回逻辑尺寸；改按SCContentFilter.contentRect乘pointPixelScale，独立用CGDisplayMode.pixelWidth/Height验收。",
+    "撤销返回初始sRGB合成且对象为空；原始DeviceRGB编码文件与sRGB文件不要求逐字节相同，未改渲染器。",
+    "Esc此前手动清除原生选区后继续转发，导致同一次事件关窗；现由原生选字层消费。"
+  ],
+  "performance_not_certified": "本次是功能样本，不是规范冷暖P50/P95基准；保留全部两次修复后观察，首次识字出现约3.85秒，不声称0.5秒目标通过。",
+  "remaining": [
+    "混合1x/2x硬件",
+    "实体全局快捷键",
+    "真实中文输入法候选",
+    "安装/升级与权限恢复",
+    "规范性能/稳定性基准",
+    "异常卷保存恢复",
+    "用户整体视觉确认"
+  ],
+  "new_permissions": false,
+  "paid_requests": false,
+  "previews": {
+    "app/previews/real-display-selection-2026-11-03.png": "b215261e771586c34bd9fcfb26b87a61798dbaa1b0e4b78cd64279cc660ff1a4",
+    "app/previews/real-display-crop-2026-11-03.png": "aed3d4658da662210320d20901dc2fc1184c6132f1ac7494b147a2a9b963d099",
+    "app/previews/real-display-editor-2026-11-03.png": "2641c1a172b0d5bbc1be8d43e332d0e88fc1aa9186b7b1d0e52254f08c3236e6",
+    "app/previews/real-display-selected-2026-11-03.png": "02a32e0d17d20b8787e33dfc959e99abd0bd1a8f5d63d604e31f004f2f1cfbd7",
+    "app/previews/single-character-copy-2026-11-03.png": "1ab239bbd7fb3c439c53bff6da8bd281492ed14b365fc879c336ff73fd1a90e1",
+    "app/previews/display-region-0-2026-11-03.png": "0d208a98563f431ff7d542ba423c7d9eeba7613aca61a95a0ed84678385510c9",
+    "app/previews/display-region-1-2026-11-03.png": "1a08f17b2d97b2db20589cacb8c56089600c919b380d6142a351a2cc20219de1"
+  }
+}
