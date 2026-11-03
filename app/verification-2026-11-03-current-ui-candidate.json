@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-03",
+  "source_revision": "312e12da21fa3b8226d535387866a4dd5be61413",
+  "package_relative_path": "app/build/packages/312e12da21fa3b8226d535387866a4dd5be61413/CcShot-0.1.0-dev-arm64.zip",
+  "package_sha256": "fd1467f0eaced4614a16f006d359fbf5dfe2450049266e554ed399403a960d60",
+  "package_bytes": 449117,
+  "checks": {
+    "archive_sha256_matches": true,
+    "archive_size_matches": true,
+    "source_files_match_manifest": true,
+    "manifest_files_match_committed_revision": true,
+    "arrow_evidence_hashes_match": true,
+    "signature_verified": true,
+    "binary_matches_build": true,
+    "source_revision_matches": true,
+    "arm64_only": true,
+    "macos14_target": true,
+    "trial_guide_matches": true
+  },
+  "passed": true,
+  "contains": [
+    "自动样式与图形选项",
+    "单排文字设置",
+    "三档线宽加数值输入",
+    "已选对象直接调整与箭头中点拖弯",
+    "实心遮挡与当前安全图像输出"
+  ],
+  "functional_evidence": [
+    "verification-2026-11-03-curved-arrow.json",
+    "verification-2026-11-03-audience-review.json",
+    "verification-2026-11-03-solid-mask.json"
+  ],
+  "runtime_investigation": {
+    "user_report": "好像没反应，尚未明确是全局键还是文字工具",
+    "before_launch": "进程查询未见CcShot可执行文件运行",
+    "after_launch": "CUA启动后确认一个生产模式CcShot进程，未传fixture参数；保持运行供本人使用",
+    "launch_installed_app": false,
+    "cua_menu_read": "对菜单栏应用两次读取超时，进程保持运行；不能据此声称菜单或热键回调已通过",
+    "hotkey_result": "CUA在Finder前台发送组合键未证实截图唤起，不等于实体按键已验证；不修改热键实现以掩盖未知原因",
+    "code_fix": false,
+    "user_followup": "用户随后要求App路径，已提供当前build/CcShot.app；具体无响应步骤尚未获得确认"
+  },
+  "supersedes_source_revision": "dff9c76857bca22672a83cdced433681031cebb8",
+  "installed_verified": false,
+  "public_release": false,
+  "new_permissions": false,
+  "clipboard_touched": false,
+  "unpacked_verification_copy_removed": true,
+  "remaining": [
+    "区分用户反馈的具体无响应步骤并复现",
+    "实体快捷键和真实中文候选",
+    "安装授权尚未获得，用户本次仅询问UI同步",
+    "混合1x/2x、安装升级与权限恢复等原有未测边界"
+  ]
+}
