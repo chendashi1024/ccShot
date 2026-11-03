@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS15.4.1/arm64/SDK15.4",
+  "sources": {
+    "app/Sources/PixelSampler.swift": "0bac310684a4e4145b00b8fad1a3c47593c947e7ac0b0b0154f2ad7c785ecb0c",
+    "app/Sources/WindowCapture.swift": "ba63b78b70b90aae8b4e8dd66842d22bf60355217a8899879be3caea40ad6106",
+    "app/Sources/SelectionView.swift": "0568eb69fe465c84e354578cf8987793d7ccb79890eac47eb6d6aaae86e0d52a",
+    "app/Sources/CaptureGeometry.swift": "88dbab5df62c170e2029d075150a8d9ae23b7ee10596c3f5197b76a4dd8db1f8",
+    "app/Sources/SelectionHandle.swift": "a27742ad44edb2c9b3fe2f3f3c6c8a36d244fa906e776a7eff3aa97146262d95",
+    "app/Sources/WindowTarget.swift": "897ca7c5587aacba8fd11178384f461496cfc562690260e8dd6a843a66bc0fc7",
+    "app/Sources/App.swift": "26be9afeb2131768eea827506bddaee53997921bdd558ad616d02749cb6afda9",
+    "app/Sources/ImageWindow.swift": "96e20b066768d666c3569e22a4c1f9201fea4d5fa5946013015b59598442e9b2",
+    "app/check.sh": "d09f5e781e9138392aa46d57aee26c89caa43ccd6cdd95c28f84ae2a7b01cff9",
+    "app/Tests/GeometryTests.swift": "e585759db1b058f41f51e906f265ec0ad762455fa2cb7890e8c21a750de731be"
+  },
+  "controlled_real_window_capture": {
+    "closed_window_rejected": true,
+    "fixture_only": true,
+    "height": 678,
+    "passed": true,
+    "source_owner_only": true,
+    "width": 1800,
+    "wrong_owner_rejected": true
+  },
+  "view_event_smoke": {
+    "cancel_window_pick": true,
+    "closed_windows_removed": true,
+    "copy_closes_editor_only": true,
+    "escape_clears_then_cancels": true,
+    "escape_restores_drag": true,
+    "fixture_only": true,
+    "hex_key_clipboard": true,
+    "jpeg_roundtrip": true,
+    "passed": true,
+    "png_roundtrip": true,
+    "resize_event_callback": true,
+    "rgb_key_clipboard": true,
+    "selection_callback_crop": true,
+    "two_windows_and_pin_level": true,
+    "window_click_target": true,
+    "window_drag_is_region": true
+  },
+  "visual_checked": [
+    "app/previews/window-capture-2026-11-03.png",
+    "app/previews/window-highlight-2026-11-03.png"
+  ],
+  "scope": "真实捕获仅限本进程虚构样本窗口；高亮图是同一原生视图的受控渲染",
+  "not_verified": [
+    "第三方窗口完整鼠标选择",
+    "混合多屏与跨屏窗口",
+    "真实全局热键",
+    "权限恢复",
+    "完整MVP"
+  ]
+}

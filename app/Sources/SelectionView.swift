@@ -10,6 +10,12 @@ enum SelectionAction { case edit, copy, save, pin }
     let image: CGImage
     var onConfirm: ((CGImage, NSRect, SelectionAction) -> Void)?
     var onCancel: (() -> Void)?
+    var onWindowPick: ((WindowTarget) -> Void)?
+    var windowTargets: [WindowTarget] = []
+    private var hoveredWindow: WindowTarget?
+    private var pendingWindow: WindowTarget?
+    private var dragged = false
+    private var windowStatus: String?
     private var anchor: NSPoint?
     private var selection = NSRect.zero
     private var selectionPixels: CGRect?
@@ -45,6 +51,7 @@ enum SelectionAction { case edit, copy, save, pin }
     override func selectAll(_ sender: Any?) { selectRegion(bounds) }
 
     func selectRegion(_ rect: CGRect) { updateSelection(rect); showActions() }
+    func showWindowStatus(_ message: String?) { windowStatus = message; needsDisplay = true }
 
     private var imageSize: CGSize { CGSize(width: image.width, height: image.height) }
     private func updateSelection(_ raw: CGRect) {
@@ -57,20 +64,21 @@ enum SelectionAction { case edit, copy, save, pin }
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         context.draw(image, in: bounds)
+        let highlighted = selection.isEmpty ? hoveredWindow?.rect ?? .zero : selection
         context.saveGState()
         let outside = CGMutablePath()
         outside.addRect(bounds)
-        if !selection.isEmpty { outside.addRect(selection) }
+        if !highlighted.isEmpty { outside.addRect(highlighted) }
         context.addPath(outside)
         context.setFillColor(NSColor.black.withAlphaComponent(0.48).cgColor)
         context.drawPath(using: .eoFill)
         context.restoreGState()
-        if !selection.isEmpty {
+        if !highlighted.isEmpty {
             NSColor.systemBlue.setStroke()
-            let border = NSBezierPath(rect: selection)
+            let border = NSBezierPath(rect: highlighted)
             border.lineWidth = 1.5
             border.stroke()
-            for handle in SelectionHandle.allCases {
+            for handle in selection.isEmpty ? [] : SelectionHandle.allCases {
                 let point = handle.point(in: selection)
                 let box = NSBezierPath(rect: NSRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6))
                 NSColor.white.setFill(); box.fill(); NSColor.systemBlue.setStroke(); box.stroke()
@@ -82,6 +90,9 @@ enum SelectionAction { case edit, copy, save, pin }
             (text as NSString).draw(at: NSPoint(x: min(max(8, selection.minX), bounds.width - 150), y: min(bounds.height - 25, selection.maxY + 6)), withAttributes: attributes)
         }
         drawMagnifier(context)
+        if let message = windowStatus ?? (hoveredWindow != nil && selection.isEmpty ? "单击截取窗口，拖动选择区域" : nil) {
+            (message as NSString).draw(at: CGPoint(x: 12, y: 12), withAttributes: [.font: NSFont.systemFont(ofSize: 13), .foregroundColor: NSColor.labelColor, .backgroundColor: NSColor.windowBackgroundColor])
+        }
     }
     private func pixel(at point: NSPoint) -> (Int, Int)? {
         guard bounds.contains(point) else { return nil }
@@ -90,12 +101,13 @@ enum SelectionAction { case edit, copy, save, pin }
     }
     func updatePointer(_ point: NSPoint) {
         pointer = point
+        hoveredWindow = selection.isEmpty ? WindowTarget.hit(point, in: windowTargets) : nil
         if let (x, y) = pixel(at: point) { pointerColor = PixelSampler.color(in: image, x: x, y: y) }
         else { pointerColor = nil }
         needsDisplay = true
     }
     override func mouseMoved(with event: NSEvent) { updatePointer(convert(event.locationInWindow, from: nil)) }
-    override func mouseExited(with event: NSEvent) { pointer = nil; pointerColor = nil; needsDisplay = true }
+    override func mouseExited(with event: NSEvent) { pointer = nil; pointerColor = nil; hoveredWindow = nil; needsDisplay = true }
     private func drawMagnifier(_ context: CGContext) {
         guard let pointer, let color = pointerColor, let (x, y) = pixel(at: pointer) else { return }
         let size = CGSize(width: 130, height: 157)
@@ -125,6 +137,9 @@ enum SelectionAction { case edit, copy, save, pin }
     override func mouseDown(with event: NSEvent) {
         anchor = convert(event.locationInWindow, from: nil)
         previous = selection
+        windowStatus = nil
+        dragged = false
+        pendingWindow = selection.isEmpty ? WindowTarget.hit(anchor!, in: windowTargets) : nil
         resizing = selection.isEmpty ? nil : SelectionHandle.allCases.first { handle in
             let point = handle.point(in: selection)
             return abs(point.x - anchor!.x) <= 7 && abs(point.y - anchor!.y) <= 7
@@ -137,6 +152,7 @@ enum SelectionAction { case edit, copy, save, pin }
     override func mouseDragged(with event: NSEvent) {
         guard let anchor else { return }
         let point = convert(event.locationInWindow, from: nil)
+        if hypot(point.x - anchor.x, point.y - anchor.y) > 3 { dragged = true; pendingWindow = nil }
         updatePointer(point)
         if let resizing {
             updateSelection(resizing.resize(previous, toward: point, canvas: bounds.size,
@@ -151,8 +167,18 @@ enum SelectionAction { case edit, copy, save, pin }
         }
     }
     override func mouseUp(with event: NSEvent) {
+        if let anchor {
+            let point = convert(event.locationInWindow, from: nil)
+            if hypot(point.x - anchor.x, point.y - anchor.y) > 3 { dragged = true; pendingWindow = nil }
+        }
         anchor = nil
         resizing = nil
+        if !dragged, let target = pendingWindow {
+            pendingWindow = nil
+            onWindowPick?(target)
+            return
+        }
+        pendingWindow = nil
         showActions()
     }
     private func showActions() {
@@ -200,6 +226,7 @@ enum SelectionAction { case edit, copy, save, pin }
     @objc private func reset() { selection = .zero; selectionPixels = nil; actions.isHidden = true; needsDisplay = true }
     override func cancelOperation(_ sender: Any?) { handleEscape() }
     private func handleEscape() {
+        pendingWindow = nil
         if anchor != nil { anchor = nil; resizing = nil; moving = false; selectRegion(previous) }
         else if !selection.isEmpty { reset() }
         else { cancel() }

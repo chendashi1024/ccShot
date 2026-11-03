@@ -39,6 +39,13 @@ import AppKit
         precondition(PixelSampler.color(in: colors, x: 1, y: 0)?.rgb == "RGB(0, 255, 0)", "取色坐标应逐像素对应")
         precondition(PixelSampler.color(in: colors, x: 0, y: 1)?.hex == "#0000FF", "取色不能上下翻转")
         precondition(PixelSampler.color(in: colors, x: -1, y: 0) == nil && PixelSampler.color(in: colors, x: 2, y: 0) == nil, "越界不应返回旧色值")
-        print("通过：截图坐标、八控制点、跨边界缩放、sRGB逐像素取色")
+        precondition(WindowTarget.localRect(quartzFrame: CGRect(x: 100, y: 100, width: 400, height: 300), screenFrame: CGRect(x: 0, y: 0, width: 1440, height: 900), primaryTop: 900) == CGRect(x: 100, y: 500, width: 400, height: 300), "窗口高亮应翻转全局 Y 坐标")
+        precondition(WindowTarget.localRect(quartzFrame: CGRect(x: -1200, y: 300, width: 300, height: 200), screenFrame: CGRect(x: -1280, y: 0, width: 1280, height: 720), primaryTop: 900) == CGRect(x: 80, y: 400, width: 300, height: 200), "左屏负坐标应映射到本屏")
+        precondition(WindowTarget.localRect(quartzFrame: CGRect(x: 100, y: -800, width: 400, height: 300), screenFrame: CGRect(x: 0, y: 900, width: 1440, height: 900), primaryTop: 900) == CGRect(x: 100, y: 500, width: 400, height: 300), "上方副屏不应使用本屏高度翻转全局坐标")
+        precondition(WindowTarget.localRect(quartzFrame: CGRect(x: 2000, y: 0, width: 100, height: 100), screenFrame: CGRect(x: 0, y: 0, width: 1440, height: 900), primaryTop: 900) == nil, "屏外窗口不能高亮")
+        let front = WindowTarget(id: 1, ownerPID: 10, rect: CGRect(x: 100, y: 100, width: 100, height: 100))
+        let back = WindowTarget(id: 2, ownerPID: 20, rect: CGRect(x: 0, y: 0, width: 300, height: 300))
+        precondition(WindowTarget.hit(CGPoint(x: 150, y: 150), in: [front, back]) == front, "重叠窗口命中最前目标")
+        print("通过：截图坐标、控制点、取色、窗口坐标和前后命中")
     }
 }
