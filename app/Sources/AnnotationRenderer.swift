@@ -27,11 +27,11 @@ import CoreImage
             let path = object.tool == .ellipse ? CGPath(ellipseIn: rect, transform: nil) : CGPath(roundedRect: rect, cornerWidth: min(style.cornerRadius, rect.width/2), cornerHeight: min(style.cornerRadius, rect.height/2), transform: nil)
             context.addPath(path); context.drawPath(using: style.filled ? .fill : .stroke)
         case .line, .arrow:
-            context.move(to: object.start); context.addLine(to: object.end); context.strokePath()
+            context.addPath(object.strokePath); context.strokePath()
             if object.tool == .arrow {
                 context.setLineDash(phase: 0, lengths: [])
-                arrow(at: object.end, from: object.start, style: style, context: context)
-                if style.arrowHead == .double { arrow(at: object.start, from: object.end, style: style, context: context) }
+                arrow(at: object.end, from: object.curveControl == object.end ? object.start : (object.curveControl ?? object.start), style: style, context: context)
+                if style.arrowHead == .double { arrow(at: object.start, from: object.curveControl == object.start ? object.end : (object.curveControl ?? object.end), style: style, context: context) }
             }
         case .pen, .highlight:
             guard let first = object.points.first else { return true }

@@ -88,12 +88,41 @@ extension ImageWindow {
         canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 300,y:180)))
         canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 300,y:180)))
         result["visible_endpoint_edits_in_arrow_mode"] = document.state.objects.count == arrowCount && document.state.objects.last?.end == CGPoint(x:300,y:180) && canvas.tool == .arrow
-        canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 200,y:140)))
-        canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 240,y:160)))
-        canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 240,y:160)))
+        canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 150,y:120)))
+        canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 190,y:140)))
+        canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 190,y:140)))
         result["selected_arrow_body_moves_without_new_object"] = document.state.objects.count == arrowCount && document.state.objects.last?.start == CGPoint(x:140,y:120) && document.state.objects.last?.end == CGPoint(x:340,y:200)
         editor.undo(nil)
         result["direct_arrow_move_undo"] = document.state.objects.last?.start == CGPoint(x:100,y:100) && document.state.objects.last?.end == CGPoint(x:300,y:180)
+        let straight = document.state.objects.last!
+        result["arrow_defaults_to_straight"] = straight.curveControl == nil
+        func dragArrow(_ from: CGPoint,_ to: CGPoint) {
+            canvas.mouseDown(with:mouse(.leftMouseDown,from)); canvas.mouseDragged(with:mouse(.leftMouseDragged,to)); canvas.mouseUp(with:mouse(.leftMouseUp,to))
+        }
+        dragArrow(straight.arrowMidpoint,CGPoint(x:200,y:240))
+        let curved = document.state.objects.last!
+        result["middle_handle_bends_existing_arrow"] = document.state.objects.count == arrowCount && curved.start == straight.start && curved.end == straight.end && hypot(curved.arrowMidpoint.x-200,curved.arrowMidpoint.y-240) < 0.01
+        result["curved_hit_follows_visible_line"] = curved.hit(curved.arrowPoint(at:0.25),tolerance:1) && !curved.hit(straight.arrowMidpoint,tolerance:1)
+        editor.undo(nil); result["bend_undo_restores_straight"] = document.state.objects.last == straight
+        editor.redo(nil); result["bend_redo_restores_curve"] = document.state.objects.last == curved
+        canvas.mouseDown(with:mouse(.leftMouseDown,curved.arrowMidpoint)); canvas.mouseDragged(with:mouse(.leftMouseDragged,CGPoint(x:200,y:280))); canvas.cancelGesture()
+        result["bend_cancel_preserves_curve"] = document.state.objects.last == curved && !canvas.hasDraft
+        let body = curved.arrowPoint(at:0.25)
+        dragArrow(body,CGPoint(x:body.x+30,y:body.y+10))
+        result["curved_body_moves_all_geometry"] = document.state.objects.last == curved.moved(by:CGPoint(x:30,y:10))
+        editor.undo(nil)
+        dragArrow(curved.end,CGPoint(x:350,y:200))
+        result["curved_endpoint_retains_bend"] = document.state.objects.last?.end == CGPoint(x:350,y:200) && document.state.objects.last?.curveControl == CGPoint(x:225,y:350)
+        editor.undo(nil)
+        let copy = document.copied(); copy.undo()
+        result["curved_pin_copy_is_independent"] = document.state.objects.last == curved && copy.state.objects.last == straight
+        dragArrow(curved.arrowMidpoint,straight.arrowMidpoint)
+        result["middle_handle_can_restore_straight"] = document.state.objects.last?.arrowMidpoint == straight.arrowMidpoint && document.state.objects.last?.strokePath.boundingBoxOfPath == straight.strokePath.boundingBoxOfPath
+        editor.undo(nil)
+        dragArrow(curved.arrowMidpoint,CGPoint(x:200,y:CGFloat(image.height)))
+        let box = document.state.objects.last!.strokePath.boundingBoxOfPath
+        result["bending_stays_inside_image"] = box.maxY <= CGFloat(image.height) && box.minY >= 0 && box.minX >= 0 && box.maxX <= CGFloat(image.width)
+        editor.undo(nil)
         canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 20,y:300)))
         canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 70,y:340)))
         canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 70,y:340)))
@@ -128,6 +157,18 @@ extension ImageWindow {
         func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
         if pinned && CommandLine.arguments.contains("--preview-edit") { if let root = editor.window?.contentView { descendants(root).compactMap { $0 as? NSButton }.first(where:{$0.title == "标注"})?.performClick(nil) } }
         if !pinned || CommandLine.arguments.contains("--preview-edit") { editor.canvas.chooseTool(CommandLine.arguments.contains("--preview-text") ? .text : .arrow) }
+        if CommandLine.arguments.contains("--preview-curved-arrow") {
+            let canvas = editor.canvas
+            canvas.chooseTool(.select); editor.window?.contentView?.layoutSubtreeIfNeeded()
+            func mouse(_ type: NSEvent.EventType,_ point: CGPoint) -> NSEvent {
+                let rect = canvas.contentRect
+                let local = CGPoint(x:rect.minX+point.x/size.width*rect.width,y:rect.minY+point.y/size.height*rect.height)
+                return NSEvent.mouseEvent(with:type,location:canvas.convert(local,to:nil),modifierFlags:[],timestamp:0,windowNumber:editor.window!.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:1)!
+            }
+            let middle = CGPoint(x:730,y:220), bent = CGPoint(x:800,y:290)
+            canvas.mouseDown(with:mouse(.leftMouseDown,middle)); canvas.mouseUp(with:mouse(.leftMouseUp,middle))
+            canvas.mouseDown(with:mouse(.leftMouseDown,middle)); canvas.mouseDragged(with:mouse(.leftMouseDragged,bent)); canvas.mouseUp(with:mouse(.leftMouseUp,bent))
+        }
         // 样式随选中工具自动出现；旧 --show-style 参数保留兼容，不再额外点击。
         await editor.recognitionForVerification?.value
         guard CGPreflightScreenCaptureAccess(), let window = editor.window else { return false }

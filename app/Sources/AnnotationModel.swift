@@ -67,6 +67,7 @@ struct AnnotationObject: Equatable {
     var style: AnnotationStyle
     var start: CGPoint
     var end: CGPoint
+    var curveControl: CGPoint?
     var points: [CGPoint] = []
     var number: Int = 1
     var text = ""
@@ -74,7 +75,24 @@ struct AnnotationObject: Equatable {
     init(id: UUID = UUID(), tool: AnnotationTool, style: AnnotationStyle, start: CGPoint, end: CGPoint, points: [CGPoint] = [], number: Int = 1, text: String = "", textLayoutWidth: CGFloat = 360) {
         self.id = id; self.tool = tool; self.style = style; self.start = start; self.end = end; self.points = points; self.number = number; self.text = text; self.textLayoutWidth = textLayoutWidth
     }
+    // 中间拖点始终落在曲线上；二次贝塞尔控制点由它反推。
+    var arrowMidpoint: CGPoint { arrowPoint(at: 0.5) }
+    func arrowPoint(at t: CGFloat) -> CGPoint {
+        let c = curveControl ?? CGPoint(x:(start.x+end.x)/2,y:(start.y+end.y)/2)
+        let u = 1-t
+        return CGPoint(x:u*u*start.x+2*u*t*c.x+t*t*end.x,y:u*u*start.y+2*u*t*c.y+t*t*end.y)
+    }
+    var strokePath: CGPath {
+        let path = CGMutablePath(); path.move(to:start)
+        if tool == .arrow, let curveControl { path.addQuadCurve(to:end,control:curveControl) }
+        else { path.addLine(to:end) }
+        return path
+    }
     var bounds: CGRect {
+        if tool == .arrow, curveControl != nil {
+            let box = strokePath.boundingBoxOfPath
+            return CGRect(x:box.minX,y:box.minY,width:max(1,box.width),height:max(1,box.height))
+        }
         let values = points.isEmpty ? [start, end] : points
         let xs = values.map(\.x), ys = values.map(\.y)
         let minX = xs.min() ?? start.x, minY = ys.min() ?? start.y
@@ -90,6 +108,7 @@ struct AnnotationObject: Equatable {
         var copy = self
         copy.start = CGPoint(x: start.x + delta.x, y: start.y + delta.y)
         copy.end = CGPoint(x: end.x + delta.x, y: end.y + delta.y)
+        copy.curveControl = curveControl.map { CGPoint(x:$0.x+delta.x,y:$0.y+delta.y) }
         copy.points = points.map { CGPoint(x: $0.x + delta.x, y: $0.y + delta.y) }
         return copy
     }
@@ -105,7 +124,7 @@ struct AnnotationObject: Equatable {
             return copy
         }
         func map(_ p: CGPoint) -> CGPoint { CGPoint(x: rect.minX + (p.x - previous.minX) / previous.width * rect.width, y: rect.minY + (p.y - previous.minY) / previous.height * rect.height) }
-        var copy = self; copy.start = map(start); copy.end = map(end); copy.points = points.map(map); return copy
+        var copy = self; copy.start = map(start); copy.end = map(end); copy.points = points.map(map); copy.curveControl = curveControl.map(map); return copy
     }
     func hit(_ point: CGPoint, tolerance: CGFloat) -> Bool {
         func distance(_ p: CGPoint, _ a: CGPoint, _ b: CGPoint) -> CGFloat {
@@ -116,7 +135,19 @@ struct AnnotationObject: Equatable {
         }
         let padding = tolerance + style.width / 2
         switch tool {
-        case .line, .arrow: return distance(point, start, end) <= padding || (tool == .arrow && hypot(point.x-end.x, point.y-end.y) <= max(12, style.width * 3))
+        case .arrow:
+            let c = curveControl ?? start
+            let length = hypot(c.x-start.x,c.y-start.y)+hypot(end.x-c.x,end.y-c.y)
+            let steps = max(1,min(4096,Int(ceil(length/4))))
+            var previous = start
+            for index in 1...steps {
+                let next = arrowPoint(at:CGFloat(index)/CGFloat(steps))
+                if distance(point,previous,next) <= padding { return true }
+                previous = next
+            }
+            let headRadius = max(12,style.width*3)
+            return hypot(point.x-end.x,point.y-end.y) <= headRadius || style.arrowHead == .double && hypot(point.x-start.x,point.y-start.y) <= headRadius
+        case .line: return distance(point,start,end) <= padding
         case .text: return bounds.insetBy(dx:-tolerance,dy:-tolerance).contains(point)
         case .mask where !style.maskBrush: return bounds.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
         case .pen, .highlight, .mask:

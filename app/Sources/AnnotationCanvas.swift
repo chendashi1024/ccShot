@@ -20,7 +20,7 @@ import AppKit
     private var textTopLeft: CGPoint?
     private var textMaximumWidth: CGFloat = 360
     var onZoom: ((CGFloat) -> Void)?
-    private enum Drag { case draw, move(AnnotationObject), resize(AnnotationObject, SelectionHandle), endpoint(AnnotationObject, Bool) }
+    private enum Drag { case draw, move(AnnotationObject), resize(AnnotationObject, SelectionHandle), endpoint(AnnotationObject, Bool), bend(AnnotationObject) }
     private var drag: Drag?
     private var anchor: CGPoint?
     private var draft: AnnotationObject?
@@ -106,6 +106,11 @@ import AppKit
         let box = CGRect(x: topLeft.x, y: topLeft.y, width: bottomRight.x-topLeft.x, height: bottomRight.y-topLeft.y)
         let border = NSBezierPath(rect: box); border.setLineDash([4, 3], count: 2, phase: 0); border.stroke()
         let points = object.tool == .line || object.tool == .arrow ? [viewPoint(object.start), viewPoint(object.end)] : SelectionHandle.allCases.map { viewPoint($0.point(in: object.bounds)) }
+        if object.tool == .arrow {
+            let center = viewPoint(object.arrowMidpoint)
+            let handle = NSBezierPath(ovalIn:CGRect(x:center.x-4,y:center.y-4,width:8,height:8))
+            NSColor.white.setFill(); handle.fill(); NSColor.systemBlue.setStroke(); handle.stroke()
+        }
         for point in points {
             let path = NSBezierPath(rect: CGRect(x: point.x-3, y: point.y-3, width: 6, height: 6))
             NSColor.white.setFill(); path.fill(); NSColor.systemBlue.setStroke(); path.stroke()
@@ -120,6 +125,9 @@ import AppKit
             if object.tool == .line || object.tool == .arrow {
                 if hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
                 if hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
+                if object.tool == .arrow, hypot(point.x-object.arrowMidpoint.x,point.y-object.arrowMidpoint.y) <= tolerance {
+                    begin(.bend(object),at:point,object:object); return
+                }
             } else if let handle = SelectionHandle.allCases.first(where: { hypot(point.x-$0.point(in: object.bounds).x, point.y-$0.point(in: object.bounds).y) <= tolerance }) {
                 begin(.resize(object, handle), at: point, object: object); return
             }
@@ -182,12 +190,44 @@ import AppKit
                 value = value.moved(by:CGPoint(x:min(max(0,b.minX),imageSize.width-b.width)-b.minX,y:min(max(0,b.minY),imageSize.height-b.height)-b.minY))
             }
             draft = value
+        case .bend(let original):
+            let middle = original.arrowMidpoint
+            let target = CGPoint(x:middle.x+point.x-anchor.x,y:middle.y+point.y-anchor.y)
+            var value = original
+            value.curveControl = CGPoint(x:2*target.x-(original.start.x+original.end.x)/2,y:2*target.y-(original.start.y+original.end.y)/2)
+            draft = boundedArrow(value,from:original)
         case .endpoint(var original, let first):
+            let previous = original
             if first { original.start = snapped(point, from: original.end, event: event) }
             else { original.end = snapped(point, from: original.start, event: event) }
-            draft = original
+            // 移动端点时保留相对弦中点的弯曲偏移。
+            if let control = previous.curveControl {
+                original.curveControl = CGPoint(x:control.x+(original.start.x+original.end.x-previous.start.x-previous.end.x)/2,y:control.y+(original.start.y+original.end.y-previous.start.y-previous.end.y)/2)
+            }
+            draft = boundedArrow(original,from:previous)
         }
         if fullDraftPreview { refreshPreview() } else { needsDisplay = true }
+    }
+    // 弧线极值可能超出拖点位置；按实际路径边界限制，避免移出截图。
+    private func boundedArrow(_ proposed: AnnotationObject, from original: AnnotationObject) -> AnnotationObject {
+        guard proposed.tool == .arrow else { return proposed }
+        func inside(_ object: AnnotationObject) -> Bool {
+            let b = object.strokePath.boundingBoxOfPath
+            return b.minX >= 0 && b.minY >= 0 && b.maxX <= imageSize.width && b.maxY <= imageSize.height
+        }
+        if inside(proposed) { return proposed }
+        func mix(_ a: CGPoint,_ b: CGPoint,_ t: CGFloat) -> CGPoint { CGPoint(x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t) }
+        let a = original.curveControl ?? original.arrowMidpoint
+        let b = proposed.curveControl ?? proposed.arrowMidpoint
+        var low: CGFloat = 0, high: CGFloat = 1, accepted = original
+        for _ in 0..<24 {
+            let t = (low+high)/2
+            var value = original
+            value.start = mix(original.start,proposed.start,t); value.end = mix(original.end,proposed.end,t)
+            value.curveControl = mix(a,b,t)
+            if inside(value) { accepted = value; low = t } else { high = t }
+        }
+        return accepted
     }
     override func mouseUp(with event: NSEvent) {
         guard textEditor == nil, let object = draft else { return }

@@ -57,6 +57,17 @@ import AppKit
             let object = AnnotationObject(tool: tool, style: .initial(tool), start: CGPoint(x: 20, y: 20), end: CGPoint(x: 150, y: 70), points: tool == .pen || tool == .highlight ? [CGPoint(x: 20, y: 20), CGPoint(x: 60, y: 65), CGPoint(x: 150, y: 30)] : [], number: 123)
             precondition(AnnotationRenderer.render(base: base, objects: [object])?.width == base.width)
         }
+        var curve = AnnotationObject(tool:.arrow,style:.initial(.arrow),start:CGPoint(x:20,y:20),end:CGPoint(x:180,y:20))
+        curve.curveControl = CGPoint(x:100,y:140)
+        precondition(curve.arrowMidpoint == CGPoint(x:100,y:80) && curve.bounds == CGRect(x:20,y:20,width:160,height:60), "曲线中点与实际边界应正确")
+        precondition(curve.hit(CGPoint(x:100,y:80),tolerance:1) && !curve.hit(CGPoint(x:100,y:20),tolerance:1), "弯曲后不应选中旧直线")
+        let curveImage = AnnotationRenderer.render(base:base,objects:[curve])!
+        precondition(PixelSampler.color(in:curveImage,x:100,y:19)!.green < 100 && PixelSampler.color(in:curveImage,x:100,y:79)!.hex == "#FFFFFF", "导出必须渲染弧线且去掉旧直线")
+        precondition(curve.resized(to:CGRect(x:10,y:10,width:80,height:30)).arrowMidpoint == CGPoint(x:50,y:40), "缩放应同步曲率")
+        for head in ArrowHead.allCases {
+            curve.style.arrowHead = head; curve.style.dashed = true
+            precondition(AnnotationRenderer.render(base:base,objects:[curve]) != nil, "三种箭头与虚线应兼容弯曲")
+        }
         var invalid = filled; invalid.style.width = 0
         precondition(AnnotationRenderer.render(base:base,objects:[invalid]) == nil, "合成失败不得返回原图")
         for effect in [MaskEffect.pixelate,.blur] {
