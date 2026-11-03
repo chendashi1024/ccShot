@@ -50,6 +50,21 @@
     "只使用虚构夹具，不等于真实桌面热键端到端通过",
     "未验证真实中文输入法候选、混合1x/2x和安装升级",
     "点工具进入独立编辑器，不声称框选遮罩内原地OCR/绘制",
-    "新包在源码提交后生成并另行核验"
-  ]
+    "项目5b5c836a新增原地UI还原合同，当前跨窗结构未达标；本轮不重发过渡布局包"
+  ],
+  "ui_goal_status": {
+    "reference_commit": "5b5c836ae56cd71926d46dad078b4c123f893fa4",
+    "reference_scenes_viewed": [
+      "docs/ui-v3/annotate.png",
+      "docs/ui-v3/capture.png"
+    ],
+    "native_reconstruction_complete": false,
+    "remaining_structure": [
+      "保留选区原位置的原地编辑",
+      "图标加中文与选择/撤销/输出分组",
+      "紧靠选区且按内容收拢的参数面板"
+    ],
+    "current_running_app_replaced": false
+  },
+  "verification_bundle_removed": true
 }
