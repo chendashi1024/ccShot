@@ -57,6 +57,19 @@ import AppKit
             let object = AnnotationObject(tool: tool, style: .initial(tool), start: CGPoint(x: 20, y: 20), end: CGPoint(x: 150, y: 70), points: tool == .pen || tool == .highlight ? [CGPoint(x: 20, y: 20), CGPoint(x: 60, y: 65), CGPoint(x: 150, y: 30)] : [], number: 123)
             precondition(AnnotationRenderer.render(base: base, objects: [object])?.width == base.width)
         }
+        var invalid = filled; invalid.style.width = 0
+        precondition(AnnotationRenderer.render(base:base,objects:[invalid]) == nil, "合成失败不得返回原图")
+        for effect in MaskEffect.allCases {
+            for brush in [false,true] {
+                var style = AnnotationStyle.initial(.mask); style.maskEffect = effect; style.maskBrush = brush; style.width = 20; style.maskStrength = 20
+                let mask = AnnotationObject(tool:.mask,style:style,start:CGPoint(x:45,y:20),end:CGPoint(x:80,y:80),points:brush ? [CGPoint(x:60,y:20),CGPoint(x:60,y:80)] : [])
+                let output = AnnotationRenderer.render(base:rendered,objects:[mask])!
+                let inside = PixelSampler.color(in:output,x:58,y:base.height-1-40)!
+                let before = PixelSampler.color(in:rendered,x:58,y:base.height-1-40)!
+                precondition(inside.green > before.green, "马赛克/模糊必须实际改变目标像素")
+                precondition(PixelSampler.color(in:output,x:30,y:base.height-1-30)!.hex == PixelSampler.color(in:rendered,x:30,y:base.height-1-30)!.hex, "效果不得污染区域外像素")
+            }
+        }
         let suite = "com.ccshot.annotation-tests.\(UUID().uuidString)"; let store = UserDefaults(suiteName: suite)!
         defer { store.removePersistentDomain(forName: suite) }
         let prefs = AppPreferences(store: store); var lineStyle = AnnotationStyle.initial(.line); lineStyle.width = 12

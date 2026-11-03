@@ -1,7 +1,7 @@
 import AppKit
 
 enum AnnotationTool: String, Codable, CaseIterable {
-    case select, rectangle, ellipse, arrow, line, pen, highlight, number
+    case select, rectangle, ellipse, arrow, line, pen, mask, highlight, number
     var title: String {
         switch self {
         case .select: return "选择"
@@ -10,11 +10,12 @@ enum AnnotationTool: String, Codable, CaseIterable {
         case .arrow: return "箭头"
         case .line: return "直线"
         case .pen: return "画笔"
+        case .mask: return "马赛克"
         case .highlight: return "高亮"
         case .number: return "序号"
         }
     }
-    var key: String { [.select: "v", .rectangle: "r", .ellipse: "o", .arrow: "a", .line: "l", .pen: "p", .highlight: "h", .number: "n"][self]! }
+    var key: String { [.select: "v", .rectangle: "r", .ellipse: "o", .arrow: "a", .line: "l", .pen: "p", .mask: "m", .highlight: "h", .number: "n"][self]! }
 }
 
 struct AnnotationColor: Codable, Equatable {
@@ -32,19 +33,25 @@ struct AnnotationColor: Codable, Equatable {
     }
 }
 
+enum MaskEffect: String, Codable, CaseIterable { case pixelate, blur }
 enum ArrowHead: String, Codable, CaseIterable { case filled, open, double }
 struct AnnotationStyle: Codable, Equatable {
     var color = AnnotationColor.palette[0]
     var width: CGFloat = 4
     var filled = false
+    var fillOpacity: CGFloat = 1
     var cornerRadius: CGFloat = 0
     var dashed = false
     var arrowHead = ArrowHead.filled
-    var valid: Bool { color.valid && width.isFinite && (1...80).contains(width) && cornerRadius.isFinite && (0...80).contains(cornerRadius) }
+    var maskEffect = MaskEffect.pixelate
+    var maskBrush = false
+    var maskStrength: CGFloat = 16
+    var valid: Bool { fillOpacity.isFinite && (0...1).contains(fillOpacity) && color.valid && width.isFinite && (1...80).contains(width) && maskStrength.isFinite && (4...80).contains(maskStrength) && cornerRadius.isFinite && (0...80).contains(cornerRadius) }
     static func initial(_ tool: AnnotationTool) -> Self {
         var style = Self()
         if tool == .highlight { style.width = 18; style.color = .palette[2] }
         if tool == .number { style.width = 6 }
+        if tool == .mask { style.width = 32 }
         return style
     }
 }
@@ -88,7 +95,8 @@ struct AnnotationObject: Equatable {
         let padding = tolerance + style.width / 2
         switch tool {
         case .line, .arrow: return distance(point, start, end) <= padding || (tool == .arrow && hypot(point.x-end.x, point.y-end.y) <= max(12, style.width * 3))
-        case .pen, .highlight:
+        case .mask where !style.maskBrush: return bounds.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
+        case .pen, .highlight, .mask:
             if points.count == 1 { return distance(point, points[0], points[0]) <= padding }
             return zip(points, points.dropFirst()).contains { distance(point, $0.0, $0.1) <= padding }
         case .ellipse, .number:
@@ -106,6 +114,14 @@ struct AnnotationObject: Equatable {
 struct AnnotationState: Equatable {
     var objects: [AnnotationObject] = []
     var nextNumber = 1
+    var occlusions: [CGRect] {
+        objects.compactMap { object in
+            if object.tool == .mask { return object.bounds.insetBy(dx: object.style.maskBrush ? -object.style.width / 2 : -1, dy: object.style.maskBrush ? -object.style.width / 2 : -1) }
+            if [.rectangle, .ellipse].contains(object.tool) && object.style.filled && object.style.color.alpha > 0 { return object.bounds }
+            if object.tool == .number { return object.bounds }
+            return nil
+        }
+    }
 }
 
 @MainActor final class AnnotationDocument {

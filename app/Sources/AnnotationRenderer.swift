@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage
 
 @MainActor enum AnnotationRenderer {
     static func render(base: CGImage, objects: [AnnotationObject]) -> CGImage? {
@@ -8,14 +9,15 @@ import AppKit
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
         defer { NSGraphicsContext.restoreGraphicsState() }
-        for object in objects { draw(object, in: context) }
+        for object in objects { guard draw(object, in: context) else { return nil } }
         return context.makeImage()
     }
-    static func draw(_ object: AnnotationObject, in context: CGContext) {
+    @discardableResult static func draw(_ object: AnnotationObject, in context: CGContext) -> Bool {
         context.saveGState(); defer { context.restoreGState() }
         let style = object.style
-        guard style.valid else { return }
-        let color = style.color.nsColor.withAlphaComponent(object.tool == .highlight ? 0.3 * style.color.alpha : style.color.alpha)
+        guard style.valid else { return false }
+        let opacity = style.filled && [.rectangle,.ellipse].contains(object.tool) ? style.fillOpacity : 1
+        let color = style.color.nsColor.withAlphaComponent(style.color.alpha * (object.tool == .highlight ? 0.3 : opacity))
         context.setStrokeColor(color.cgColor); context.setFillColor(color.cgColor)
         context.setLineWidth(style.width); context.setLineCap(.round); context.setLineJoin(.round)
         if style.dashed { context.setLineDash(phase: 0, lengths: [style.width * 3, style.width * 2]) }
@@ -32,7 +34,7 @@ import AppKit
                 if style.arrowHead == .double { arrow(at: object.start, from: object.end, style: style, context: context) }
             }
         case .pen, .highlight:
-            guard let first = object.points.first else { return }
+            guard let first = object.points.first else { return true }
             context.move(to: first)
             if object.points.count == 1 {
                 context.addLine(to: CGPoint(x: first.x + 0.01, y: first.y))
@@ -45,6 +47,17 @@ import AppKit
                 context.addLine(to: previous)
             }
             context.strokePath()
+        case .mask:
+            guard let source = context.makeImage(), let filtered = filtered(source, style: style) else { return false }
+            context.setLineDash(phase: 0, lengths: [])
+            if style.maskBrush {
+                guard let first = object.points.first else { return true }
+                context.move(to: first)
+                if object.points.count == 1 { context.addLine(to: CGPoint(x: first.x + 0.01, y: first.y)) }
+                else { for point in object.points.dropFirst() { context.addLine(to: point) } }
+                context.replacePathWithStrokedPath(); context.clip()
+            } else { context.clip(to: object.bounds) }
+            context.draw(filtered, in: CGRect(x: 0, y: 0, width: source.width, height: source.height))
         case .number:
             let rect = object.bounds
             context.fillEllipse(in: rect)
@@ -55,6 +68,16 @@ import AppKit
             text.draw(at: CGPoint(x: rect.midX-size.width/2, y: rect.midY-size.height/2), withAttributes: attributes)
         case .select: break
         }
+        return true
+    }
+    private static let filterContext = CIContext(options: [.workingColorSpace: CGColorSpace(name: CGColorSpace.sRGB)!])
+    private static func filtered(_ image: CGImage, style: AnnotationStyle) -> CGImage? {
+        let input = CIImage(cgImage: image)
+        let name = style.maskEffect == .pixelate ? "CIPixellate" : "CIGaussianBlur"
+        let parameter = style.maskEffect == .pixelate ? kCIInputScaleKey : kCIInputRadiusKey
+        let strength = style.maskEffect == .pixelate ? style.maskStrength : style.maskStrength / 2
+        guard let output = CIFilter(name: name, parameters: [kCIInputImageKey: input.clampedToExtent(), parameter: strength])?.outputImage?.cropped(to: input.extent) else { return nil }
+        return filterContext.createCGImage(output, from: input.extent)
     }
     private static func arrow(at tip: CGPoint, from start: CGPoint, style: AnnotationStyle, context: CGContext) {
         guard hypot(tip.x-start.x, tip.y-start.y) > 0 else { return }

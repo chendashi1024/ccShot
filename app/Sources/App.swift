@@ -40,7 +40,8 @@ import ScreenCaptureKit
         registerHotkeys()
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
-            if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
+            if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview")) ? 0 : 1) } }
+            else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
             else if let path = argument("--render-annotations") { Task { @MainActor in exit(await ImageWindow.annotationPreview(image, to: path) ? 0 : 1) } }
             else if let path = argument("--render-settings") { renderSettings(to: path) }
             else if let previewPath = argument("--render-window-highlight") { renderSelection(image, to: previewPath, windowHighlight: true) }

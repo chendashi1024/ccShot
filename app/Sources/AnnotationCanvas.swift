@@ -20,6 +20,7 @@ import AppKit
     private var anchor: CGPoint?
     private var draft: AnnotationObject?
     private var following: [AnnotationObject] = []
+    private var fullDraftPreview = false
     var hasDraft: Bool { drag != nil }
     var selected: AnnotationObject? { document.state.objects.first { $0.id == selectedID } }
     var currentStyle: AnnotationStyle { selected?.style ?? preferences.annotationStyle(for: tool) }
@@ -69,17 +70,19 @@ import AppKit
     }
     func deselect() { selectedID = nil; needsDisplay = true; onSelectionChanged?() }
     private func refreshPreview() {
-        let objects: [AnnotationObject]
+        var objects: [AnnotationObject]
         if let draft, let index = document.state.objects.firstIndex(where: { $0.id == draft.id }) {
             objects = Array(document.state.objects[..<index]); following = Array(document.state.objects.dropFirst(index+1))
         } else { objects = document.state.objects; following = [] }
+        fullDraftPreview = draft != nil && (draft?.tool == .mask || following.contains(where: { $0.tool == .mask }))
+        if fullDraftPreview, let draft { objects.append(draft); objects.append(contentsOf: following) }
         previewImage = AnnotationRenderer.render(base: document.baseImage, objects: objects)
         image = previewImage.map { NSImage(cgImage: $0, size: imageSize) }
         needsDisplay = true
     }
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        if let draft, let context = NSGraphicsContext.current?.cgContext {
+        if !fullDraftPreview, let draft, let context = NSGraphicsContext.current?.cgContext {
             context.saveGState()
             context.clip(to: contentRect)
             context.translateBy(x: contentRect.minX, y: contentRect.minY)
@@ -123,7 +126,7 @@ import AppKit
                 var state = document.state; state.objects.append(object); state.nextNumber += 1
                 selectedID = object.id; document.commit(state); onSelectionChanged?()
             } else {
-                let object = AnnotationObject(tool: tool, style: style, start: point, end: point, points: tool == .pen || tool == .highlight ? [point] : [])
+                let object = AnnotationObject(tool: tool, style: style, start: point, end: point, points: tool == .pen || tool == .highlight || tool == .mask && style.maskBrush ? [point] : [])
                 begin(.draw, at: point, object: object)
             }
         }
@@ -143,7 +146,7 @@ import AppKit
         case .draw:
             guard var object = draft else { return }
             object.end = object.tool == .line || object.tool == .arrow ? snapped(point, from: anchor, event: event) : point
-            if object.tool == .pen || object.tool == .highlight {
+            if object.tool == .pen || object.tool == .highlight || object.tool == .mask && object.style.maskBrush {
                 if let last = object.points.last, hypot(last.x-point.x,last.y-point.y) >= 0.5 { object.points.append(point) }
             }
             draft = object
@@ -157,12 +160,12 @@ import AppKit
             else { original.end = snapped(point, from: original.start, event: event) }
             draft = original
         }
-        needsDisplay = true
+        if fullDraftPreview { refreshPreview() } else { needsDisplay = true }
     }
     override func mouseUp(with event: NSEvent) {
         guard let object = draft else { return }
         let valid: Bool
-        if object.tool == .rectangle || object.tool == .ellipse { valid = abs(object.end.x-object.start.x) >= 1 && abs(object.end.y-object.start.y) >= 1 }
+        if object.tool == .rectangle || object.tool == .ellipse || object.tool == .mask && !object.style.maskBrush { valid = abs(object.end.x-object.start.x) >= 1 && abs(object.end.y-object.start.y) >= 1 }
         else { valid = !object.points.isEmpty || hypot(object.end.x-object.start.x,object.end.y-object.start.y) >= 1 }
         draft = nil; drag = nil; anchor = nil; following = []
         if valid {

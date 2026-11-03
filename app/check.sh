@@ -8,7 +8,13 @@ xcrun swiftc Sources/AppPreferences.swift Tests/PreferencesTests.swift -o build/
 build/preferences-tests
 xcrun swiftc Sources/AnnotationModel.swift Sources/AnnotationRenderer.swift Sources/AnnotationPreferences.swift Sources/AppPreferences.swift Sources/PixelSampler.swift Tests/AnnotationTests.swift -o build/annotation-tests
 build/annotation-tests
+xcrun swiftc Sources/SafeTextImage.swift Tests/SafeTextGeometryTests.swift -o build/privacy-geometry-tests
+build/privacy-geometry-tests
 build/CcShot.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --smoke-test "$PWD/build/smoke.json"
 cat build/smoke.json
+build/CcShot.app/Contents/MacOS/CcShot \
+  --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
+  --privacy-smoke-test "$PWD/build/privacy-smoke.json"
+cat build/privacy-smoke.json
