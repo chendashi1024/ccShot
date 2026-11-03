@@ -6,8 +6,10 @@ import ScreenCaptureKit
     private var statusItem: NSStatusItem!
     private var selectionWindow: SelectionWindow?
     private var imageWindows: [UUID: ImageWindow] = [:]
-    private var hotkeys: [EventHotKeyRef] = []
-    private var handler: EventHandlerRef?
+    private let hotkeys = HotkeyManager()
+    private let preferences = AppPreferences.shared
+    private var settings: SettingsWindow?
+    private var hotkeyWarning: NSMenuItem?
     private var captureTask: Task<Void, Never>?
     private var fixture: CGImage?
     private var captureGeneration = 0
@@ -15,7 +17,7 @@ import ScreenCaptureKit
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         let menu = NSMenu()
-        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("退出 CcShot", #selector(quit), "q")] {
+        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("设置…", #selector(openSettings), ","), ("退出 CcShot", #selector(quit), "q")] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
             item.target = self
             menu.addItem(item)
@@ -34,6 +36,7 @@ import ScreenCaptureKit
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
             if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
+            else if let path = argument("--render-settings") { renderSettings(to: path) }
             else if let previewPath = argument("--render-window-highlight") { renderSelection(image, to: previewPath, windowHighlight: true) }
             else if let previewPath = argument("--render-selection") { renderSelection(image, to: previewPath) }
             else if argument("--smoke-test") != nil { runSmokeTest(image) }
@@ -48,23 +51,49 @@ import ScreenCaptureKit
         return args[index + 1]
     }
     private func registerHotkeys() {
-        var type = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-        let target = GetApplicationEventTarget()
-        let result = InstallEventHandler(target, { _, event, context in
-            guard let event, let context else { return OSStatus(eventNotHandledErr) }
-            var identifier = EventHotKeyID()
-            guard GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &identifier) == noErr else { return OSStatus(eventNotHandledErr) }
-            let controller = Unmanaged<AppController>.fromOpaque(context).takeUnretainedValue()
-            Task { @MainActor in
-                if identifier.id == 3 { controller.pinCurrentOrClipboard() } else { controller.capture() }
+        hotkeys.onAction = { [weak self] action in
+            switch action {
+            case .capture: self?.capture()
+            case .pin: self?.pinCurrentOrClipboard()
             }
-            return noErr
-        }, 1, &type, Unmanaged.passUnretained(self).toOpaque(), &handler)
-        guard result == noErr else { return }
-        for (id, key, modifiers) in [(UInt32(1), UInt32(kVK_F1), UInt32(0)), (2, UInt32(kVK_ANSI_S), UInt32(controlKey | optionKey)), (3, UInt32(kVK_F3), UInt32(0))] {
-            var reference: EventHotKeyRef?
-            if RegisterEventHotKey(key, modifiers, EventHotKeyID(signature: 0x43435348, id: id), target, 0, &reference) == noErr, let reference { hotkeys.append(reference) }
         }
+        updateHotkeyWarning(hotkeys.apply(capture: preferences.captureShortcut, pin: preferences.pinShortcut))
+    }
+    private func updateHotkeyWarning(_ error: String?) {
+        if let hotkeyWarning { statusItem.menu?.removeItem(hotkeyWarning) }
+        hotkeyWarning = nil
+        if let error {
+            let warning = NSMenuItem(title: error, action: nil, keyEquivalent: "")
+            warning.isEnabled = false
+            statusItem.menu?.addItem(warning)
+            hotkeyWarning = warning
+        }
+    }
+    @objc private func openSettings() {
+        // 暂藏框选而不丢掉快照，关闭设置后可继续当前截图。
+        captureGeneration += 1
+        captureTask?.cancel(); captureTask = nil
+        selectionWindow?.orderOut(nil)
+        if settings == nil {
+            settings = SettingsWindow(preferences: preferences, applyShortcuts: { [weak self] capture, pin in
+                guard let self else { return "应用已关闭" }
+                let error = self.hotkeys.apply(capture: capture, pin: pin)
+                self.updateHotkeyWarning(error)
+                return error
+            }, recordingChanged: { [weak self] recording in
+                guard let self else { return "应用已关闭" }
+                if recording { self.hotkeys.pause(); return nil }
+                let error = self.hotkeys.apply(capture: self.preferences.captureShortcut, pin: self.preferences.pinShortcut)
+                self.updateHotkeyWarning(error)
+                return error
+            })
+            settings?.onClose = { [weak self] in
+                guard let window = self?.selectionWindow else { return }
+                window.makeKeyAndOrderFront(nil)
+                window.makeFirstResponder(window.contentView)
+            }
+        }
+        settings?.present()
     }
     @objc func capture() {
         cancelCapture()
@@ -209,6 +238,17 @@ import ScreenCaptureKit
         return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }
     private func runSmokeTest(_ image: CGImage) {
+        let settingsSmoke = runSettingsSmokeTest()
+        let repeatBindingPassed = hotkeys.apply(capture: preferences.captureShortcut, pin: preferences.pinShortcut) == nil
+        let fallbackBindingPassed = hotkeys.apply(capture: .fallback, pin: preferences.pinShortcut) == nil && hotkeys.activeCount == 2
+        let restoredAfterFallback = hotkeys.apply(capture: preferences.captureShortcut, pin: preferences.pinShortcut) == nil
+        let previousBindingCount = hotkeys.activeCount
+        let occupied = AppShortcut(keyCode: UInt32(kVK_ANSI_X), modifiers: UInt32(controlKey | optionKey | cmdKey | shiftKey), keyName: "X")
+        var foreign: EventHotKeyRef?
+        let conflictStatus = RegisterEventHotKey(occupied.keyCode, occupied.modifiers, EventHotKeyID(signature: 0x54455354, id: 999), GetApplicationEventTarget(), 0, &foreign)
+        let conflictRejected = conflictStatus == noErr && foreign != nil && hotkeys.apply(capture: occupied, pin: preferences.pinShortcut) != nil && hotkeys.activeCount == previousBindingCount
+        if let foreign { UnregisterEventHotKey(foreign) }
+        let oldBindingsPreserved = conflictRejected && hotkeys.apply(capture: preferences.captureShortcut, pin: preferences.pinShortcut) == nil
         let pasteboard = NSPasteboard.general
         let saved = pasteboard.pasteboardItems?.map { item -> NSPasteboardItem in
             let copy = NSPasteboardItem()
@@ -276,12 +316,38 @@ import ScreenCaptureKit
         let copyClosedEditorOnly = imageWindows.count == 1
         let png = pasteboard.data(forType: .png).flatMap(Self.loadImage)
         let jpeg = ImageWindow.encoded(image, type: .jpeg).flatMap(Self.loadImage)
-        let passed = cropPassed && resizePassed && cancelGesturePassed && cancelSequencePassed && hexKeyPassed && rgbKeyPassed && windowClickPassed && windowDragPassed && cancelWindowPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
+        let passed = settingsSmoke.values.allSatisfy({ $0 }) && repeatBindingPassed && fallbackBindingPassed && restoredAfterFallback && oldBindingsPreserved && cropPassed && resizePassed && cancelGesturePassed && cancelSequencePassed && hexKeyPassed && rgbKeyPassed && windowClickPassed && windowDragPassed && cancelWindowPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
         if pasteboard.changeCount == writtenCount { pasteboard.clearContents(); pasteboard.writeObjects(saved) }
         editor.close(); pin.close()
-        let result: [String: Any] = ["fixture_only": true, "selection_callback_crop": cropPassed, "resize_event_callback": resizePassed, "escape_restores_drag": cancelGesturePassed, "escape_clears_then_cancels": cancelSequencePassed, "hex_key_clipboard": hexKeyPassed, "rgb_key_clipboard": rgbKeyPassed, "window_click_target": windowClickPassed, "window_drag_is_region": windowDragPassed, "cancel_window_pick": cancelWindowPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
+        let result: [String: Any] = ["fixture_only": true, "settings_recorder": settingsSmoke, "hotkey_reapply": repeatBindingPassed, "hotkey_fallback_as_primary": fallbackBindingPassed && restoredAfterFallback, "hotkey_conflict_keeps_old_bindings": oldBindingsPreserved, "selection_callback_crop": cropPassed, "resize_event_callback": resizePassed, "escape_restores_drag": cancelGesturePassed, "escape_clears_then_cancels": cancelSequencePassed, "hex_key_clipboard": hexKeyPassed, "rgb_key_clipboard": rgbKeyPassed, "window_click_target": windowClickPassed, "window_drag_is_region": windowDragPassed, "cancel_window_pick": cancelWindowPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
         if let path = argument("--smoke-test"), let data = try? JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]) { try? data.write(to: URL(fileURLWithPath: path)) }
         exit(passed && imageWindows.isEmpty ? 0 : 1)
+    }
+    private func runSettingsSmokeTest() -> [String: Bool] {
+        let suite = "com.ccshot.settings-tests.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        defer { store.removePersistentDomain(forName: suite) }
+        var recording: [Bool] = []
+        let test = SettingsWindow(preferences: AppPreferences(store: store), applyShortcuts: { capture, _ in
+            capture.keyCode == UInt32(kVK_ANSI_J) ? "测试冲突" : nil
+        }, recordingChanged: { recording.append($0); return nil })
+        var result = test.recordingSmokeTest()
+        result["recording_pause_resume_balanced"] = recording == [true, false, true, false, true, false, true, false]
+        return result
+    }
+    private func renderSettings(to path: String) {
+        let suite = "com.ccshot.settings-preview.\(UUID().uuidString)"
+        let store = UserDefaults(suiteName: suite)!
+        let preview = SettingsWindow(preferences: AppPreferences(store: store), applyShortcuts: { _, _ in nil }, recordingChanged: { _ in nil })
+        guard let view = preview.window?.contentView else { exit(1) }
+        view.layoutSubtreeIfNeeded()
+        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { exit(1) }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else { exit(1) }
+        do { try png.write(to: URL(fileURLWithPath: path), options: .atomic) }
+        catch { exit(1) }
+        store.removePersistentDomain(forName: suite)
+        exit(0)
     }
     private func renderSelection(_ image: CGImage, to path: String, windowHighlight: Bool = false) {
         guard let context = CGContext(data: nil, width: 1000, height: 650, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { exit(1) }
@@ -350,8 +416,8 @@ import ScreenCaptureKit
     func applicationWillTerminate(_ notification: Notification) {
         cancelCapture()
         for controller in Array(imageWindows.values) { controller.close() }
-        for key in hotkeys { UnregisterEventHotKey(key) }
-        if let handler { RemoveEventHandler(handler) }
+        settings?.close()
+        hotkeys.shutdown()
         NotificationCenter.default.removeObserver(self)
     }
 }

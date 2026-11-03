@@ -1,0 +1,67 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS15.4.1/arm64/SDK15.4",
+  "sources": {
+    "app/Sources/PixelSampler.swift": "0bac310684a4e4145b00b8fad1a3c47593c947e7ac0b0b0154f2ad7c785ecb0c",
+    "app/Sources/SettingsWindow.swift": "f7952a8f3fd0f664cf4e8323fce2747ba9ea4f6d3e89c02b39e33745c0f8f5b6",
+    "app/Sources/WindowCapture.swift": "ba63b78b70b90aae8b4e8dd66842d22bf60355217a8899879be3caea40ad6106",
+    "app/Sources/SelectionView.swift": "0568eb69fe465c84e354578cf8987793d7ccb79890eac47eb6d6aaae86e0d52a",
+    "app/Sources/HotkeyManager.swift": "6e974ad45b23616cd9cc3ae3b87d61c21d6477328be86d17261df0ef9aa831a5",
+    "app/Sources/CaptureGeometry.swift": "88dbab5df62c170e2029d075150a8d9ae23b7ee10596c3f5197b76a4dd8db1f8",
+    "app/Sources/SelectionHandle.swift": "a27742ad44edb2c9b3fe2f3f3c6c8a36d244fa906e776a7eff3aa97146262d95",
+    "app/Sources/AppPreferences.swift": "78e4e602bd09574bd8e8886d03c5ecc6f20624c6c0da2c81d407e3c6a188b6d1",
+    "app/Sources/WindowTarget.swift": "897ca7c5587aacba8fd11178384f461496cfc562690260e8dd6a843a66bc0fc7",
+    "app/Sources/App.swift": "6302221ca564783e5f2f5f378e87aa4683b680a678052c1ede803300677e932f",
+    "app/Sources/ImageWindow.swift": "4f71c7421b429201828a0d194301344ddcdd61305f964b7ff4d61c229a935657",
+    "app/Tests/PreferencesTests.swift": "75db1b20d8e252f8c5bcbc93be3d6084798de2d485c7e87178e133580b68cb5d",
+    "app/Tests/GeometryTests.swift": "e585759db1b058f41f51e906f265ec0ad762455fa2cb7890e8c21a750de731be",
+    "app/check.sh": "9d2239a9f463bca48dd5a796a8314c3874c4628a8973c3cb849b9046c7315826",
+    "app/build.sh": "5661a9a67ccbff0f3248bf5cd0af1d03049f3bdab9ab4464bce74b5a989fb531"
+  },
+  "preferences_checks": "通过：快捷键有效性、损坏回退、跨实例恢复、冲突不写入、保存目录失效",
+  "consumer_smoke": {
+    "cancel_window_pick": true,
+    "closed_windows_removed": true,
+    "copy_closes_editor_only": true,
+    "escape_clears_then_cancels": true,
+    "escape_restores_drag": true,
+    "fixture_only": true,
+    "hex_key_clipboard": true,
+    "hotkey_conflict_keeps_old_bindings": true,
+    "hotkey_fallback_as_primary": true,
+    "hotkey_reapply": true,
+    "jpeg_roundtrip": true,
+    "passed": true,
+    "png_roundtrip": true,
+    "resize_event_callback": true,
+    "rgb_key_clipboard": true,
+    "selection_callback_crop": true,
+    "settings_recorder": {
+      "close_stops_recording": true,
+      "escape_stops_recording": true,
+      "failed_change_keeps_value": true,
+      "recording_accepts_key": true,
+      "recording_pause_resume_balanced": true
+    },
+    "two_windows_and_pin_level": true,
+    "window_click_target": true,
+    "window_drag_is_region": true
+  },
+  "settings_visual": {
+    "path": "app/previews/settings-2026-11-03.png",
+    "sha256": "69abf5aec24699e3c4094b531f1d3eab601b1bbfc2c24dfc45c339e79f670b30",
+    "scope": "真实SettingsWindow原生视图离屏渲染；使用独立默认偏好域；已目视检查布局"
+  },
+  "system_login_registration_tested": false,
+  "system_permissions_requested": false,
+  "note": "读取SMAppService当前状态不等于开机启动可用；未执行登录项注册、系统授权或真实登录测试",
+  "not_verified": [
+    "实体全局热键及键盘布局切换",
+    "真实保存目录选择与保存对话框",
+    "登录项注册和真实登录启动",
+    "屏幕权限恢复",
+    "混合多屏",
+    "AI设置与后续功能",
+    "完整44项MVP"
+  ]
+}

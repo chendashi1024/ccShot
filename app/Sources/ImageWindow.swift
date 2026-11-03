@@ -10,12 +10,14 @@ import UniformTypeIdentifiers
     private let status = NSTextField(labelWithString: "正在识别文字…")
     private var recognition: Task<Void, Never>?
     private var closed = false
+    private let preferences: AppPreferences
     var onClose: (() -> Void)?
     var onPin: ((CGImage) -> Void)?
 
-    init(image: CGImage, pinned: Bool) {
+    init(image: CGImage, pinned: Bool, preferences: AppPreferences = .shared) {
         self.image = image
         self.pinned = pinned
+        self.preferences = preferences
         let ratio = CGFloat(image.height) / CGFloat(image.width)
         let width = min(900, max(pinned ? 580 : 420, CGFloat(image.width)))
         let height = min(700, max(300, width * ratio + 95))
@@ -125,6 +127,7 @@ import UniformTypeIdentifiers
         guard let window else { return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.png, .jpeg]
+        panel.directoryURL = preferences.usableSaveDirectory
         panel.nameFieldStringValue = "CcShot-\(Int(Date().timeIntervalSince1970)).png"
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let self, let url = panel.url else { return }
