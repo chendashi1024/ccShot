@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-03",
+  "source_revision": "dff9c76857bca22672a83cdced433681031cebb8",
+  "package_relative_path": "app/build/packages/dff9c76857bca22672a83cdced433681031cebb8/CcShot-0.1.0-dev-arm64.zip",
+  "package_sha256": "a0207b0b0b06d8c3924a67f3ccf8245f3323b50267a26ba95665c249d4efc9a5",
+  "package_bytes": 434017,
+  "checks": {
+    "archive_sha256_matches": true,
+    "archive_size_matches": true,
+    "source_files_match_manifest": true,
+    "text_style_evidence_matches_sources": true,
+    "signature_verified": true,
+    "binary_matches_build": true,
+    "source_revision_matches": true,
+    "arm64_only": true,
+    "macos14_target": true,
+    "current_trial_guide_included": true
+  },
+  "passed": true,
+  "change": "纳入用户要求的文字参数单排：字号输入框、加粗B、底色按钮与集中色板；其他核心行为沿用前版",
+  "supersedes_source_revision": "f09def9c808633c633a44c09b4f64ac4b38df8d4",
+  "functional_evidence": [
+    "verification-2026-11-03-text-style.json",
+    "verification-2026-11-03-core-candidate.json"
+  ],
+  "installed_verified": false,
+  "public_release": false,
+  "new_permissions": false,
+  "clipboard_touched": false,
+  "unpacked_verification_copy_removed": true,
+  "remaining": [
+    "真实键盘全局唤起和中文输入法候选，已请求本人实测结果",
+    "混合1x/2x设备未提供",
+    "新装/升级及权限恢复不在当前授权范围",
+    "首次识字超0.5秒已知表现、磁盘满及拔出外置卷未通过完整验收"
+  ]
+}
