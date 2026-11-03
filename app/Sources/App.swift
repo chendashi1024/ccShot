@@ -43,6 +43,7 @@ import QuartzCore
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
             if let path = argument("--screen-smoke-test") { Task { @MainActor in exit(await ScreenVerification.run(image,reportPath:path)) } }
+            else if CommandLine.arguments.contains("--permission-guide") { showPermissionGuide(); showImage(image,pinned:false) }
             else if let path = argument("--fixture-save-directory") {
                 let store = UserDefaults(suiteName:"com.ccshot.save-check.\(UUID().uuidString)")!
                 store.setVolatileDomain([AppPreferences.directoryKey:path],forName:UserDefaults.argumentDomain)
@@ -117,7 +118,7 @@ import QuartzCore
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) }) ?? NSScreen.main else { return }
         if let fixture { presentSelection(fixture, on: screen); return }
         guard CGPreflightScreenCaptureAccess() else {
-            showError("需要屏幕录制权限", detail: "请在系统设置的隐私与安全性中允许 CcShot 屏幕录制，再重新打开应用。")
+            showPermissionGuide()
             return
         }
         guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return }
@@ -242,6 +243,18 @@ import QuartzCore
         if let selection = selectionWindow?.contentView as? SelectionView { selection.pinSelection() }
         else if let editor = imageWindows.values.first(where: { $0.window?.isKeyWindow == true }) { editor.pinImage() }
         else { pinClipboard() }
+    }
+    private func showPermissionGuide() {
+        let alert = NSAlert(); alert.messageText = "需要屏幕录制权限"
+        alert.informativeText = "在系统设置 → 隐私与安全性 → 屏幕录制中添加或允许 CcShot，然后重新打开应用。"
+        alert.addButton(withTitle:"打开系统设置"); alert.addButton(withTitle:"暂不")
+        NSApp.activate(ignoringOtherApps:true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier:"com.apple.systempreferences") else {
+            showError("无法打开系统设置",detail:"请从苹果菜单打开系统设置，进入隐私与安全性。")
+            return
+        }
+        NSWorkspace.shared.openApplication(at:url,configuration:NSWorkspace.OpenConfiguration())
     }
     private func showError(_ title: String, detail: String) {
         let alert = NSAlert(); alert.messageText = title; alert.informativeText = detail

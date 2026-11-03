@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
+source_revision=$(git rev-parse HEAD)
 mkdir -p build/ModuleCache build/CcShot.app/Contents/MacOS
 xcrun swiftc -swift-version 5 -parse-as-library -O -target arm64-apple-macos14.0 \
   -module-cache-path "$PWD/build/ModuleCache" Sources/*.swift \
@@ -22,4 +23,5 @@ cat > build/CcShot.app/Contents/Info.plist <<'PLIST'
 <key>LSUIElement</key><true/>
 </dict></plist>
 PLIST
+/usr/libexec/PlistBuddy -c "Add :CcShotSourceRevision string $source_revision" build/CcShot.app/Contents/Info.plist
 codesign --force --sign - build/CcShot.app
