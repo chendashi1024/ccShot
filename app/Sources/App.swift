@@ -33,7 +33,8 @@ import ScreenCaptureKit
         registerHotkeys()
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
-            if argument("--smoke-test") != nil { runSmokeTest(image) }
+            if let previewPath = argument("--render-selection") { renderSelection(image, to: previewPath) }
+            else if argument("--smoke-test") != nil { runSmokeTest(image) }
             else if CommandLine.arguments.contains("--select") { capture() }
             else { showImage(image, pinned: false) }
         }
@@ -98,8 +99,10 @@ import ScreenCaptureKit
     }
     private func presentSelection(_ image: CGImage, on screen: NSScreen) {
         let window = SelectionWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.title = "CcShot · 框选"
         window.level = .screenSaver
         window.isOpaque = true
+        window.acceptsMouseMovedEvents = true
         window.isReleasedWhenClosed = false
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         let view = SelectionView(image: image, frame: CGRect(origin: .zero, size: screen.frame.size))
@@ -184,32 +187,85 @@ import ScreenCaptureKit
         return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }
     private func runSmokeTest(_ image: CGImage) {
-        let selector = SelectionView(image: image, frame: NSRect(x: 0, y: 0, width: 960, height: 230))
-        var selected: CGImage?
-        selector.onConfirm = { image, _, _ in selected = image }
-        selector.selectRegion(NSRect(x: 0, y: 115, width: 480, height: 115))
-        selector.confirm()
-        let cropPassed = selected?.width == image.width / 2 && selected?.height == image.height / 2
-        let editor = showImage(image, pinned: false)
-        let pin = showImage(image, pinned: true)
-        let twoWindows = imageWindows.count == 2 && pin.window?.level == .floating
         let pasteboard = NSPasteboard.general
         let saved = pasteboard.pasteboardItems?.map { item -> NSPasteboardItem in
             let copy = NSPasteboardItem()
             for type in item.types { if let data = item.data(forType: type) { copy.setData(data, forType: type) } }
             return copy
         } ?? []
+        let selector = SelectionView(image: image, frame: NSRect(x: 0, y: 0, width: 960, height: 230))
+        var selected: CGImage?
+        selector.onConfirm = { image, _, _ in selected = image }
+        selector.selectRegion(NSRect(x: 0, y: 115, width: 480, height: 115))
+        selector.confirm()
+        let cropPassed = selected?.width == image.width / 2 && selected?.height == image.height / 2
+        // 直接回归本视图的事件处理，不向系统注入鼠标事件。
+        func mouse(_ kind: NSEvent.EventType, _ point: CGPoint) -> NSEvent {
+            NSEvent.mouseEvent(with: kind, location: point, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, eventNumber: 1, clickCount: 1, pressure: 1)!
+        }
+        selector.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 480, y: 230)))
+        selector.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 600, y: 200)))
+        selector.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 600, y: 200)))
+        selector.confirm()
+        let resizePassed = selected?.width == image.width * 600 / 960 && selected?.height == image.height * 85 / 230
+        selector.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 600, y: 200)))
+        selector.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 700, y: 180)))
+        selector.cancelOperation(nil)
+        selector.confirm()
+        let cancelGesturePassed = selected?.width == image.width * 600 / 960 && selected?.height == image.height * 85 / 230
+        selected = nil
+        selector.cancelOperation(nil)
+        selector.confirm()
+        var canceled = false
+        selector.onCancel = { canceled = true }
+        selector.cancelOperation(nil)
+        let cancelSequencePassed = selected == nil && canceled
+        selector.updatePointer(CGPoint(x: 480, y: 115))
+        let expectedColor = PixelSampler.color(in: image, x: image.width / 2, y: image.height - 1 - image.height / 2)
+        let colorKey = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, characters: "c", charactersIgnoringModifiers: "c", isARepeat: false, keyCode: UInt16(kVK_ANSI_C))!
+        selector.keyDown(with: colorKey)
+        let hexKeyPassed = pasteboard.string(forType: .string) == expectedColor?.hex
+        let rgbKey = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: .shift, timestamp: 0, windowNumber: 0, context: nil, characters: "C", charactersIgnoringModifiers: "c", isARepeat: false, keyCode: UInt16(kVK_ANSI_C))!
+        selector.keyDown(with: rgbKey)
+        let rgbKeyPassed = pasteboard.string(forType: .string) == expectedColor?.rgb
+        let editor = showImage(image, pinned: false)
+        let pin = showImage(image, pinned: true)
+        let twoWindows = imageWindows.count == 2 && pin.window?.level == .floating
         editor.copyImage()
         let writtenCount = pasteboard.changeCount
         let copyClosedEditorOnly = imageWindows.count == 1
         let png = pasteboard.data(forType: .png).flatMap(Self.loadImage)
         let jpeg = ImageWindow.encoded(image, type: .jpeg).flatMap(Self.loadImage)
-        let passed = cropPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
+        let passed = cropPassed && resizePassed && cancelGesturePassed && cancelSequencePassed && hexKeyPassed && rgbKeyPassed && png?.width == image.width && png?.height == image.height && jpeg?.width == image.width && jpeg?.height == image.height && twoWindows && copyClosedEditorOnly
         if pasteboard.changeCount == writtenCount { pasteboard.clearContents(); pasteboard.writeObjects(saved) }
         editor.close(); pin.close()
-        let result: [String: Any] = ["fixture_only": true, "selection_callback_crop": cropPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
+        let result: [String: Any] = ["fixture_only": true, "selection_callback_crop": cropPassed, "resize_event_callback": resizePassed, "escape_restores_drag": cancelGesturePassed, "escape_clears_then_cancels": cancelSequencePassed, "hex_key_clipboard": hexKeyPassed, "rgb_key_clipboard": rgbKeyPassed, "png_roundtrip": png?.width == image.width && png?.height == image.height, "jpeg_roundtrip": jpeg?.width == image.width && jpeg?.height == image.height, "two_windows_and_pin_level": twoWindows, "copy_closes_editor_only": copyClosedEditorOnly, "closed_windows_removed": imageWindows.isEmpty, "passed": passed && imageWindows.isEmpty]
         if let path = argument("--smoke-test"), let data = try? JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]) { try? data.write(to: URL(fileURLWithPath: path)) }
         exit(passed && imageWindows.isEmpty ? 0 : 1)
+    }
+    private func renderSelection(_ image: CGImage, to path: String) {
+        guard let context = CGContext(data: nil, width: 1000, height: 650, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { exit(1) }
+        context.setFillColor(CGColor(srgbRed: 0.9, green: 0.92, blue: 0.94, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 1000, height: 650))
+        context.draw(image, in: CGRect(x: 40, y: 220, width: 920, height: 920 * CGFloat(image.height) / CGFloat(image.width)))
+        for row in 0..<10 {
+            for column in 0..<10 {
+                context.setFillColor((row + column).isMultiple(of: 2) ? NSColor.systemBlue.cgColor : NSColor.systemYellow.cgColor)
+                context.fill(CGRect(x: 980 + column * 2, y: 630 + row * 2, width: 2, height: 2))
+            }
+        }
+        guard let composed = context.makeImage() else { exit(1) }
+        let view = SelectionView(image: composed, frame: NSRect(x: 0, y: 0, width: 1000, height: 650))
+        let window = SelectionWindow(contentRect: view.bounds, styleMask: .borderless, backing: .buffered, defer: false)
+        window.contentView = view
+        view.selectRegion(CGRect(x: 40, y: 210, width: 920, height: 250))
+        view.updatePointer(CGPoint(x: 992, y: 642))
+        view.layoutSubtreeIfNeeded()
+        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { exit(1) }
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        guard let png = bitmap.representation(using: .png, properties: [:]) else { exit(1) }
+        do { try png.write(to: URL(fileURLWithPath: path), options: .atomic); exit(0) }
+        catch { exit(1) }
     }
     @objc private func quit() { NSApp.terminate(nil) }
     func applicationWillTerminate(_ notification: Notification) {

@@ -1,0 +1,44 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS 15.4.1 / arm64 / SDK15.4",
+  "source_sha256": {
+    "app/Sources/PixelSampler.swift": "0bac310684a4e4145b00b8fad1a3c47593c947e7ac0b0b0154f2ad7c785ecb0c",
+    "app/Sources/SelectionView.swift": "4cbd160e713b62d4a3be7cf3118ae195014396ba24681c8f43c42c21599f054e",
+    "app/Sources/CaptureGeometry.swift": "88dbab5df62c170e2029d075150a8d9ae23b7ee10596c3f5197b76a4dd8db1f8",
+    "app/Sources/SelectionHandle.swift": "a27742ad44edb2c9b3fe2f3f3c6c8a36d244fa906e776a7eff3aa97146262d95",
+    "app/Sources/App.swift": "545ebd03fee8855abd839aab17741eb475f052be2a94ff69bda70afe0f3e725f",
+    "app/Sources/ImageWindow.swift": "96e20b066768d666c3569e22a4c1f9201fea4d5fa5946013015b59598442e9b2",
+    "app/check.sh": "8881488c2820f5238635ea9d6232f8100f37445c5cd5ed8b7c1205f27282b089",
+    "app/Tests/GeometryTests.swift": "1809d2b9b2372db977179c2b4acee5b0639f6fdd2f23f2812bf9967c370ee28f"
+  },
+  "geometry_and_pixel_checks": "通过：1x/2x/Y翻转、屏边裁剪、机器精度整像素边界、像素往返、八控制点含跨边与屏边限制、已知红绿蓝sRGB像素及越界",
+  "consumer_smoke": {
+    "closed_windows_removed": true,
+    "copy_closes_editor_only": true,
+    "escape_clears_then_cancels": true,
+    "escape_restores_drag": true,
+    "fixture_only": true,
+    "hex_key_clipboard": true,
+    "jpeg_roundtrip": true,
+    "passed": true,
+    "png_roundtrip": true,
+    "resize_event_callback": true,
+    "rgb_key_clipboard": true,
+    "selection_callback_crop": true,
+    "two_windows_and_pin_level": true
+  },
+  "visual_evidence": {
+    "path": "app/previews/selection-controls-2026-11-03.png",
+    "sha256": "c2265d9fb7ef267c123702d5ee097675a195a44c654a37c85f9e1a8e77c878f1",
+    "scope": "真实AppKit离屏渲染的自制样本，已查看控制点、尺寸、操作条与贴边放大镜；不是真实桌面捕获"
+  },
+  "not_verified": [
+    "实体全局热键",
+    "真实鼠标从截图到输出全流程",
+    "保存对话框",
+    "权限恢复",
+    "混合多屏",
+    "窗口捕获与设置",
+    "完整44项MVP"
+  ]
+}

@@ -7,6 +7,7 @@ import AppKit
         precondition(CaptureGeometry.pixelRect(CGRect(x: 10, y: 20, width: 100, height: 50), canvas: canvas, image: image) == CGRect(x: 20, y: 1660, width: 200, height: 100), "Retina 的 Y 翻转与尺寸应精确")
         precondition(CaptureGeometry.pixelRect(CGRect(x: -5, y: -5, width: 15, height: 15), canvas: canvas, image: image) == CGRect(x: 0, y: 1780, width: 20, height: 20), "边缘必须裁入图像")
         precondition(CaptureGeometry.pixelRect(.zero, canvas: canvas, image: image) == nil, "零面积不能输出")
+        precondition(CaptureGeometry.pixelRect(CGRect(x: 10, y: 20, width: 100.00000000000001, height: 50), canvas: canvas, image: image) == CGRect(x: 20, y: 1660, width: 200, height: 100), "整像素边界的机器精度误差不应向外扩一像素")
         precondition(CaptureGeometry.pixelRect(CGRect(x: 2000, y: 0, width: 10, height: 10), canvas: canvas, image: image) == nil, "屏幕外不能输出旧图")
         precondition(CaptureGeometry.pixelRect(CGRect(x: 10, y: 20, width: 100, height: 50), canvas: CGSize(width: 1280, height: 720), image: CGSize(width: 1280, height: 720)) == CGRect(x: 10, y: 650, width: 100, height: 50), "1x 显示器不能套用主屏比例")
         let scaledCanvas = CGSize(width: 1512, height: 982)
@@ -15,6 +16,29 @@ import AppKit
             let visible = CaptureGeometry.viewRect(pixels, canvas: scaledCanvas, image: scaledImage)
             precondition(CaptureGeometry.pixelRect(visible, canvas: scaledCanvas, image: scaledImage) == pixels, "可见框与裁剪像素必须往返一致")
         }
-        print("通过：Retina、1x、Y 翻转、边缘裁剪、无效选区")
+        let demoCanvas = CGSize(width: 1728, height: 1117)
+        let demoRegion = CGRect(x: demoCanvas.width * 0.2, y: demoCanvas.height * 0.25, width: demoCanvas.width * 0.6, height: demoCanvas.height * 0.5)
+        precondition(CaptureGeometry.pixelRect(demoRegion, canvas: demoCanvas, image: CGSize(width: 1920, height: 460)) == CGRect(x: 384, y: 115, width: 1152, height: 230), "浮点误差不得使整像素边界多输出一列或一行")
+        for canvas in [CGSize(width: 1440, height: 900), CGSize(width: 1728, height: 1117), CGSize(width: 1512, height: 982), CGSize(width: 1920, height: 1080)] {
+            let pixels = CGRect(x: 384, y: 115, width: 1152, height: 230)
+            let source = CGSize(width: 1920, height: 460)
+            let visible = CaptureGeometry.viewRect(pixels, canvas: canvas, image: source)
+            precondition(CaptureGeometry.pixelRect(visible, canvas: canvas, image: source) == pixels, "界面显示后再次裁剪不能扩大像素范围")
+        }
+        let initial = CGRect(x: 100, y: 100, width: 200, height: 100)
+        precondition(SelectionHandle.topRight.resize(initial, toward: CGPoint(x: 350, y: 250), canvas: canvas, minimum: CGSize(width: 1, height: 1)) == CGRect(x: 100, y: 100, width: 250, height: 150), "右上控制点应保留对角")
+        precondition(SelectionHandle.left.resize(initial, toward: CGPoint(x: 350, y: 999), canvas: canvas, minimum: CGSize(width: 1, height: 1)) == CGRect(x: 300, y: 100, width: 50, height: 100), "控制点跨越固定边仍应生成合法矩形")
+        for handle in SelectionHandle.allCases {
+            let resized = handle.resize(initial, toward: CGPoint(x: -100, y: 2000), canvas: canvas, minimum: CGSize(width: 1, height: 1))
+            precondition(resized.width >= 1 && resized.height >= 1 && CGRect(origin: .zero, size: canvas).contains(resized), "所有控制点都应限制在屏内")
+        }
+        let rgba: [UInt8] = [255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]
+        let provider = CGDataProvider(data: Data(rgba) as CFData)!
+        let colors = CGImage(width: 2, height: 2, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: 8, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue), provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+        precondition(PixelSampler.color(in: colors, x: 0, y: 0)?.hex == "#FF0000", "取色应保留原图左上红色像素")
+        precondition(PixelSampler.color(in: colors, x: 1, y: 0)?.rgb == "RGB(0, 255, 0)", "取色坐标应逐像素对应")
+        precondition(PixelSampler.color(in: colors, x: 0, y: 1)?.hex == "#0000FF", "取色不能上下翻转")
+        precondition(PixelSampler.color(in: colors, x: -1, y: 0) == nil && PixelSampler.color(in: colors, x: 2, y: 0) == nil, "越界不应返回旧色值")
+        print("通过：截图坐标、八控制点、跨边界缩放、sRGB逐像素取色")
     }
 }

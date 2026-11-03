@@ -12,8 +12,13 @@ enum SelectionAction { case edit, copy, save, pin }
     var onCancel: (() -> Void)?
     private var anchor: NSPoint?
     private var selection = NSRect.zero
+    private var selectionPixels: CGRect?
     private var previous = NSRect.zero
     private var moving = false
+    private var resizing: SelectionHandle?
+    private var pointer: NSPoint?
+    private var pointerColor: SampledColor?
+    private var mouseTracking: NSTrackingArea?
     private let actions = NSStackView()
 
     init(image: CGImage, frame: NSRect) {
@@ -31,6 +36,12 @@ enum SelectionAction { case edit, copy, save, pin }
     required init?(coder: NSCoder) { nil }
     override var acceptsFirstResponder: Bool { true }
     override func resetCursorRects() { addCursorRect(bounds, cursor: .crosshair) }
+    override func updateTrackingAreas() {
+        if let mouseTracking { removeTrackingArea(mouseTracking) }
+        let tracking = NSTrackingArea(rect: .zero, options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect], owner: self)
+        addTrackingArea(tracking); mouseTracking = tracking
+        super.updateTrackingAreas()
+    }
     override func selectAll(_ sender: Any?) { selectRegion(bounds) }
 
     func selectRegion(_ rect: CGRect) { updateSelection(rect); showActions() }
@@ -38,8 +49,9 @@ enum SelectionAction { case edit, copy, save, pin }
     private var imageSize: CGSize { CGSize(width: image.width, height: image.height) }
     private func updateSelection(_ raw: CGRect) {
         if let pixels = CaptureGeometry.pixelRect(raw, canvas: bounds.size, image: imageSize) {
+            selectionPixels = pixels
             selection = CaptureGeometry.viewRect(pixels, canvas: bounds.size, image: imageSize)
-        } else { selection = .zero }
+        } else { selection = .zero; selectionPixels = nil }
         needsDisplay = true
     }
     override func draw(_ dirtyRect: NSRect) {
@@ -53,27 +65,83 @@ enum SelectionAction { case edit, copy, save, pin }
         context.setFillColor(NSColor.black.withAlphaComponent(0.48).cgColor)
         context.drawPath(using: .eoFill)
         context.restoreGState()
-        guard !selection.isEmpty else { return }
-        NSColor.systemBlue.setStroke()
-        let border = NSBezierPath(rect: selection)
-        border.lineWidth = 1.5
-        border.stroke()
-        if let pixels = CaptureGeometry.pixelRect(selection, canvas: bounds.size, image: imageSize) {
+        if !selection.isEmpty {
+            NSColor.systemBlue.setStroke()
+            let border = NSBezierPath(rect: selection)
+            border.lineWidth = 1.5
+            border.stroke()
+            for handle in SelectionHandle.allCases {
+                let point = handle.point(in: selection)
+                let box = NSBezierPath(rect: NSRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6))
+                NSColor.white.setFill(); box.fill(); NSColor.systemBlue.setStroke(); box.stroke()
+            }
+        }
+        if let pixels = selectionPixels {
             let text = "\(Int(pixels.width)) × \(Int(pixels.height)) px"
             let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium), .foregroundColor: NSColor.white, .backgroundColor: NSColor.black.withAlphaComponent(0.7)]
             (text as NSString).draw(at: NSPoint(x: min(max(8, selection.minX), bounds.width - 150), y: min(bounds.height - 25, selection.maxY + 6)), withAttributes: attributes)
         }
+        drawMagnifier(context)
+    }
+    private func pixel(at point: NSPoint) -> (Int, Int)? {
+        guard bounds.contains(point) else { return nil }
+        return (min(image.width - 1, Int(point.x * CGFloat(image.width) / bounds.width)),
+                max(0, image.height - 1 - Int(point.y * CGFloat(image.height) / bounds.height)))
+    }
+    func updatePointer(_ point: NSPoint) {
+        pointer = point
+        if let (x, y) = pixel(at: point) { pointerColor = PixelSampler.color(in: image, x: x, y: y) }
+        else { pointerColor = nil }
+        needsDisplay = true
+    }
+    override func mouseMoved(with event: NSEvent) { updatePointer(convert(event.locationInWindow, from: nil)) }
+    override func mouseExited(with event: NSEvent) { pointer = nil; pointerColor = nil; needsDisplay = true }
+    private func drawMagnifier(_ context: CGContext) {
+        guard let pointer, let color = pointerColor, let (x, y) = pixel(at: pointer) else { return }
+        let size = CGSize(width: 130, height: 157)
+        var origin = CGPoint(x: pointer.x + 20, y: pointer.y + 20)
+        if origin.x + size.width > bounds.maxX { origin.x = pointer.x - size.width - 20 }
+        if origin.y + size.height > bounds.maxY { origin.y = pointer.y - size.height - 20 }
+        origin.x = max(0, min(origin.x, bounds.width - size.width))
+        origin.y = max(0, min(origin.y, bounds.height - size.height))
+        let panel = CGRect(origin: origin, size: size)
+        NSColor.windowBackgroundColor.setFill(); NSBezierPath(roundedRect: panel, xRadius: 8, yRadius: 8).fill()
+        let sample = CGRect(x: panel.minX + 10, y: panel.minY + 37, width: 110, height: 110)
+        let wanted = CGRect(x: x - 5, y: y - 5, width: 11, height: 11)
+        let clipped = wanted.intersection(CGRect(origin: .zero, size: imageSize))
+        if let magnified = image.cropping(to: clipped) {
+            context.saveGState()
+            context.interpolationQuality = .none
+            context.draw(magnified, in: CGRect(x: sample.minX + (clipped.minX - wanted.minX) * 10,
+                y: sample.minY + (wanted.maxY - clipped.maxY) * 10, width: clipped.width * 10, height: clipped.height * 10))
+            context.restoreGState()
+        }
+        NSColor.systemRed.setStroke()
+        NSBezierPath(rect: CGRect(x: sample.midX - 5, y: sample.midY - 5, width: 10, height: 10)).stroke()
+        let attributes: [NSAttributedString.Key: Any] = [.font: NSFont.monospacedSystemFont(ofSize: 11, weight: .medium), .foregroundColor: NSColor.labelColor]
+        (color.hex as NSString).draw(at: CGPoint(x: panel.minX + 10, y: panel.minY + 20), withAttributes: attributes)
+        ("\(x), \(y) px" as NSString).draw(at: CGPoint(x: panel.minX + 10, y: panel.minY + 5), withAttributes: attributes)
     }
     override func mouseDown(with event: NSEvent) {
         anchor = convert(event.locationInWindow, from: nil)
         previous = selection
-        moving = !selection.isEmpty && selection.contains(anchor!)
+        resizing = selection.isEmpty ? nil : SelectionHandle.allCases.first { handle in
+            let point = handle.point(in: selection)
+            return abs(point.x - anchor!.x) <= 7 && abs(point.y - anchor!.y) <= 7
+        }
+        moving = resizing == nil && !selection.isEmpty && selection.contains(anchor!)
+        if event.clickCount == 2, moving { finish(.copy); return }
+        updatePointer(anchor!)
         actions.isHidden = true
     }
     override func mouseDragged(with event: NSEvent) {
         guard let anchor else { return }
         let point = convert(event.locationInWindow, from: nil)
-        if moving {
+        updatePointer(point)
+        if let resizing {
+            updateSelection(resizing.resize(previous, toward: point, canvas: bounds.size,
+                minimum: CGSize(width: bounds.width / imageSize.width, height: bounds.height / imageSize.height)))
+        } else if moving {
             var rect = previous.offsetBy(dx: point.x - anchor.x, dy: point.y - anchor.y)
             rect.origin.x = min(max(0, rect.minX), bounds.width - rect.width)
             rect.origin.y = min(max(0, rect.minY), bounds.height - rect.height)
@@ -84,6 +152,7 @@ enum SelectionAction { case edit, copy, save, pin }
     }
     override func mouseUp(with event: NSEvent) {
         anchor = nil
+        resizing = nil
         showActions()
     }
     private func showActions() {
@@ -92,8 +161,15 @@ enum SelectionAction { case edit, copy, save, pin }
         actions.frame.origin = NSPoint(x: min(max(8, selection.maxX - actions.frame.width), bounds.width - actions.frame.width - 8), y: max(8, selection.minY - actions.frame.height - 10))
     }
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53 { cancel(); return }
+        if event.keyCode == 53 { handleEscape(); return }
         if event.keyCode == 36 { confirm(); return }
+        if event.charactersIgnoringModifiers?.lowercased() == "c", event.modifierFlags.intersection([.command, .control, .option]).isEmpty {
+            guard let color = pointerColor else { NSSound.beep(); return }
+            let value = event.modifierFlags.contains(.shift) ? color.rgb : color.hex
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents(); pasteboard.setString(value, forType: .string)
+            return
+        }
         if event.modifierFlags.contains(.command), event.charactersIgnoringModifiers == "a" {
             updateSelection(bounds); showActions(); return
         }
@@ -117,10 +193,16 @@ enum SelectionAction { case edit, copy, save, pin }
     func pinSelection() { finish(.pin) }
     @objc func confirm() { finish(.edit) }
     private func finish(_ action: SelectionAction) {
-        guard let pixels = CaptureGeometry.pixelRect(selection, canvas: bounds.size, image: imageSize),
+        guard let pixels = selectionPixels,
               let cropped = image.cropping(to: pixels) else { return }
         onConfirm?(cropped, window?.convertToScreen(selection) ?? selection, action)
     }
-    @objc private func reset() { selection = .zero; actions.isHidden = true; needsDisplay = true }
+    @objc private func reset() { selection = .zero; selectionPixels = nil; actions.isHidden = true; needsDisplay = true }
+    override func cancelOperation(_ sender: Any?) { handleEscape() }
+    private func handleEscape() {
+        if anchor != nil { anchor = nil; resizing = nil; moving = false; selectRegion(previous) }
+        else if !selection.isEmpty { reset() }
+        else { cancel() }
+    }
     @objc private func cancel() { onCancel?() }
 }

@@ -6,10 +6,15 @@ enum CaptureGeometry {
               [selection.origin.x, selection.origin.y, selection.width, selection.height].allSatisfy({ $0.isFinite }) else { return nil }
         let rect = selection.standardized.intersection(CGRect(origin: .zero, size: canvas))
         guard !rect.isNull, !rect.isEmpty else { return nil }
-        let x = floor(rect.minX * image.width / canvas.width)
-        let y = floor((canvas.height - rect.maxY) * image.height / canvas.height)
-        let right = min(image.width, ceil(rect.maxX * image.width / canvas.width))
-        let bottom = min(image.height, ceil((canvas.height - rect.minY) * image.height / canvas.height))
+        // 只消除整像素附近的机器精度误差，真实的分数像素仍按覆盖范围取整。
+        func stable(_ value: CGFloat) -> CGFloat {
+            let nearest = value.rounded()
+            return abs(value - nearest) <= max(1, abs(value)) * CGFloat.ulpOfOne * 16 ? nearest : value
+        }
+        let x = floor(stable(rect.minX * image.width / canvas.width))
+        let y = floor(stable((canvas.height - rect.maxY) * image.height / canvas.height))
+        let right = min(image.width, ceil(stable(rect.maxX * image.width / canvas.width)))
+        let bottom = min(image.height, ceil(stable((canvas.height - rect.minY) * image.height / canvas.height)))
         return CGRect(x: max(0, x), y: max(0, y), width: right - max(0, x), height: bottom - max(0, y))
     }
 
