@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS15.4.1/arm64/SDK15.4",
+  "sources": {
+    "app/Sources/App.swift": "7f45aede619e2d5690b48fa572493a2f338ead1f6e4e68adb3873c4246d7fa75",
+    "app/Sources/ImageWindow.swift": "6cbbfb5a3d7351e952b4d85be1c8beaca2eee0ebc24f1fb8ea2c346992a52a77",
+    "app/Sources/ImageEncoding.swift": "4aadeef8666e58b2fd3a9c5d80588dcb5bc3d50439e807c2326e18f6acdfc762",
+    "app/Sources/SaveFormatAccessory.swift": "4cd5179dbceb28b6eadbc8257ff1269385b36938c1a39f40a2a277c33e4af46e",
+    "app/Tests/ImageEncodingTests.swift": "d01f415d58443ad9028f5392151db16d294f997ce5fab7837d7578c4e6a42fe4",
+    "app/build.sh": "22ffe193aa4fe11429247f10385b7fc82c4e78ffc4514af7d2204a55da50756b",
+    "app/check.sh": "e6b7489c27c3df537669a96b26a0adccf5dc9b1d15fe63b71c11055d683b694f"
+  },
+  "encoding_test": {
+    "checks": {
+      "public.jpeg_dimensions": true,
+      "public.jpeg_opaque_content": true,
+      "public.jpeg_transparent_background": true,
+      "public.png_dimensions": true,
+      "public.png_opaque_content": true,
+      "public.png_transparent_background": true
+    },
+    "passed": true
+  },
+  "native_save_ui": {
+    "png_saved": true,
+    "png_identical_to_source": true,
+    "jpeg_saved": true,
+    "actual_decoded_dimensions": [
+      1920,
+      460
+    ],
+    "cancel_created_no_file": true,
+    "format_picker_changes_type_and_extension": true,
+    "chinese_native_panel_observed": true,
+    "jpeg_result_viewed": true,
+    "output_contains_no_controls_or_selection": true
+  },
+  "regression": {
+    "consumer": true,
+    "privacy": true,
+    "text": true
+  },
+  "scope": "真实CUA保存面板写入忽略目录内虚构样本；sips解码类型/尺寸，PNG与源文件逐字节相同；取消无文件。编码透明行为在本机ImageIO原实现已通过，无需另加白底变换。",
+  "remaining": [
+    "磁盘满/外置卷断开时保存恢复尚未实测",
+    "实体快捷键、真实中文候选、混合1x/2x及安装验收"
+  ],
+  "new_permissions": false,
+  "paid_requests": false,
+  "previews": {
+    "app/previews/save-png-2026-11-03.png": "61084792aa76a13b4d089a656b58cba0be02e6d60250071e932bcea09701ee64",
+    "app/previews/save-jpg-2026-11-03.png": "fdedf848327832f006dfed7591b8f0ee9058fb531bdf017bb519aa950a6b29f9"
+  }
+}

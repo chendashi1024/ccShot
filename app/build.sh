@@ -11,6 +11,8 @@ cat > build/CcShot.app/Contents/Info.plist <<'PLIST'
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>com.ccshot.dev</string>
 <key>CFBundleName</key><string>CcShot</string>
+<key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
+<key>CFBundleLocalizations</key><array><string>zh-Hans</string></array>
 <key>CFBundleExecutable</key><string>CcShot</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleVersion</key><string>1</string>

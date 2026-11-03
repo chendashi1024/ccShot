@@ -432,22 +432,21 @@ import UniformTypeIdentifiers
     }
     @objc func saveDocument(_ sender: Any?) { saveImage() }
     @objc func saveImage() {
-        guard stableImage() != nil, let window else { return }
-        let panel = NSSavePanel(); panel.allowedContentTypes = [.png, .jpeg]; panel.directoryURL = preferences.usableSaveDirectory
+        guard stableImage() != nil, let window, window.attachedSheet == nil else { return }
+        let panel = NSSavePanel(); panel.prompt = "保存"; panel.nameFieldLabel = "文件名："; panel.directoryURL = preferences.usableSaveDirectory
         panel.nameFieldStringValue = "CcShot-\(Int(Date().timeIntervalSince1970)).png"
+        let format = SaveFormatAccessory(panel:panel); panel.accessoryView = format
+        panel.isExtensionHidden = false; panel.allowsOtherFileTypes = false
         panel.beginSheetModal(for: window) { [weak self] response in
             guard response == .OK, let self, !self.closed, let url = panel.url, let image = self.stableImage() else { return }
-            let type: UTType = ["jpg", "jpeg"].contains(url.pathExtension.lowercased()) ? .jpeg : .png
+            let type = format.type
             guard let data = Self.encoded(image, type: type) else { self.status.stringValue = "图片编码失败"; return }
             do { try data.write(to: url, options: .atomic); self.status.stringValue = "图片已保存" }
             catch { self.status.stringValue = "保存失败，请检查目录权限与可用空间" }
         }
     }
     static func encoded(_ image: CGImage, type: UTType) -> Data? {
-        let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(data, type.identifier as CFString, 1, nil) else { return nil }
-        CGImageDestinationAddImage(destination, image, nil)
-        return CGImageDestinationFinalize(destination) ? data as Data : nil
+        ImageEncoding.data(image,type:type)
     }
     @objc func pinImage() { guard stableImage() != nil else { return }; onPin?(annotationDocument.copied()) }
     @objc private func changeOpacity(_ sender: NSSlider) { window?.alphaValue = sender.doubleValue }

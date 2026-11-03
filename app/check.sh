@@ -12,6 +12,8 @@ xcrun swiftc Sources/AnnotationModel.swift Sources/AnnotationTextLayout.swift Te
 build/text-tests
 xcrun swiftc Sources/SafeTextImage.swift Tests/SafeTextGeometryTests.swift -o build/privacy-geometry-tests
 build/privacy-geometry-tests
+xcrun swiftc Sources/ImageEncoding.swift Tests/ImageEncodingTests.swift -o build/image-encoding-tests
+build/image-encoding-tests > build/image-encoding.json
 build/CcShot.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --smoke-test "$PWD/build/smoke.json"

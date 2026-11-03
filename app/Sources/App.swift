@@ -43,6 +43,11 @@ import QuartzCore
         if let path = argument("--fixture"), let image = Self.loadImage(URL(fileURLWithPath: path)) {
             fixture = image
             if let path = argument("--screen-smoke-test") { Task { @MainActor in exit(await ScreenVerification.run(image,reportPath:path)) } }
+            else if let path = argument("--fixture-save-directory") {
+                let store = UserDefaults(suiteName:"com.ccshot.save-check.\(UUID().uuidString)")!
+                store.setVolatileDomain([AppPreferences.directoryKey:path],forName:UserDefaults.argumentDomain)
+                showDocument(AnnotationDocument(image:image),pinned:false,preferences:AppPreferences(store:store))
+            }
             else if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
             else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview")) ? 0 : 1) } }
             else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
@@ -208,9 +213,9 @@ import QuartzCore
     @discardableResult private func showImage(_ image: CGImage, pinned: Bool) -> ImageWindow {
         return showDocument(AnnotationDocument(image: image), pinned: pinned)
     }
-    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool) -> ImageWindow {
+    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared) -> ImageWindow {
         let id = UUID()
-        let controller = ImageWindow(annotationDocument: document, pinned: pinned)
+        let controller = ImageWindow(annotationDocument: document, pinned: pinned, preferences:preferences)
         controller.onClose = { [weak self] in self?.imageWindows.removeValue(forKey: id) }
         controller.onPin = { [weak self] document in self?.showDocument(document, pinned: true) }
         imageWindows[id] = controller
