@@ -1,0 +1,87 @@
+{
+  "checks": {
+    "pin_can_edit": true,
+    "screen_0_capture_native_size": true,
+    "screen_0_edit_event_tracks_source_coordinates": true,
+    "screen_0_export_keeps_source_pixels": true,
+    "screen_0_quartz_to_local": true,
+    "screen_0_rendered_marker_and_base_align": true,
+    "screen_0_select_all_matches_safe_text": true,
+    "screen_0_self_excluded_from_window_targets": true,
+    "screen_0_undo_restores_exact_export": true,
+    "screen_0_window_on_requested_screen": true,
+    "screen_1_capture_native_size": true,
+    "screen_1_edit_event_tracks_source_coordinates": true,
+    "screen_1_export_keeps_source_pixels": true,
+    "screen_1_quartz_to_local": true,
+    "screen_1_rendered_marker_and_base_align": true,
+    "screen_1_select_all_matches_safe_text": true,
+    "screen_1_self_excluded_from_window_targets": true,
+    "screen_1_undo_restores_exact_export": true,
+    "screen_1_window_on_requested_screen": true
+  },
+  "fixture_only": true,
+  "mixed_1x_2x_available": false,
+  "passed": true,
+  "scope": "真实当前显示器上移动本进程样本窗口并捕获；受控AppKit事件编辑，不等同实体鼠标/全局键测试",
+  "screens": [
+    {
+      "capture_pixels": [
+        1840,
+        880
+      ],
+      "capture_scale": 2,
+      "index": 0,
+      "logical_frame": [
+        0,
+        0,
+        1470,
+        956
+      ],
+      "own_window_capture_file": "app/previews/screens-0-2026-11-03.png",
+      "quartz_window_frame": [
+        275,
+        78,
+        920,
+        440
+      ],
+      "screen_scale": 2,
+      "window_scale": 2,
+      "sha256": "8e348bf1af9542df222c0b1e251e3e3097e4f34db43c3968da2569957b84890b"
+    },
+    {
+      "capture_pixels": [
+        1840,
+        880
+      ],
+      "capture_scale": 2,
+      "index": 1,
+      "logical_frame": [
+        1470,
+        181,
+        1920,
+        1080
+      ],
+      "own_window_capture_file": "app/previews/screens-1-2026-11-03.png",
+      "quartz_window_frame": [
+        1970,
+        -240,
+        920,
+        440
+      ],
+      "screen_scale": 2,
+      "window_scale": 2,
+      "sha256": "d03873262b1829a872b0075d68bcc20f28ab524b6b919b638736dd1589402c14"
+    }
+  ],
+  "source_pixels": [
+    1920,
+    460
+  ],
+  "date": "2026-11-03",
+  "new_permissions": false,
+  "sources": {
+    "app/Sources/ScreenVerification.swift": "a1d1ea7080307c9904d5fbe04853c405e4fa44f34502f29f352f156ebfae3b07",
+    "app/Sources/App.swift": "e0fe04d727886adcd4cb00216eea17f803d9837e057b2bd2cb4c2ad08451a02e"
+  }
+}
