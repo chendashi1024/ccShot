@@ -11,7 +11,7 @@ rect, text, line, circle, icon, action = base.rect, base.text, base.line, base.c
 INK, MUTED, GREEN, PAPER = '#282d2a', '#626c65', '#285c53', '#fafbf8'
 base.PATHS['back'] = '<path d="M15 5l-7 7 7 7"/>'
 base.PATHS['cover'] = '<rect x="3" y="6" width="18" height="12" rx="2" fill="currentColor" stroke="none"/>'
-TOOLS = [('arrow','箭头'),('rectangle','画框'),('text','文字'),('cover','遮挡')]
+TOOLS = [('arrow','箭头'),('rectangle','画框'),('text','文字'),('pencil','画笔'),('cover','遮挡'),('highlight','高亮'),('number','序号')]
 COLORS = ['#c64635', '#285c53', '#2e63a5', '#252b28']
 
 
@@ -47,7 +47,10 @@ def image_content(annotated=False):
             'arrow':'<path d="M924 523Q861 472 767 480M782 469l-15 11 18 2" fill="none"/>',
             'rectangle':'<rect x="434" y="465" width="335" height="35" rx="4" fill="none"/>',
             'text':'<text x="832" y="489" font-size="22" fill="currentColor" stroke="none">这里补图</text>',
+            'pencil':'<path d="M440 502Q478 492 512 502T584 502T656 502T730 502" fill="none"/>',
             'cover':'<rect x="438" y="466" width="329" height="32" rx="2" fill="currentColor" stroke="none"/>',
+            'highlight':'<path d="M442 476H732" opacity=".35"/>',
+            'number':'<circle cx="416" cy="477" r="16" fill="currentColor" stroke="none"/><text x="416" y="483" text-anchor="middle" font-size="16" fill="#fff" stroke="none">1</text>',
         }
         for name,shape in shapes.items():
             out+=f'<g data-mark="{name}" style="display:{"inline" if name=="arrow" else "none"}" color="{COLORS[0]}" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">{shape}</g>'
@@ -63,16 +66,24 @@ def crop():
     return '<g data-ui="true">'+out+'</g>'
 
 
-def mainbar(selected_text=False):
-    x,y=475,648
-    out=panel(x,y,490,56)
-    out+=control(x+8,y+8,94,'标注','pencil','data-scene="annotate"')
-    out+=control(x+102,y+8,94,'钉住','pin','data-scene="pin"')
-    out+=control(x+196,y+8,94,'保存','save','data-action="save"')
-    out+=line(x+294,y+15,x+294,y+41,'#d5dcd3')
-    out+=control(x+304,y+8,128,'复制文字' if selected_text else '复制','copy',f'data-action="{"copy-text" if selected_text else "copy"}"',True)
-    out+=action(rect(x+438,y+8,44,40,'transparent',8)+icon('close',x+450,y+18,20,INK),'结束截图','data-action="close"')
-    return out
+def mainbar(selected_text=False, selected='pointer'):
+    x,y=156,648
+    out=panel(x,y,1128,56)
+    for i,(name,label) in enumerate(TOOLS):
+        out+=control(x+8+i*78,y+8,78,label,name,f'data-tool="{name}" aria-pressed="{str(name==selected).lower()}"',active=name==selected)
+    for offset,name,label,attrs in [(562,'pointer','选择与选字（V）','data-tool="pointer"'),(604,'undo','撤销示例标记','data-action="undo"'),(642,'redo','重做示例标记','data-action="redo"')]:
+        if name=='redo' or (name=='undo' and selected=='pointer'):
+            attrs+=' aria-disabled="true" opacity=".35"'
+        out+=action(rect(x+offset,y+8,36,40,'#e6eee8' if name==selected else 'transparent',7)+icon(name,x+offset+8,y+18,20,INK),label,attrs)
+    out+=line(x+688,y+15,x+688,y+41,'#d5dcd3')
+    body=rect(x+696,y+8,90,40,'transparent',8)+circle(x+711,y+28,7,COLORS[0],extra='data-style-dot="true"')+text(x+727,y+34,'样式',14,INK)+icon('chevron',x+762,y+21,15,INK)
+    out+=action(body,'调整当前工具样式','data-action="style" aria-expanded="false"')
+    out+=line(x+794,y+15,x+794,y+41,'#d5dcd3')
+    out+=control(x+802,y+8,78,'钉住','pin','data-scene="pin"')
+    out+=control(x+880,y+8,78,'保存','save','data-action="save"')
+    out+=control(x+962,y+8,112,'复制文字' if selected_text else '复制','copy',f'data-action="{"copy-text" if selected_text else "copy"}"',True)
+    out+=action(rect(x+1080,y+8,40,40,'transparent',8)+icon('close',x+1090,y+18,20,INK),'结束截图','data-action="close"')
+    return out+style_popover()
 
 
 def capture():
@@ -86,12 +97,12 @@ def selection():
 
 
 def style_popover():
-    x,y=807,716
+    x,y=852,716
     out=panel(x,y,232,148,10)+text(x+16,y+28,'颜色',13,MUTED)
     for i,color in enumerate(COLORS):
         xx=x+29+i*51
         out+=action(rect(xx-20,y+36,40,34,'transparent',6)+circle(xx,y+53,10,color)+circle(xx,y+53,14,'none',GREEN if i==0 else 'none',f'data-ring="{color}"'),f'标注颜色 {color}',f'data-color="{color}"')
-    out+=line(x+16,y+80,x+216,y+80,'#e0e5dd')+text(x+16,y+104,'粗细',13,MUTED,extra='data-param-label="true"')
+    out+=line(x+16,y+80,x+216,y+80,'#e0e5dd',extra='data-param-rule="true"')+text(x+16,y+104,'粗细',13,MUTED,extra='data-param-label="true"')
     for i,(width,label) in enumerate([(2,'细'),(4,'中'),(6,'粗')]):
         xx=x+68+i*50
         out+=action(rect(xx,y+87,42,43,'#e6eee8' if width==4 else 'transparent',7,extra=f'data-width-bg="{width}"')+text(xx+21,y+114,label,14,INK,500,'text-anchor="middle" data-width-text="true"'),label,f'data-width="{width}"')
@@ -99,17 +110,7 @@ def style_popover():
 
 
 def annotate():
-    x,y=395,648
-    out=backdrop()+image_content(True)+crop()+panel(x,y,650,56)
-    out+=action(rect(x+8,y+8,42,40,'transparent',8)+icon('back',x+19,y+18,20,INK),'返回截图','data-scene="capture"')
-    out+=line(x+56,y+15,x+56,y+41,'#d5dcd3')
-    for i,(name,label) in enumerate(TOOLS):
-        out+=control(x+65+i*87,y+8,85,label,name,f'data-tool="{name}" aria-pressed="{str(i==0).lower()}"',active=i==0)
-    out+=line(x+420,y+15,x+420,y+41,'#d5dcd3')
-    body=rect(x+429,y+8,96,40,'transparent',8)+circle(x+448,y+28,7,COLORS[0],extra='data-style-dot="true"')+text(x+464,y+34,'样式',14,INK)+icon('chevron',x+500,y+21,15,INK)
-    out+=action(body,'调整标注样式','data-action="style" aria-expanded="false"')
-    out+=control(x+536,y+8,106,'完成','check','data-scene="capture"',True)
-    return out+style_popover()
+    return backdrop()+image_content(True)+crop()+mainbar(selected='arrow')
 
 
 def pinned():
@@ -140,9 +141,13 @@ SCENES=[('capture','截图',capture),('annotate','标注',annotate),('selection'
 SCRIPT=r'''
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-let current='capture', tool='arrow', color='#c64635', width=4, hasMark=false;
-const hints={capture:'示例截图：标注、钉住与输出都从这里开始。保存与复制使用示例图片。',annotate:'点击工具查看示例标记，点击「样式」调整颜色和粗细。这里尚不支持自由绘制。',selection:'固定选字示例；复制会尝试写入这段示例文字，尚未接入 OCR。',pin:'钉图操作栏的显现状态。网页未连接系统置顶窗口。',settings:'只演示两项设置；切换值不会更改 macOS。'};
+let current='capture', tool='pointer', markTool='arrow', color='#c64635', width=4, hasMark=false, canRedo=false;
+const hints={capture:'常用工具已在第一排。点击工具查看示例标记，再直接复制、保存或钉住。',annotate:'标注与输出保持同一排；点击工具或样式查看示例，这里尚不支持自由绘制。',selection:'固定选字示例；复制会尝试写入这段示例文字，尚未接入 OCR。',pin:'钉图操作栏的显现状态。网页未连接系统置顶窗口。',settings:'只演示两项设置；切换值不会更改 macOS。'};
 const announce = message => { $('#status').textContent=message; };
+function closeStyles() {
+  $$('[data-popover]').forEach(el=>el.style.display='none');
+  $$('[data-action="style"]').forEach(el=>el.setAttribute('aria-expanded','false'));
+}
 function syncMarks() {
   $$('.scene [data-export-content]').forEach(group=>{
     if (!group.querySelector('[data-mark]')) {
@@ -150,33 +155,46 @@ function syncMarks() {
       source.querySelectorAll('[data-mark]').forEach(mark=>group.append(mark.cloneNode(true)));
     }
     group.querySelectorAll('[data-mark]').forEach(mark=>{
-      const ownScene=group.closest('.scene').dataset.sceneId;
-      mark.style.display=mark.dataset.mark===tool && (hasMark || ownScene==='annotate')?'inline':'none';
-      mark.setAttribute('color',color); mark.setAttribute('stroke-width',width);
-      const text=mark.querySelector('text'); if(text) text.setAttribute('font-size',{2:18,4:22,6:28}[width]);
+      mark.style.display=mark.dataset.mark===markTool && hasMark?'inline':'none';
+      mark.setAttribute('color',color); mark.setAttribute('stroke-width',mark.dataset.mark==='highlight'?width*4:width);
+      const text=mark.querySelector('text');
+      if(text) text.setAttribute('font-size',mark.dataset.mark==='number'?width*2+8:{2:18,4:22,6:28}[width]);
+      if(mark.dataset.mark==='number') mark.querySelector('circle').setAttribute('r',width*2+8);
+    });
+  });
+  $$('[data-tool]').forEach(el=>{
+    const active=el.dataset.tool===tool;el.setAttribute('aria-pressed',active);
+    el.querySelector('rect').setAttribute('fill',active?'#e6eee8':'transparent');
+    el.querySelector('text')?.setAttribute('fill',active?'#285c53':'#282d2a');
+    el.querySelectorAll('g[stroke]').forEach(icon=>icon.setAttribute('stroke',active?'#285c53':'#282d2a'));
+  });
+  for(const [name,enabled] of [['undo',hasMark],['redo',canRedo]]) {
+    $$(`[data-action="${name}"]`).forEach(el=>{el.setAttribute('aria-disabled',String(!enabled));el.setAttribute('opacity',enabled?'1':'.35');});
+  }
+  const styleTool=tool==='pointer'?markTool:tool, covered=styleTool==='cover';
+  $$('[data-popover]').forEach(panel=>{
+    panel.querySelector('rect').setAttribute('height',covered?84:148);
+    panel.querySelector('[data-param-rule]').style.display=covered?'none':'inline';
+    const label=panel.querySelector('[data-param-label]');label.style.display=covered?'none':'inline';
+    label.textContent=styleTool==='text'?'字号':styleTool==='number'?'大小':'粗细';
+    panel.querySelectorAll('[data-width]').forEach((el,i)=>{
+      el.style.display=covered?'none':'inline';
+      const label=styleTool==='text'?['18','22','28'][i]:styleTool==='number'?['小','中','大'][i]:['细','中','粗'][i];
+      el.querySelector('[data-width-text]').textContent=label;el.setAttribute('aria-label',label);
     });
   });
 }
 function show(scene) {
-  if (current==='annotate' && scene!=='annotate') hasMark=true;
   current=scene; $$('.scene').forEach(el=>el.hidden=el.dataset.sceneId!==scene);
   $$('nav [data-scene]').forEach(el=>el.setAttribute('aria-pressed',el.dataset.scene===scene));
-  $('[data-popover]').style.display='none'; $('[data-action="style"]').setAttribute('aria-expanded','false');
-  syncMarks(); announce(hints[scene]);
+  if(scene==='annotate'){tool='arrow';markTool='arrow';hasMark=true;canRedo=false;}
+  if(scene==='capture'||scene==='selection') tool='pointer';
+  closeStyles();syncMarks();announce(hints[scene]);
 }
 function chooseTool(name) {
+  if(current==='selection' && name!=='pointer')show('capture');
   tool=name;
-  $$('[data-tool]').forEach(el=>{
-    const active=el.dataset.tool===tool; el.setAttribute('aria-pressed',active);
-    el.querySelector('rect').setAttribute('fill',active?'#e6eee8':'transparent');
-  });
-  const covered=tool==='cover';
-  $('[data-param-label]').textContent=tool==='text'?'字号':'粗细';
-  $$('[data-width]').forEach((el,i)=>{
-    el.style.display=covered?'none':'inline';
-    el.querySelector('[data-width-text]').textContent=tool==='text'?['18','22','28'][i]:['细','中','粗'][i];
-  });
-  $('[data-param-label]').style.display=covered?'none':'inline';
+  if(name!=='pointer'){markTool=name;hasMark=true;canRedo=false;}
   syncMarks();
 }
 async function imageBlob() {
@@ -194,15 +212,18 @@ async function imageBlob() {
   } finally { URL.revokeObjectURL(url); }
 }
 async function activate(el) {
+  if(el.getAttribute('aria-disabled')==='true')return;
   if(el.dataset.scene) return show(el.dataset.scene);
   if(el.dataset.tool) return chooseTool(el.dataset.tool);
   if(el.dataset.color) {
     color=el.dataset.color; $$('[data-ring]').forEach(r=>r.setAttribute('stroke',r.dataset.ring===color?'#285c53':'none'));
-    $('[data-style-dot]').setAttribute('fill',color); return syncMarks();
+    $$('[data-style-dot]').forEach(dot=>dot.setAttribute('fill',color)); return syncMarks();
   }
   if(el.dataset.width) {width=Number(el.dataset.width); $$('[data-width-bg]').forEach(r=>r.setAttribute('fill',Number(r.dataset.widthBg)===width?'#e6eee8':'transparent'));return syncMarks();}
   const name=el.dataset.action;
-  if(name==='style') {const open=el.getAttribute('aria-expanded')!=='true';el.setAttribute('aria-expanded',open);$('[data-popover]').style.display=open?'inline':'none';return;}
+  if(name==='style') {const open=el.getAttribute('aria-expanded')!=='true';closeStyles();el.setAttribute('aria-expanded',open);el.closest('.scene').querySelector('[data-popover]').style.display=open?'inline':'none';return;}
+  if(name==='undo'){hasMark=false;canRedo=true;syncMarks();return;}
+  if(name==='redo'){hasMark=true;canRedo=false;syncMarks();return;}
   if(name==='close') {show('capture');announce('演示已回到截图画面；网页不会关闭真实窗口。');return;}
   if(name==='hotkey') {const value=el.querySelector('text');value.textContent=value.textContent==='F1'?'⌃⌥S':'F1';announce('快捷键外观演示；原生版通过按键录入并检查冲突。');return;}
   if(name==='folder') {const value=$('[data-folder-label]');value.textContent=value.textContent==='桌面'?'下载':'桌面';announce('目录外观演示；原生版使用系统文件夹选择器。');return;}
@@ -221,8 +242,9 @@ async function activate(el) {
 document.addEventListener('click',event=>{const el=event.target.closest('[data-scene],[data-tool],[data-color],[data-width],[data-action]');if(el) activate(el);});
 document.addEventListener('keydown',event=>{
   if(event.key==='Escape') {
-    const panel=$('[data-popover]'); if(panel.style.display!=='none'){panel.style.display='none';$('[data-action="style"]').setAttribute('aria-expanded','false');$('[data-action="style"]').focus();}
-    else if(current==='annotate')show('capture');return;
+    const panel=$(`[data-scene-id="${current}"] [data-popover]`);
+    if(panel && panel.style.display!=='none'){closeStyles();$(`[data-scene-id="${current}"] [data-action="style"]`).focus();}
+    else if(tool!=='pointer')chooseTool('pointer');return;
   }
   if((event.key==='Enter'||event.key===' ') && event.target.matches('g[role="button"]')){event.preventDefault();activate(event.target);}
 });
