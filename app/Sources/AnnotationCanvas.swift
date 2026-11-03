@@ -292,6 +292,7 @@ extension AnnotationCanvas {
         editor.insertionPointColor = .controlAccentColor; editor.string = previousText
         editor.onCommit = { [weak self] in _ = self?.finishTextEditing() }
         editor.onCancel = { [weak self] in self?.cancelTextEditing() }
+        editor.onChange = { [weak self] in self?.onSelectionChanged?() }
         let scroll = NSScrollView(); scroll.hasVerticalScroller = true; scroll.autohidesScrollers = true; scroll.scrollerStyle = .overlay
         scroll.drawsBackground = false; scroll.contentView.drawsBackground = false; scroll.borderType = .noBorder
         scroll.wantsLayer = true; scroll.layer?.borderColor = NSColor.controlAccentColor.cgColor; scroll.layer?.borderWidth = 1.5

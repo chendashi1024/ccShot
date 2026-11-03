@@ -24,8 +24,14 @@ import QuartzCore
             let local = CGPoint(x:rect.minX+point.x/1600*rect.width,y:rect.minY+point.y/700*rect.height)
             return NSEvent.mouseEvent(with:.leftMouseDown,location:canvas.convert(local,to:nil),modifierFlags:[],timestamp:0,windowNumber:editor.window!.windowNumber,context:nil,eventNumber:1,clickCount:count,pressure:1)!
         }
+        func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
+        func control(_ action: Selector) -> NSButton? { descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where:{$0.action == action && !$0.isHidden}) }
+        func copyTitle() -> String? { control(#selector(ImageWindow.copy(_:)))?.title }
+        editor.selectAll(nil); let selectedTitle = copyTitle()
+        canvas.chooseTool(.arrow); let drawingTitle = copyTitle()
         canvas.chooseTool(.text); canvas.mouseDown(with:mouse(CGPoint(x:100,y:400)))
         var checks = ["native_editor_opens":canvas.textEditor != nil,"pending_text_blocks_export":editor.stableImage() == nil]
+        checks["copy_title_matches_selection_and_tool"] = selectedTitle == "复制文字" && drawingTitle == "复制"
         guard let input = canvas.textEditor else { return false }
         input.setMarkedText("zhongwen",selectedRange:NSRange(location:8,length:0),replacementRange:NSRange(location:NSNotFound,length:0))
         checks["composition_is_marked"] = input.hasMarkedText()
@@ -50,6 +56,11 @@ import QuartzCore
         checks["native_typing_undo_keeps_document_empty"] = input.string != expected && document.state.objects.isEmpty && !document.canUndo
         if let index = editMenu?.items.firstIndex(where:{$0.action == #selector(ImageWindow.redo(_:))}) { editMenu?.performActionForItem(at:index) }
         checks["native_typing_redo_restores_input"] = input.string == expected
+        control(#selector(ImageWindow.undo(_:)))?.performClick(nil)
+        checks["toolbar_undo_routes_to_text_input"] = input.string != expected && document.state.objects.isEmpty
+        control(#selector(ImageWindow.redo(_:)))?.performClick(nil)
+        checks["toolbar_redo_restores_text_input"] = input.string == expected
+
 
         let key = NSEvent.keyEvent(with:.keyDown,location:.zero,modifierFlags:[],timestamp:0,windowNumber:editor.window!.windowNumber,context:nil,characters:"v",charactersIgnoringModifiers:"v",isARepeat:false,keyCode:9)!
         checks["tool_keys_do_not_handle_text_input"] = !canvas.handleKey(key) && canvas.tool == .text && input.string == expected

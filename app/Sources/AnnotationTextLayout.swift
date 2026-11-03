@@ -24,6 +24,8 @@ import AppKit
 @MainActor final class AnnotationTextView: NSTextView {
     var onCommit: (() -> Void)?
     var onCancel: (() -> Void)?
+    var onChange: (() -> Void)?
+    override func didChangeText() { super.didChangeText(); onChange?() }
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 36 && event.modifierFlags.contains(.command) && !hasMarkedText() { onCommit?(); return }
         if event.keyCode == 53 && !hasMarkedText() { onCancel?(); return }

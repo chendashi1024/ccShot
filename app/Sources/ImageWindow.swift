@@ -24,6 +24,15 @@ import UniformTypeIdentifiers
     private let overlay = ImageAnalysisOverlayView()
     private let status = NSTextField(labelWithString: "正在识别文字…")
     private let toolRow = NSStackView()
+    private let viewerRow = NSStackView()
+    private var styleButton: NSButton!
+    private var copyButton: NSButton!
+    private var viewerCopyButton: NSButton!
+    private var pinButton: NSButton!
+    private var saveButton: NSButton!
+    private var donePinButton: NSButton!
+    private var styleExpanded = false
+    private var viewingFrame: CGRect?
     private let styleRow = NSStackView()
     private let optionRow = NSStackView()
     private var toolButtons: [AnnotationTool: NSButton] = [:]
@@ -69,44 +78,48 @@ import UniformTypeIdentifiers
         canvas = AnnotationCanvas(document: annotationDocument, preferences: preferences)
         editing = !pinned
         let ratio = CGFloat(annotationDocument.baseImage.height) / CGFloat(annotationDocument.baseImage.width)
-        let width: CGFloat = min(1040, max(780, CGFloat(annotationDocument.baseImage.width)))
-        let height = min(780, max(450, width * ratio + 200))
+        let width: CGFloat = min(pinned ? 900 : 1040, max(pinned ? 420 : 880, CGFloat(annotationDocument.baseImage.width)))
+        let height = min(780, max(pinned ? 260 : 360, width * ratio + 100))
         let window = AnnotationWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: height), styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
         window.title = pinned ? "CcShot · 钉图" : "CcShot"
         window.isReleasedWhenClosed = false
-        window.minSize = NSSize(width: 780, height: 380)
+        window.minSize = NSSize(width: pinned ? 420 : 880, height: pinned ? 260 : 300)
+        window.backgroundColor = CoreAppearance.surface
         if pinned { window.level = .floating; window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] }
         super.init(window: window)
         window.delegate = self
-        let root = NSView(); window.contentView = root
+        let root = CoreSurfaceView(); window.contentView = root
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         overlay.delegate = self; overlay.trackingImageView = canvas
         overlay.preferredInteractionTypes = .textSelection
         overlay.autoresizingMask = [.width, .height]; canvas.addSubview(overlay)
-        let output = NSStackView(); output.spacing = 8
-        for (title, action) in [("复制图片", #selector(copyImage)), ("保存", #selector(saveImage)), ("复制全部文字", #selector(copyAllText))] { output.addArrangedSubview(button(title, action)) }
-        if !pinned { output.addArrangedSubview(button("钉图", #selector(pinImage))) }
-        else {
-            editButton.target = self; editButton.action = #selector(toggleEditing); editButton.bezelStyle = .rounded; output.addArrangedSubview(editButton)
-            output.addArrangedSubview(NSTextField(labelWithString: "透明度"))
-            let opacity = NSSlider(value: 1, minValue: 0.2, maxValue: 1, target: self, action: #selector(changeOpacity(_:)))
-            opacity.widthAnchor.constraint(equalToConstant: 70).isActive = true; output.addArrangedSubview(opacity)
-        }
-        finishTextButton = button("完成文字",#selector(finishText)); cancelTextButton = button("取消文字",#selector(cancelText))
-        finishTextButton.toolTip = "完成文字（⌘Return）"; cancelTextButton.toolTip = "取消文字（Esc）"
-        output.addArrangedSubview(finishTextButton); output.addArrangedSubview(cancelTextButton)
-        undoButton = button("撤销", #selector(undo(_:))); redoButton = button("重做", #selector(redo(_:)))
-        output.addArrangedSubview(undoButton); output.addArrangedSubview(redoButton)
         buildStyles()
-        status.textColor = .secondaryLabelColor; status.font = .systemFont(ofSize: 12)
-        let stack = NSStackView(views: [output, toolRow, styleRow, optionRow, canvas, status])
+        undoButton = iconButton("arrow.uturn.backward", "撤销（⌘Z）", #selector(undo(_:)))
+        redoButton = iconButton("arrow.uturn.forward", "重做（⌘⇧Z）", #selector(redo(_:)))
+        styleButton = button("样式",#selector(toggleStyle)); styleButton.setAccessibilityLabel("样式")
+        toolRow.addArrangedSubview(styleButton); toolRow.addArrangedSubview(undoButton); toolRow.addArrangedSubview(redoButton)
+        let spacer = NSView(); spacer.setContentHuggingPriority(.defaultLow,for:.horizontal)
+        spacer.widthAnchor.constraint(greaterThanOrEqualToConstant:8).isActive = true; toolRow.addArrangedSubview(spacer)
+        pinButton = button("钉住",#selector(pinImage)); saveButton = button("保存",#selector(saveImage)); copyButton = button("复制",#selector(copy(_:)))
+        donePinButton = button("完成",#selector(toggleEditing))
+        for value in [donePinButton,pinButton,saveButton,copyButton] { toolRow.addArrangedSubview(value!) }
+        finishTextButton = button("完成文字",#selector(finishText)); cancelTextButton = button("取消",#selector(cancelText))
+        finishTextButton.toolTip = "完成文字（⌘Return）"; cancelTextButton.toolTip = "取消文字（Esc）"
+        toolRow.addArrangedSubview(finishTextButton); toolRow.addArrangedSubview(cancelTextButton)
+        editButton.target = self; editButton.action = #selector(toggleEditing); editButton.bezelStyle = .rounded; editButton.font = .systemFont(ofSize:14)
+        viewerCopyButton = button("复制",#selector(copy(_:)))
+        viewerRow.spacing = 8
+        for view in [editButton,viewerCopyButton,button("关闭",#selector(closeImage))] { viewerRow.addArrangedSubview(view!) }
+        canvas.menu = makeContextMenu()
+        status.textColor = .labelColor; status.font = .systemFont(ofSize:13)
+        let stack = NSStackView(views:[toolRow,viewerRow,styleRow,optionRow,canvas,status])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(stack)
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16), stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -16),
             stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 12), stack.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -12),
-            canvas.widthAnchor.constraint(equalTo: stack.widthAnchor), canvas.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
+            toolRow.widthAnchor.constraint(equalTo:stack.widthAnchor), canvas.widthAnchor.constraint(equalTo: stack.widthAnchor), canvas.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
         ])
         canvas.onError = { [weak self] message in self?.status.stringValue = message }
         canvas.onPreviewBegin = { [weak self] in self?.invalidateRecognition() }
@@ -126,13 +139,19 @@ import UniformTypeIdentifiers
     }
     required init?(coder: NSCoder) { nil }
     private func button(_ title: String, _ action: Selector) -> NSButton {
-        let button = NSButton(title: title, target: self, action: action); button.bezelStyle = .rounded; return button
+        let button = NSButton(title:title,target:self,action:action); button.bezelStyle = .rounded; button.font = .systemFont(ofSize:14); button.heightAnchor.constraint(greaterThanOrEqualToConstant:28).isActive = true; return button
+    }
+    private func iconButton(_ symbol: String, _ title: String, _ action: Selector) -> NSButton {
+        let value = button("",action); value.image = NSImage(systemSymbolName:symbol,accessibilityDescription:title); value.imagePosition = .imageOnly
+        value.toolTip = title; value.setAccessibilityLabel(title); value.widthAnchor.constraint(equalToConstant:28).isActive = true; return value
     }
     private func buildStyles() {
-        toolRow.spacing = 5; styleRow.spacing = 8; optionRow.spacing = 10
-        for (index, tool) in AnnotationTool.allCases.enumerated() {
-            let value = button(tool.title, #selector(chooseTool(_:))); value.tag = index; value.setButtonType(.pushOnPushOff)
-            value.toolTip = "\(tool.title)（\(tool.key.uppercased())）"; toolButtons[tool] = value; toolRow.addArrangedSubview(value)
+        toolRow.spacing = 4; styleRow.spacing = 8; optionRow.spacing = 10
+        for tool in [AnnotationTool.select,.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
+            let index = AnnotationTool.allCases.firstIndex(of:tool)!
+            let title = tool == .rectangle ? "画框" : tool == .mask ? "遮挡" : tool.title
+            let value = button(title, #selector(chooseTool(_:))); value.tag = index; value.setButtonType(.pushOnPushOff)
+            value.toolTip = "\(title)（\(tool.key.uppercased())）"; toolButtons[tool] = value; toolRow.addArrangedSubview(value)
         }
         widthSlider.target = self; widthSlider.action = #selector(changeWidth(_:)); widthSlider.isContinuous = true
         widthSlider.widthAnchor.constraint(equalToConstant: 105).isActive = true
@@ -143,7 +162,8 @@ import UniformTypeIdentifiers
             let value = NSButton(title: "●", target: self, action: #selector(palette(_:))); value.isBordered = false
             value.attributedTitle = NSAttributedString(string: "●", attributes: [.foregroundColor: color.nsColor, .font: NSFont.systemFont(ofSize: 22)])
             value.tag = index; value.toolTip = "颜色 \(index+1)"; value.setAccessibilityLabel("预设颜色 \(index+1)")
-            value.widthAnchor.constraint(equalToConstant: 22).isActive = true; colorControls.append(value); styleRow.addArrangedSubview(value)
+            value.widthAnchor.constraint(equalToConstant:26).isActive = true; value.heightAnchor.constraint(equalToConstant:26).isActive = true
+            value.wantsLayer = true; value.layer?.cornerRadius = 13; value.layer?.borderWidth = 0.75; value.layer?.borderColor = NSColor.gray.cgColor; colorControls.append(value); styleRow.addArrangedSubview(value)
         }
         colorWell.target = self; colorWell.action = #selector(changeColor(_:)); colorWell.widthAnchor.constraint(equalToConstant: 40).isActive = true; colorControls.append(colorWell); styleRow.addArrangedSubview(colorWell)
         fillButton.target = self; fillButton.action = #selector(changeOptions)
@@ -169,8 +189,16 @@ import UniformTypeIdentifiers
         let tool = canvas.currentTool, style = canvas.currentStyle
         canvas.editingEnabled = editing
         toolRow.isHidden = !editing
-        styleRow.isHidden = !editing || tool == .select
-        for (tool, button) in toolButtons { button.state = tool == canvas.tool ? .on : .off }
+        styleRow.isHidden = !editing || tool == .select || !styleExpanded
+        viewerRow.isHidden = !pinned || editing
+        window?.minSize = CGSize(width:editing ? 880 : 420,height:styleRow.isHidden ? (editing ? 300 : 260) : 480)
+        styleButton.isEnabled = editing && tool != .select
+        styleButton.title = "样式"
+        styleButton.toolTip = "\(tool.title)样式"
+        for (tool, button) in toolButtons {
+            let selected = tool == canvas.tool; button.state = selected ? .on : .off
+            button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor
+        }
         let width = tool == .text ? style.fontSize : tool == .mask ? style.maskStrength : style.width
         widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : "粗细"
         widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
@@ -196,13 +224,48 @@ import UniformTypeIdentifiers
         numberLabel.isHidden = tool != .number; numberField.isHidden = tool != .number
         numberLabel.stringValue = canvas.selected == nil ? "下一号" : "编号"
         if window?.firstResponder !== numberField.currentEditor() { numberField.stringValue = "\(canvas.selected?.number ?? annotationDocument.state.nextNumber)" }
-        optionRow.isHidden = !editing || tool == .select || [.pen, .highlight].contains(tool)
-        editButton.title = editing ? "完成标注" : "标注"
-        undoButton.isEnabled = annotationDocument.canUndo && !canvas.hasDraft && !annotationDocument.inTransaction
-        redoButton.isEnabled = annotationDocument.canRedo && !canvas.hasDraft && !annotationDocument.inTransaction
+        optionRow.isHidden = styleRow.isHidden || [.pen,.highlight].contains(tool)
+        let input = canvas.textEditor
+        pinButton.isHidden = pinned || input != nil; saveButton.isHidden = input != nil; copyButton.isHidden = input != nil; donePinButton.isHidden = !pinned || input != nil
+        if let input {
+            undoButton.isEnabled = input.undoManager?.canUndo == true && !input.hasMarkedText()
+            redoButton.isEnabled = input.undoManager?.canRedo == true && !input.hasMarkedText()
+        } else {
+            undoButton.isEnabled = annotationDocument.canUndo && !canvas.hasDraft && !annotationDocument.inTransaction
+            redoButton.isEnabled = annotationDocument.canRedo && !canvas.hasDraft && !annotationDocument.inTransaction
+        }
         overlay.isHidden = canvas.hasDraft || canvas.tool != .select || canvas.selected != nil
+        updateCopyTitle()
         canvas.needsDisplay = true
     }
+    private func updateCopyTitle() {
+        let title = !overlay.isHidden && overlay.hasActiveTextSelection && !overlay.selectedText.isEmpty ? "复制文字" : "复制"
+        copyButton?.title = title; viewerCopyButton?.title = title
+        let help = title == "复制文字" ? "复制选中的文字" : "复制当前图片"; copyButton?.toolTip = help; viewerCopyButton?.toolTip = help
+        canvas.menu = makeContextMenu()
+    }
+    private func makeContextMenu() -> NSMenu {
+        let menu = NSMenu()
+        if !overlay.isHidden && !overlay.selectedText.isEmpty { menu.addItem(withTitle:"复制文字",action:#selector(copySelectedText),keyEquivalent:"").target = self }
+        if !overlay.text.isEmpty { menu.addItem(withTitle:"复制全部文字",action:#selector(copyAllText),keyEquivalent:"").target = self }
+        if !menu.items.isEmpty { menu.addItem(.separator()) }
+        for (title,action) in [("复制图片",#selector(copyImage)),("保存图片…",#selector(saveImage))] { menu.addItem(withTitle:title,action:action,keyEquivalent:"").target = self }
+        if !pinned { menu.addItem(withTitle:"钉住",action:#selector(pinImage),keyEquivalent:"").target = self }
+        else {
+            let opacity = NSMenuItem(title:"透明度",action:nil,keyEquivalent:""); opacity.submenu = NSMenu()
+            for value in [100,75,50,25] { let item = NSMenuItem(title:"\(value)%",action:#selector(opacityPreset(_:)),keyEquivalent:""); item.tag = value; item.target = self; opacity.submenu?.addItem(item) }
+            menu.addItem(opacity)
+        }
+        return menu
+    }
+    func textSelectionDidChange(_ overlayView: ImageAnalysisOverlayView) { updateCopyTitle() }
+    @objc private func toggleStyle() {
+        styleExpanded.toggle()
+        if styleExpanded, let window, window.frame.height < 480 { var frame = window.frame; frame.origin.y -= 480-frame.height; frame.size.height = 480; setVisibleFrame(frame) }
+        updateControls()
+    }
+    @objc private func closeImage() { close() }
+    @objc private func opacityPreset(_ sender: NSMenuItem) { window?.alphaValue = Double(sender.tag)/100 }
     @objc private func chooseTool(_ sender: NSButton) { canvas.chooseTool(AnnotationTool.allCases[sender.tag]); if canvas.textEditor == nil { window?.makeFirstResponder(canvas) } }
     @objc private func changeWidth(_ sender: NSSlider) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.doubleValue.rounded()) } else if canvas.currentTool == .mask { style.maskStrength = CGFloat(sender.doubleValue.rounded()) } else { style.width = CGFloat(sender.doubleValue.rounded()) }; canvas.changeStyle(style) }
     @objc private func widthPreset(_ sender: NSButton) { var style = canvas.currentStyle; if canvas.currentTool == .text { style.fontSize = CGFloat(sender.tag) } else if canvas.currentTool == .mask { style.maskStrength = max(4,CGFloat(sender.tag)) } else { style.width = CGFloat(sender.tag) }; canvas.changeStyle(style) }
@@ -245,14 +308,33 @@ import UniformTypeIdentifiers
     }
     @objc private func toggleEditing() {
         guard pinned else { return }
-        window?.makeFirstResponder(canvas); canvas.cancelGesture(); canvas.chooseTool(.select); editing.toggle(); updateControls()
+        guard canvas.finishTextEditing() else { return }
+        window?.makeFirstResponder(canvas); canvas.cancelGesture(); canvas.chooseTool(.select); styleExpanded = false
+        if !editing, let window {
+            viewingFrame = window.frame; window.minSize = CGSize(width:880,height:300)
+            var frame = window.frame; frame.size.width = max(880,frame.width); frame.size.height = max(360,frame.height); setVisibleFrame(frame)
+        } else if let window {
+            window.minSize = CGSize(width:420,height:260)
+            if let viewingFrame { setVisibleFrame(CGRect(x:window.frame.minX,y:window.frame.maxY-viewingFrame.height,width:viewingFrame.width,height:viewingFrame.height)) }
+            viewingFrame = nil
+        }
+        editing.toggle(); updateControls()
+    }
+    private func setVisibleFrame(_ proposed: CGRect) {
+        guard let window else { return }
+        var frame = proposed
+        if let visible = window.screen?.visibleFrame {
+            frame.size.width = min(frame.width,visible.width); frame.size.height = min(frame.height,visible.height)
+            frame.origin.x = max(visible.minX,min(frame.minX,visible.maxX-frame.width)); frame.origin.y = max(visible.minY,min(frame.minY,visible.maxY-frame.height))
+        }
+        window.setFrame(frame,display:true)
     }
     private func zoom(_ factor: CGFloat) {
         guard pinned, let window, let screen = window.screen else { return }
         let previous = window.frame
         let width = min(screen.visibleFrame.width, max(window.minSize.width, previous.width * factor))
         let height = min(screen.visibleFrame.height, max(window.minSize.height, previous.height * factor))
-        window.setFrame(CGRect(x: previous.midX-width/2, y: previous.midY-height/2, width: width, height: height), display: true)
+        setVisibleFrame(CGRect(x:previous.midX-width/2,y:previous.midY-height/2,width:width,height:height))
     }
     private func invalidateRecognition() {
         generation += 1; recognition?.cancel(); recognition = nil; overlay.resetSelection(); overlay.analysis = nil
@@ -288,7 +370,7 @@ import UniformTypeIdentifiers
                 try Task.checkCancellation()
                 let result = try await ImageAnalyzer().analyze(input, orientation: .up, configuration: config)
                 guard let self, !Task.isCancelled, !closed, token == generation, revision == annotationDocument.revision else { return }
-                overlay.analysis = result; overlay.setContentsRectNeedsUpdate()
+                overlay.analysis = result; overlay.setContentsRectNeedsUpdate(); updateCopyTitle()
                 status.stringValue = result.transcript.isEmpty ? "没有发现文字" : "拖选文字后 ⌘C 复制 · \(image.width) × \(image.height) px"
             } catch {
                 guard let self, !closed, !Task.isCancelled, token == generation else { return }
@@ -305,6 +387,7 @@ import UniformTypeIdentifiers
     var recognitionForVerification: Task<Void, Never>? { recognition }
     var recognizedTextForVerification: String { overlay.text }
     var selectedTextForVerification: String { overlay.selectedText }
+    func overlayView(_ overlayView: ImageAnalysisOverlayView, updatedMenuFor menu: NSMenu, for event: NSEvent, at point: CGPoint) -> NSMenu { makeContextMenu() }
     func stableImage() -> CGImage? {
         guard !canvas.hasDraft, !annotationDocument.inTransaction else { status.stringValue = "请先完成当前编辑"; return nil }
         guard let image = canvas.previewImage else { status.stringValue = "图片合成失败，请撤销后重试"; return nil }
@@ -316,11 +399,15 @@ import UniformTypeIdentifiers
     }
     override func selectAll(_ sender: Any?) {
         guard !overlay.isHidden else { return }
-        let text = overlay.text; guard !text.isEmpty else { return }; overlay.selectedRanges = [text.startIndex..<text.endIndex]
+        let text = overlay.text; guard !text.isEmpty else { return }; overlay.selectedRanges = [text.startIndex..<text.endIndex]; updateCopyTitle()
     }
-    @objc func undo(_ sender: Any?) { guard !canvas.hasDraft else { return }; annotationDocument.undo() }
-    @objc func redo(_ sender: Any?) { guard !canvas.hasDraft else { return }; annotationDocument.redo() }
+    @objc func undo(_ sender: Any?) { if let input = canvas.textEditor { guard !input.hasMarkedText() else { return }; input.breakUndoCoalescing(); input.undoManager?.undo(); updateControls() } else { guard !canvas.hasDraft else { return }; annotationDocument.undo() } }
+    @objc func redo(_ sender: Any?) { if let input = canvas.textEditor { guard !input.hasMarkedText() else { return }; input.undoManager?.redo(); updateControls() } else { guard !canvas.hasDraft else { return }; annotationDocument.redo() } }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(copySelectedText) { return !canvas.hasDraft && !overlay.isHidden && !overlay.selectedText.isEmpty }
+        if menuItem.action == #selector(copyAllText) { return !canvas.hasDraft && !annotationDocument.inTransaction && !overlay.text.isEmpty }
+        if let action = menuItem.action, [#selector(copyImage),#selector(saveImage),#selector(saveDocument(_:)),#selector(pinImage)].contains(action) { return !closed && !canvas.hasDraft && !annotationDocument.inTransaction && canvas.previewImage != nil }
+        if menuItem.action == #selector(opacityPreset(_:)) { menuItem.state = Int(((window?.alphaValue ?? 1)*100).rounded()) == menuItem.tag ? .on : .off; return pinned }
         if menuItem.action == #selector(undo(_:)) { return annotationDocument.canUndo && !canvas.hasDraft && !annotationDocument.inTransaction }
         if menuItem.action == #selector(redo(_:)) { return annotationDocument.canRedo && !canvas.hasDraft && !annotationDocument.inTransaction }
         return true
@@ -331,6 +418,9 @@ import UniformTypeIdentifiers
         let pasteboard = NSPasteboard.general; pasteboard.clearContents()
         guard pasteboard.setData(png, forType: .png) else { status.stringValue = "复制失败，请重试"; return }
         status.stringValue = "图片已复制"; if !pinned { close() }
+    }
+    @objc private func copySelectedText() {
+        guard !canvas.hasDraft, !annotationDocument.inTransaction, !overlay.isHidden, !overlay.selectedText.isEmpty else { status.stringValue = "请先选择文字"; return }; writeText(overlay.selectedText)
     }
     @objc func copyAllText() {
         guard !canvas.hasDraft, !annotationDocument.inTransaction, !overlay.text.isEmpty else { status.stringValue = "当前没有可复制文字"; return }
@@ -371,5 +461,25 @@ import UniformTypeIdentifiers
     }
     func windowWillClose(_ notification: Notification) {
         closed = true; generation += 1; recognition?.cancel(); recognition = nil; baseRegionsTask?.cancel(); baseRegionsTask = nil; overlay.analysis = nil; annotationDocument.onChange = nil; onClose?()
+    }
+}
+
+extension ImageWindow {
+    func coreLayoutChecks() -> [String:Bool] {
+        guard let window, let root = window.contentView, !pinned else { return [:] }
+        let original = window.frame
+        let previousCopyTitle = copyButton.title; copyButton.title = "复制文字"
+        window.setFrame(CGRect(x:original.minX,y:original.minY,width:880,height:360),display:true); root.layoutSubtreeIfNeeded()
+        let controls = toolRow.arrangedSubviews.compactMap { $0 as? NSButton }.filter { !$0.isHidden }
+        let contained = controls.allSatisfy { value in
+            let rect = value.alignmentRect(forFrame:value.frame)
+            return root.bounds.contains(root.convert(value.bounds,from:value)) && rect.minX >= -0.5 && rect.maxX <= toolRow.bounds.maxX+0.5 && rect.minY >= -0.5 && rect.maxY <= toolRow.bounds.maxY+0.5 && value.frame.width >= value.intrinsicContentSize.width-1
+        }
+        var result = ["core_tools_share_first_row":toolButtons.count == 8 && toolButtons.values.allSatisfy { $0.superview === toolRow && !$0.isHidden },"minimum_window_keeps_primary_controls":contained,"minimum_window_keeps_canvas":canvas.bounds.height >= 160]
+        canvas.chooseTool(.rectangle); toggleStyle(); root.layoutSubtreeIfNeeded()
+        result["style_panel_stays_in_window"] = !styleRow.isHidden && root.bounds.contains(root.convert(styleRow.bounds,from:styleRow)) && root.bounds.contains(root.convert(optionRow.bounds,from:optionRow))
+        toggleStyle(); canvas.chooseTool(.select); copyButton.title = previousCopyTitle
+        window.setFrame(original,display:true); root.layoutSubtreeIfNeeded()
+        return result
     }
 }

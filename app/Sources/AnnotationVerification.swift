@@ -9,6 +9,7 @@ extension ImageWindow {
         let preferences = AppPreferences(store: store)
         let editor = ImageWindow(image: image, pinned: false, preferences: preferences)
         defer { editor.close() }
+        let layoutChecks = editor.coreLayoutChecks()
         let canvas = editor.canvas, document = editor.annotationDocument
         editor.window?.contentView?.layoutSubtreeIfNeeded()
         func mouse(_ type: NSEvent.EventType, _ point: CGPoint) -> NSEvent {
@@ -22,7 +23,8 @@ extension ImageWindow {
         let blocksDraftExport = editor.stableImage() == nil
         canvas.mouseUp(with: mouse(.leftMouseUp, CGPoint(x: 400, y: 220)))
         let created = document.state.objects.first
-        var result = ["draft_blocks_export": blocksDraftExport, "draw_event_creates_object": created?.tool == .rectangle && created?.bounds == CGRect(x: 80, y: 80, width: 320, height: 140)]
+        var result = layoutChecks
+        result.merge(["draft_blocks_export": blocksDraftExport, "draw_event_creates_object": created?.tool == .rectangle && created?.bounds == CGRect(x: 80, y: 80, width: 320, height: 140)],uniquingKeysWith:{ _, new in new })
         let untouchedDefault = preferences.annotationStyle(for: .rectangle)
         var style = canvas.currentStyle; style.width = 12; style.filled = true
         canvas.changeStyle(style)
@@ -62,6 +64,10 @@ extension ImageWindow {
             pinCopy.undo()
             result["pin_edit_independent"] = pinCopy.state != document.state && document.state.nextNumber == 3 && pin.stableImage() != nil
             let expectedPNG = pin.stableImage().flatMap { Self.encoded($0, type: .png) }
+            if let opacity = pin.canvas.menu?.items.first(where:{$0.title == "透明度"})?.submenu, let index = opacity.items.firstIndex(where:{$0.tag == 50}) { opacity.performActionForItem(at:index) }
+            result["pin_opacity_menu_changes_view_only"] = pin.window?.alphaValue == 0.5
+            if let menu = pin.canvas.menu, let index = menu.items.firstIndex(where:{$0.action == #selector(ImageWindow.copyImage)}) { menu.performActionForItem(at:index) }
+            result["context_copy_uses_composite"] = expectedPNG != nil && NSPasteboard.general.data(forType:.png) == expectedPNG
             pin.copyImage()
             result["pin_copy_uses_composite"] = expectedPNG != nil && NSPasteboard.general.data(forType: .png) == expectedPNG && pin.window?.isVisible == true
             pin.close()
@@ -69,12 +75,15 @@ extension ImageWindow {
         document.beginTransaction(); result["transaction_blocks_export"] = editor.stableImage() == nil; document.endTransaction()
         func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
         let buttons = descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }
-        buttons.first(where: { $0.title == "矩形" })?.performClick(nil)
-        buttons.first(where: { $0.title == "16" })?.performClick(nil)
+        buttons.first(where: { $0.title == "画框" })?.performClick(nil)
+        buttons.first(where: { $0.title == "样式" })?.performClick(nil)
+        editor.window!.contentView!.layoutSubtreeIfNeeded()
+        descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where: { $0.title == "16" })?.performClick(nil)
         result["style_buttons_route_to_current_tool"] = canvas.tool == .rectangle && preferences.annotationStyle(for: .rectangle).width == 16 && document.state.objects.first?.style.width == 12
         return result
     }
     static func annotationPreview(_ image: CGImage, to path: String) async -> Bool {
+        let pinned = CommandLine.arguments.contains("--preview-pin")
         let suite = "com.ccshot.annotation-preview.\(UUID().uuidString)"
         let store = UserDefaults(suiteName: suite)!
         // 预览不写用户偏好，也不读取用户截图。
@@ -96,11 +105,15 @@ extension ImageWindow {
         state.objects.append(AnnotationObject(tool:.highlight,style:.initial(.highlight),start:CGPoint(x:50,y:164),end:CGPoint(x:470,y:164),points:[CGPoint(x:50,y:164),CGPoint(x:470,y:164)]))
         state.objects.append(AnnotationObject(tool:.number,style:.initial(.number),start:CGPoint(x:880,y:90),end:CGPoint(x:928,y:138)))
         document.commit(state)
-        let editor = ImageWindow(annotationDocument:document,pinned:false,preferences:AppPreferences(store:store))
+        let editor = ImageWindow(annotationDocument:document,pinned:pinned,preferences:AppPreferences(store:store))
         defer { editor.close() }
-        editor.canvas.chooseTool(.arrow)
+        func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
+        if pinned && CommandLine.arguments.contains("--preview-edit") { if let root = editor.window?.contentView { descendants(root).compactMap { $0 as? NSButton }.first(where:{$0.title == "标注"})?.performClick(nil) } }
+        if !pinned || CommandLine.arguments.contains("--preview-edit") { editor.canvas.chooseTool(.arrow) }
+        if CommandLine.arguments.contains("--show-style"), let root = editor.window?.contentView { descendants(root).compactMap { $0 as? NSButton }.first(where:{$0.title == "样式"})?.performClick(nil) }
+        await editor.recognitionForVerification?.value
         guard CGPreflightScreenCaptureAccess(), let window = editor.window else { return false }
-        window.title = "CcShot · 标注样本"
+        window.title = pinned ? "CcShot · 钉图样本" : "CcShot · 标注样本"
         window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
         do {
             let snapshot = try await WindowCapture.capture(id: UInt32(window.windowNumber), ownerPID: ProcessInfo.processInfo.processIdentifier)

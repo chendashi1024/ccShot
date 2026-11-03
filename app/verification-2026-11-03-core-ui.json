@@ -1,0 +1,218 @@
+{
+  "date": "2026-11-03",
+  "environment": "macOS15.4.1/arm64/SDK15.4",
+  "scope": "最新GOALS的Mac核心界面，常用标注首排直达；AI、美化与高级设置延期，现有代码保留",
+  "sources": {
+    "app/Sources/TextVerification.swift": "c0e896db53dc8cba8405beeb9dbc0fb7ca49cc8a279a9dccc584c9ddcb2117d6",
+    "app/Sources/PixelSampler.swift": "0bac310684a4e4145b00b8fad1a3c47593c947e7ac0b0b0154f2ad7c785ecb0c",
+    "app/Sources/SettingsWindow.swift": "a16323e9b9882c714e98e899091c4e156bea85f682e3abadf600f5ca16c83bca",
+    "app/Sources/AnnotationCanvas.swift": "55836659b3243b62d5a21466e92a2825091d9a2b55eb3279096ed2afe8756889",
+    "app/Sources/AnnotationModel.swift": "d35016eae574678854cb71f68342efec1554d073bfea7c704a42342f6f836b86",
+    "app/Sources/WindowCapture.swift": "ba63b78b70b90aae8b4e8dd66842d22bf60355217a8899879be3caea40ad6106",
+    "app/Sources/SafeTextImage.swift": "fd41022848b053fd88a1cc1c8c5b550c9be52fe59712e3c0d901c079ef8189a5",
+    "app/Sources/PrivacyVerification.swift": "15c9a7cb3e9588d40d20bc1159f4cf0bfff3772be97b3bcb6a5d709babdb9bf8",
+    "app/Sources/SelectionView.swift": "0568eb69fe465c84e354578cf8987793d7ccb79890eac47eb6d6aaae86e0d52a",
+    "app/Sources/HotkeyManager.swift": "6e974ad45b23616cd9cc3ae3b87d61c21d6477328be86d17261df0ef9aa831a5",
+    "app/Sources/AnnotationPreferences.swift": "9be69d87f8ba189cf2dba1a774e67c34c5ac17d0d269f90902eefe58003ae791",
+    "app/Sources/CaptureGeometry.swift": "88dbab5df62c170e2029d075150a8d9ae23b7ee10596c3f5197b76a4dd8db1f8",
+    "app/Sources/SelectionHandle.swift": "a27742ad44edb2c9b3fe2f3f3c6c8a36d244fa906e776a7eff3aa97146262d95",
+    "app/Sources/AppPreferences.swift": "46b1fcfd42d54f6ea408e0217f22a4306384d13a00178b5dab767ea32100ab65",
+    "app/Sources/AnnotationRenderer.swift": "d43df58426d8a31c2464d5ef9e6cb3b810b58da5dd523c5beea9cc848f5ca191",
+    "app/Sources/WindowTarget.swift": "897ca7c5587aacba8fd11178384f461496cfc562690260e8dd6a843a66bc0fc7",
+    "app/Sources/AnnotationVerification.swift": "0564b87782ba664ac0342a7dc364d6c57aec35a7788568eb3071b461a86f9454",
+    "app/Sources/CoreAppearance.swift": "7f394eecbfcbb7f0e0d377e62da8977befc96ae65406f4c676caa393601cce74",
+    "app/Sources/App.swift": "a239c87c41c344b91016be227d63127042a09b4352aaebe73f01f52ef1887d17",
+    "app/Sources/AnnotationTextLayout.swift": "8aedde98ee991022bb5b2c901c320646b26bae1377d7015c7786658e518d5b04",
+    "app/Sources/ImageWindow.swift": "024f5fe5b847061485546c64972e4af0121ecfc1826b191ab389cebfc2d46126",
+    "app/check.sh": "a3b1464529e5ba958b7f472b67d6440d778a4f557e42909a87814f7c6ff65203"
+  },
+  "consumer_smoke": {
+    "annotations": {
+      "cancel_gesture_keeps_document": true,
+      "composite_contains_annotation": true,
+      "context_copy_uses_composite": true,
+      "core_tools_share_first_row": true,
+      "draft_blocks_export": true,
+      "draw_event_creates_object": true,
+      "minimum_window_keeps_canvas": true,
+      "minimum_window_keeps_primary_controls": true,
+      "move_event_updates_object": true,
+      "move_redo": true,
+      "move_undo": true,
+      "number_sequence": true,
+      "number_undo_restores_next": true,
+      "pin_copy_uses_composite": true,
+      "pin_edit_independent": true,
+      "pin_initial_space_enters_editing": true,
+      "pin_keeps_editable_objects": true,
+      "pin_opacity_menu_changes_view_only": true,
+      "resize_event_updates_object": true,
+      "selected_style_keeps_tool_default": true,
+      "style_buttons_route_to_current_tool": true,
+      "style_panel_stays_in_window": true,
+      "transaction_blocks_export": true
+    },
+    "cancel_window_pick": true,
+    "closed_windows_removed": true,
+    "copy_closes_editor_only": true,
+    "escape_clears_then_cancels": true,
+    "escape_restores_drag": true,
+    "fixture_only": true,
+    "hex_key_clipboard": true,
+    "hotkey_conflict_keeps_old_bindings": true,
+    "hotkey_fallback_as_primary": true,
+    "hotkey_reapply": true,
+    "jpeg_roundtrip": true,
+    "passed": true,
+    "png_roundtrip": true,
+    "resize_event_callback": true,
+    "rgb_key_clipboard": true,
+    "selection_callback_crop": true,
+    "settings_recorder": {
+      "close_stops_recording": true,
+      "escape_stops_recording": true,
+      "failed_change_keeps_value": true,
+      "recording_accepts_key": true,
+      "recording_pause_resume_balanced": true
+    },
+    "two_windows_and_pin_level": true,
+    "window_click_target": true,
+    "window_drag_is_region": true
+  },
+  "privacy_smoke": {
+    "checks": {
+      "baseline_recognizes_both_lines": true,
+      "blur_brush_composite_changed": true,
+      "blur_brush_copy_all_uses_safe_text": true,
+      "blur_brush_old_text_cleared_immediately": true,
+      "blur_brush_suppresses_entire_private_unit": true,
+      "blur_rectangle_composite_changed": true,
+      "blur_rectangle_copy_all_uses_safe_text": true,
+      "blur_rectangle_old_text_cleared_immediately": true,
+      "blur_rectangle_suppresses_entire_private_unit": true,
+      "closed_window_has_no_old_analysis": true,
+      "filled_shape_also_suppresses_private_unit": true,
+      "moving_mask_restores_visible_text": true,
+      "pixelate_brush_composite_changed": true,
+      "pixelate_brush_copy_all_uses_safe_text": true,
+      "pixelate_brush_old_text_cleared_immediately": true,
+      "pixelate_brush_suppresses_entire_private_unit": true,
+      "pixelate_rectangle_composite_changed": true,
+      "pixelate_rectangle_copy_all_uses_safe_text": true,
+      "pixelate_rectangle_old_text_cleared_immediately": true,
+      "pixelate_rectangle_suppresses_entire_private_unit": true,
+      "redo_restores_visible_text": true,
+      "undo_clears_old_text": true,
+      "undo_restores_suppression": true
+    },
+    "fixture_only": true,
+    "passed": true,
+    "test_data": "两行虚构英文，仅局部遮挡第一行；不记录私人截图或OCR"
+  },
+  "text_smoke": {
+    "checks": {
+      "background_keeps_user_text_hides_original": true,
+      "cancel_preserves_existing_text": true,
+      "composition_is_marked": true,
+      "copy_title_matches_selection_and_tool": true,
+      "double_click_edits_object": true,
+      "later_mask_suppresses_annotation_text": true,
+      "marked_candidate_blocks_commit": true,
+      "native_editor_has_focus": true,
+      "native_editor_opens": true,
+      "native_typing_redo_restores_input": true,
+      "native_typing_undo_keeps_document_empty": true,
+      "overflow_stays_editable": true,
+      "pending_text_blocks_export": true,
+      "redo_restores_text": true,
+      "rendered_text_is_recognizable": true,
+      "standard_paste_menu_exists": true,
+      "standard_paste_menu_routes_to_editor": true,
+      "text_above_mask_remains_visible": true,
+      "text_commits_exact_unicode": true,
+      "text_edit_undo": true,
+      "tool_keys_do_not_handle_text_input": true,
+      "toolbar_redo_restores_text_input": true,
+      "toolbar_undo_routes_to_text_input": true,
+      "typing_is_one_document_undo": true
+    },
+    "composition_scope": "直接调用原生NSTextInputClient标记/插入；不冒充真实中文输入法候选实测",
+    "fixture_only": true,
+    "passed": true,
+    "physical_ime_tested": false
+  },
+  "native_ui_observed": [
+    "首排选择/箭头/画框/文字/画笔/遮挡/高亮/序号直接可用",
+    "真实拖选文字后显示复制文字，切箭头恢复复制图片语义，修复顺序后复测通过",
+    "样式展开后控件完整；原生钉图精简为标注/复制/关闭，空格展开编辑首排",
+    "钉图原生右键菜单已全部走本应用中文动作，不暴露系统另一路复制/分享",
+    "设置仅截图快捷键和保存位置；错误提示与录入焦点已查看"
+  ],
+  "previews": [
+    {
+      "path": "app/previews/core-light-2026-11-03.png",
+      "sha256": "3104507a01785244757933d9e8e8b868184f05f96a80c1357bb543a70ca2979b",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    },
+    {
+      "path": "app/previews/core-dark-2026-11-03.png",
+      "sha256": "d39946f258bc3f497d479f39c728a93bb73d89f0705c48b5387c8182d537c00c",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    },
+    {
+      "path": "app/previews/core-style-2026-11-03.png",
+      "sha256": "8460c184f5707ced0ec2cad2498ea2a05033d0d22e51849f6ca920741f1f4568",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    },
+    {
+      "path": "app/previews/pin-core-2026-11-03.png",
+      "sha256": "906bb7c41888b695919e0df8ca051047508aad35d400f47b145b0bc1ac36b8dc",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    },
+    {
+      "path": "app/previews/settings-core-light-2026-11-03.png",
+      "sha256": "073ae39cfc8e31ee4e48a84617047244baeba6a4daa267dfcd025e0de713b481",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    },
+    {
+      "path": "app/previews/settings-core-dark-2026-11-03.png",
+      "sha256": "53d192a37f261aa313c2f0b57dfeb10e7941ba42e03a86328f4ad64421b90247",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    },
+    {
+      "path": "app/previews/settings-core-error-2026-11-03.png",
+      "sha256": "856a72b262bb01fd40cbc084ed5f7edd2fa4bbd441fce8591cc4e5f0e7c0a40a",
+      "scope": "使用已有权限捕获本进程虚构样本窗口，已实际查看"
+    }
+  ],
+  "layout_scope": "880逻辑点宽窗口中按AppKit排列边界、控件实际窗口边界及画布高度检查；样式展开保持在窗口内。该检查与原生截图分开，不以源码检查冒充视觉验收。",
+  "readonly_display_inventory": [
+    {
+      "frame": [
+        0,
+        0,
+        1470,
+        956
+      ],
+      "scale": 2
+    },
+    {
+      "frame": [
+        1470,
+        181,
+        1920,
+        1080
+      ],
+      "scale": 2
+    }
+  ],
+  "display_inventory_is_not_cross_screen_validation": true,
+  "remaining": [
+    "实际跨屏流程、混合1x/2x设备",
+    "真实中文候选窗口",
+    "实体全局键、完整保存面板/安装验证",
+    "用户整体视觉验收"
+  ],
+  "paid_requests": false,
+  "new_permissions": false
+}

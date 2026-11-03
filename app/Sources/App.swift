@@ -1,6 +1,7 @@
 import AppKit
 import Carbon
 import ScreenCaptureKit
+import QuartzCore
 
 @MainActor final class AppController: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
@@ -16,6 +17,7 @@ import ScreenCaptureKit
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        if let appearance = argument("--appearance") { NSApp.appearance = NSAppearance(named:appearance == "light" ? .aqua : .darkAqua) }
         let menu = NSMenu()
         for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("设置…", #selector(openSettings), ","), ("退出 CcShot", #selector(quit), "q")] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
@@ -44,7 +46,7 @@ import ScreenCaptureKit
             else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview")) ? 0 : 1) } }
             else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }
             else if let path = argument("--render-annotations") { Task { @MainActor in exit(await ImageWindow.annotationPreview(image, to: path) ? 0 : 1) } }
-            else if let path = argument("--render-settings") { renderSettings(to: path) }
+            else if let path = argument("--render-settings") { Task { @MainActor in await renderSettings(to:path) } }
             else if let previewPath = argument("--render-window-highlight") { renderSelection(image, to: previewPath, windowHighlight: true) }
             else if let previewPath = argument("--render-selection") { renderSelection(image, to: previewPath) }
             else if argument("--smoke-test") != nil { runSmokeTest(image) }
@@ -347,19 +349,26 @@ import ScreenCaptureKit
         result["recording_pause_resume_balanced"] = recording == [true, false, true, false, true, false, true, false]
         return result
     }
-    private func renderSettings(to path: String) {
+    private func renderSettings(to path: String) async {
         let suite = "com.ccshot.settings-preview.\(UUID().uuidString)"
-        let store = UserDefaults(suiteName: suite)!
-        let preview = SettingsWindow(preferences: AppPreferences(store: store), applyShortcuts: { _, _ in nil }, recordingChanged: { _ in nil })
-        guard let view = preview.window?.contentView else { exit(1) }
-        view.layoutSubtreeIfNeeded()
-        guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { exit(1) }
-        view.cacheDisplay(in: view.bounds, to: bitmap)
-        guard let png = bitmap.representation(using: .png, properties: [:]) else { exit(1) }
-        do { try png.write(to: URL(fileURLWithPath: path), options: .atomic) }
-        catch { exit(1) }
-        store.removePersistentDomain(forName: suite)
-        exit(0)
+        let store = UserDefaults(suiteName:suite)!
+        let preview = SettingsWindow(preferences:AppPreferences(store:store),applyShortcuts:{ _, _ in nil },recordingChanged:{ _ in nil })
+        preview.present()
+        if CommandLine.arguments.contains("--settings-error"), let root = preview.window?.contentView {
+            func descendants(_ view: NSView) -> [NSView] { view.subviews.flatMap { [$0] + descendants($0) } }
+            if let recorder = descendants(root).first(where:{$0 is ShortcutRecorder}) as? ShortcutRecorder {
+                recorder.performClick(nil)
+                if let event = NSEvent.keyEvent(with:.keyDown,location:.zero,modifierFlags:[],timestamp:0,windowNumber:preview.window!.windowNumber,context:nil,characters:"a",charactersIgnoringModifiers:"a",isARepeat:false,keyCode:0) { recorder.keyDown(with:event) }
+            }
+        }
+        guard CGPreflightScreenCaptureAccess(), let window = preview.window else { exit(2) }
+        window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
+        do {
+            let image = try await WindowCapture.capture(id:UInt32(window.windowNumber),ownerPID:ProcessInfo.processInfo.processIdentifier)
+            guard let png = ImageWindow.encoded(image,type:.png) else { exit(1) }
+            try png.write(to:URL(fileURLWithPath:path),options:.atomic)
+        } catch { exit(1) }
+        preview.close(); store.removePersistentDomain(forName:suite); exit(0)
     }
     private func renderSelection(_ image: CGImage, to path: String, windowHighlight: Bool = false) {
         guard let context = CGContext(data: nil, width: 1000, height: 650, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { exit(1) }

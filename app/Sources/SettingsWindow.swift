@@ -68,26 +68,22 @@ import Carbon
         self.recordingChanged = recordingChanged
         captureRecorder = ShortcutRecorder(preferences.captureShortcut)
         pinRecorder = ShortcutRecorder(preferences.pinShortcut)
-        let panel = SettingsPanel(contentRect: NSRect(x: 0, y: 0, width: 670, height: 410), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        let panel = SettingsPanel(contentRect: NSRect(x: 0, y: 0, width: 670, height: 240), styleMask: [.titled, .closable], backing: .buffered, defer: false)
         panel.title = "CcShot · 设置"; panel.isReleasedWhenClosed = false
         super.init(window: panel)
         panel.delegate = self
-        let root = NSView(); panel.contentView = root
-        root.wantsLayer = true; root.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        let root = CoreSurfaceView(); panel.contentView = root
+        panel.backgroundColor = CoreAppearance.surface
         let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 18
         stack.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(stack)
         NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24), stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -24), stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 24)])
-        stack.addArrangedSubview(row("截图快捷键", [captureRecorder, fallbackHint]))
-        stack.addArrangedSubview(row("钉图快捷键", [pinRecorder, button("恢复默认", #selector(resetShortcuts))]))
+        stack.addArrangedSubview(row("截图快捷键", [captureRecorder, button("恢复默认", #selector(resetShortcuts)), fallbackHint]))
         stack.addArrangedSubview(functionHint)
         directory.lineBreakMode = .byTruncatingMiddle; directory.widthAnchor.constraint(equalToConstant: 270).isActive = true
-        stack.addArrangedSubview(row("保存位置", [directory, button("选择…", #selector(chooseDirectory)), button("清除", #selector(clearDirectory))]))
+        stack.addArrangedSubview(row("保存位置", [directory, button("更改…", #selector(chooseDirectory)), button("使用默认位置", #selector(clearDirectory))]))
         login.target = self; login.action = #selector(changeLogin)
         loginSettings.target = self; loginSettings.action = #selector(openLoginSettings)
-        stack.addArrangedSubview(row("启动", [login, loginStatus, loginSettings]))
-        stack.addArrangedSubview(row("屏幕录制", [permission, button("打开系统设置", #selector(openSystemSettings))]))
-        stack.addArrangedSubview(row("AI 服务", [label("尚未接入")]))
-        error.textColor = .systemRed; error.font = .systemFont(ofSize: 13)
+        error.isHidden = true; error.textColor = CoreAppearance.error; error.font = .systemFont(ofSize: 13)
         error.widthAnchor.constraint(equalToConstant: 620).isActive = true
         stack.addArrangedSubview(error)
         captureRecorder.onChange = { [weak self] choice in self?.changeShortcuts(capture: choice, pin: self?.preferences.pinShortcut ?? .pin) }
@@ -95,14 +91,15 @@ import Carbon
         for recorder in [captureRecorder, pinRecorder] {
             recorder.onRecordingChanged = { [weak self] recording in
                 guard let self else { return }
-                if let message = self.recordingChanged(recording) { self.error.stringValue = message }
+                if let message = self.recordingChanged(recording) { self.showError(message) }
             }
-            recorder.onFailure = { [weak self] message in self?.error.stringValue = message }
+            recorder.onFailure = { [weak self] message in self?.showError(message) }
         }
         refresh()
         panel.center()
     }
     required init?(coder: NSCoder) { nil }
+    private func showError(_ message: String) { error.stringValue = message; error.isHidden = message.isEmpty }
     private func label(_ text: String) -> NSTextField {
         let field = NSTextField(labelWithString: text); field.font = .systemFont(ofSize: 13); return field
     }
@@ -118,23 +115,22 @@ import Carbon
         if let message = applyShortcuts(capture, pin) { return message }
         preferences.setShortcuts(capture: capture, pin: pin)
         captureRecorder.shortcut = capture; pinRecorder.shortcut = pin
-        error.stringValue = ""
+        showError("")
         refreshHints()
         return nil
     }
-    @objc private func resetShortcuts() { if let message = changeShortcuts(capture: .capture, pin: .pin) { error.stringValue = message } }
+    @objc private func resetShortcuts() { if let message = changeShortcuts(capture: .capture, pin: preferences.pinShortcut) { showError(message) } }
     private func refresh() {
         captureRecorder.shortcut = preferences.captureShortcut; pinRecorder.shortcut = preferences.pinShortcut
         if let url = preferences.saveDirectory { directory.stringValue = url.path; directory.toolTip = url.path }
         else { directory.stringValue = "每次保存时选择"; directory.toolTip = nil }
         permission.stringValue = CGPreflightScreenCaptureAccess() ? "已授权" : "未授权，允许后重新打开应用"
-        refreshLogin()
         refreshHints()
-        if preferences.hasInvalidShortcuts { error.stringValue = "快捷键设置损坏，当前使用默认值" }
-        else if preferences.saveDirectory != nil && preferences.usableSaveDirectory == nil { error.stringValue = "保存位置不可用，请重新选择" }
+        if preferences.hasInvalidShortcuts { showError("快捷键设置损坏，当前使用默认值") }
+        else if preferences.saveDirectory != nil && preferences.usableSaveDirectory == nil { showError("保存位置不可用，请重新选择") }
     }
     private func refreshHints() {
-        functionHint.isHidden = !preferences.captureShortcut.isFunctionKey && !preferences.pinShortcut.isFunctionKey
+        functionHint.isHidden = !preferences.captureShortcut.isFunctionKey
         fallbackHint.isHidden = preferences.captureShortcut == .fallback
     }
     private func refreshLogin() {
@@ -157,8 +153,8 @@ import Carbon
             do {
                 if enabled { try SMAppService.mainApp.register() }
                 else { try await SMAppService.mainApp.unregister() }
-                error.stringValue = ""
-            } catch { self.error.stringValue = "未能更改开机启动，请检查系统登录项设置" }
+                showError("")
+            } catch { self.showError("未能更改开机启动，请检查系统登录项设置") }
             login.isEnabled = true; refreshLogin()
         }
     }
@@ -172,10 +168,10 @@ import Carbon
         panel.allowsMultipleSelection = false; panel.directoryURL = preferences.usableSaveDirectory
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK, let url = panel.url else { return }
-            preferences.setSaveDirectory(url); error.stringValue = ""; refresh()
+            preferences.setSaveDirectory(url); showError(""); refresh()
         }
     }
-    @objc private func clearDirectory() { preferences.setSaveDirectory(nil); error.stringValue = ""; refresh() }
+    @objc private func clearDirectory() { preferences.setSaveDirectory(nil); showError(""); refresh() }
     func windowDidBecomeKey(_ notification: Notification) { refresh() }
     func windowWillClose(_ notification: Notification) { captureRecorder.stop(); pinRecorder.stop(); onClose?() }
     func recordingSmokeTest() -> [String: Bool] {
