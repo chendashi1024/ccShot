@@ -1,0 +1,10 @@
+{"event": "hotkey_handler", "status": 0, "time": "2026-11-03T07:19:35Z"}
+{"event": "hotkey_registration", "shortcut": "control-option-S", "status": 0, "time": "2026-11-03T07:19:35Z"}
+{"event": "hotkey_registration", "shortcut": "F1", "status": 0, "time": "2026-11-03T07:19:35Z"}
+{"accessibility_authorized": true, "event": "startup", "image_analyzer_supported": true, "screen_capture_authorized": true, "time": "2026-11-03T07:19:35Z"}
+{"characters": 0, "event": "selection_changed", "ranges": 1, "synthetic": true, "time": "2026-11-03T07:19:36Z"}
+{"characters": 58, "event": "analysis_ready", "latency_ms": 222.31970832217485, "synthetic": true, "time": "2026-11-03T07:19:36Z"}
+{"event": "fixture_key_down", "key_code": 1, "modifiers": 786432, "time": "2026-11-03T07:19:49Z"}
+{"event": "fixture_key_down", "key_code": 122, "modifiers": 8388608, "time": "2026-11-03T07:19:49Z"}
+{"event": "fixture_key_down", "key_code": 0, "modifiers": 1048576, "time": "2026-11-03T07:19:49Z"}
+{"characters": 58, "event": "selection_changed", "ranges": 1, "synthetic": true, "time": "2026-11-03T07:19:49Z"}

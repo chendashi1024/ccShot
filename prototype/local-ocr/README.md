@@ -24,3 +24,7 @@ open build/CcShotPrototype.app --args --fixture "$PWD/results/2026-11-03-native-
 F1和Control+Option+S已实现注册，但全局回调尚未验收；程序化selectedRanges前4字变5字的边界问题保留为已知失败。鼠标拖选4字、全文复制及实际窗口截图已验证。详见 [TEST-REPORT.md](TEST-REPORT.md)。
 
 `--self-test`会测试选字API并将合成文本写入剪贴板后恢复，日志明确标记失败；不要用于真实用户截图。
+
+## S0 接续诊断
+
+最新结果见 [2026-11-03 排障记录](results/2026-11-03-s0-diagnosis/README.md)。可在自检命令后增加 `--exit-after-self-test`，范围或全文断言失败时返回非零。`--diagnose-keys` 是虚构样本模式下的显式按键诊断，不记录普通输入。

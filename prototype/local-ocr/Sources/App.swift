@@ -15,6 +15,7 @@ import Carbon
     let selfTest: Bool
     var hotKeys: [EventHotKeyRef] = []
     var handler: EventHandlerRef?
+    var localKeyMonitor: Any?
     var synthetic = false
     var generation = 0
     var readyAt: Double = 0
@@ -99,6 +100,18 @@ import Carbon
         menu.addItem(edit)
         NSApp.mainMenu = menu
         registerHotkeys()
+        if fixtureURL != nil && CommandLine.arguments.contains("--diagnose-keys") {
+            // 仅显式诊断模式记录三个测试快捷键，不记录普通输入按键。
+            localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] input in
+                let flags = input.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                if (input.keyCode == UInt16(kVK_ANSI_S) && flags.contains([.control, .option])) ||
+                   input.keyCode == UInt16(kVK_F1) ||
+                   (input.keyCode == UInt16(kVK_ANSI_A) && flags.contains(.command)) {
+                    self?.event("fixture_key_down", ["key_code": input.keyCode, "modifiers": flags.rawValue])
+                }
+                return input
+            }
+        }
         event("startup", ["image_analyzer_supported": ImageAnalyzer.isSupported,
                           "screen_capture_authorized": CGPreflightScreenCaptureAccess(),
                           "accessibility_authorized": AXIsProcessTrusted()])
@@ -276,7 +289,24 @@ import Carbon
 
     func selectionSelfTest() {
         let text = overlay.text
-        guard text.count > 4 else { event("selection_selftest", ["passed": false, "reason": "no_text"]); return }
+        guard text.count > 4 else {
+            event("selection_selftest", ["passed": false, "reason": "insufficient_text"])
+            if CommandLine.arguments.contains("--exit-after-self-test") { exit(1) }
+            return
+        }
+        // 只对虚构样本定位范围设置与文字读取之间的边界差异。
+        for (startOffset, count) in [(0, 1), (0, 4), (1, 1), (1, 3), (text.count - 1, 1)] {
+            let start = text.index(text.startIndex, offsetBy: startOffset)
+            let end = text.index(start, offsetBy: count)
+            overlay.selectedRanges = [start..<end]
+            let actualRanges = overlay.selectedRanges.map { NSRange($0, in: text) }
+            event("range_diagnostic", ["requested_location": startOffset, "requested_count": count,
+                  "returned_ranges": actualRanges.map { ["location": $0.location, "length": $0.length] },
+                  "expected": String(text[start..<end]), "actual": overlay.selectedText])
+            overlay.selectedRanges = [start..<text.index(before: end)]
+            event("adjusted_range_probe", ["requested_location": startOffset, "requested_count": count,
+                  "expected": String(text[start..<end]), "actual": overlay.selectedText])
+        }
         let end = text.index(text.startIndex, offsetBy: 4)
         overlay.selectedRanges = [text.startIndex..<end]
         let expected = String(text[..<end])
@@ -298,10 +328,12 @@ import Carbon
         event("selection_selftest", ["partial_range_exact": matches, "full_selection_exact": fullMatches,
               "method": "native_selectedRanges_and_pasteboard_roundtrip", "expected_synthetic_text": expected,
               "actual_synthetic_text": actual, "clipboard_restored": true])
+        if CommandLine.arguments.contains("--exit-after-self-test") { exit(matches && fullMatches ? 0 : 1) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
     func applicationWillTerminate(_ notification: Notification) {
+        if let localKeyMonitor { NSEvent.removeMonitor(localKeyMonitor) }
         for ref in hotKeys { UnregisterEventHotKey(ref) }
         if let handler { RemoveEventHandler(handler) }
     }

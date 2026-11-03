@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-03",
+  "scope": "S0受控样本排障，未完成产品验收",
+  "os": "macOS 15.4.1",
+  "architecture": "arm64",
+  "final_source_sha256": {
+    "Sources/OCR.swift": "110a2c56defc2476af7ce276ba02372c973e9d4f335ec6df8fefadeb5b5c17d9",
+    "Sources/App.swift": "b545b8a7fec5b557db92aa4c20b37af7986ba41e66bf193a7cc75d69d3ab3e69",
+    "Sources/Fixtures.swift": "161ed62d9c5e8ee6ef45836f8da62b50f391eda5b3e4d333097d1d987fd4e435"
+  },
+  "final_build": "通过",
+  "selftest_exit_code": 1,
+  "selftest_expected": "范围断言失败时进程返回1",
+  "native_range_issue": "已复现，尚未修复",
+  "adjusted_range_probe": "多字可补偿但单字为空，因此不作为修复",
+  "global_hotkey": "应用内事件可达，全局回调仍未验证",
+  "actual_hardware_key_test": false
+}
