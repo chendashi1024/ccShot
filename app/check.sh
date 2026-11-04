@@ -44,3 +44,9 @@ build/CcShot.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --window-inline-smoke-test "$PWD/build/window-inline-smoke.json"
 cat build/window-inline-smoke.json
+
+# 钉图使用自制便笺，检查图片与浮动操作层，不写剪贴板。
+build/CcShot.app/Contents/MacOS/CcShot \
+  --fixture "$PWD/Tests/Fixtures/pin-note.png" \
+  --pin-smoke-test "$PWD/build/pin-smoke.json"
+cat build/pin-smoke.json

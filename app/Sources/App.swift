@@ -53,6 +53,7 @@ import QuartzCore
                 store.setVolatileDomain([AppPreferences.directoryKey:path],forName:UserDefaults.argumentDomain)
                 showDocument(AnnotationDocument(image:image),pinned:false,preferences:AppPreferences(store:store))
             }
+            else if let path=argument("--pin-smoke-test") {Task { @MainActor in let keep=CommandLine.arguments.contains("--keep-pin-preview");let passed=await PinVerification.run(image:image,reportPath:path,keepPreview:keep);if !keep {exit(passed ? 0 : 1)} }}
             else if let path=argument("--window-inline-smoke-test") {Task { @MainActor in let passed=await InlineVerification.runWindow(reportPath:path,preview:CommandLine.arguments.contains("--keep-window-preview"));if !CommandLine.arguments.contains("--keep-window-preview") {exit(passed ? 0 : 1)} }}
             else if let path=argument("--inline-smoke-test") {Task { @MainActor in exit(await InlineVerification.run(reportPath:path) ? 0 : 1) }}
             else if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
@@ -258,11 +259,11 @@ import QuartzCore
     @discardableResult private func showImage(_ image: CGImage, pinned: Bool) -> ImageWindow {
         return showDocument(AnnotationDocument(image: image), pinned: pinned)
     }
-    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared, screenshot:ScreenshotPresentation?=nil) -> ImageWindow {
+    @discardableResult private func showDocument(_ document: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared, screenshot:ScreenshotPresentation?=nil,pinFrame:CGRect?=nil) -> ImageWindow {
         let id = UUID()
-        let controller = ImageWindow(annotationDocument: document, pinned:pinned,preferences:preferences,screenshot:screenshot)
+        let controller = ImageWindow(annotationDocument: document, pinned:pinned,preferences:preferences,screenshot:screenshot,pinFrame:pinFrame)
         controller.onClose = { [weak self] in self?.imageWindows.removeValue(forKey: id) }
-        controller.onPin = { [weak self] document in self?.showDocument(document, pinned: true) }
+        controller.onPin = { [weak self,weak controller] document in self?.showDocument(document,pinned:true,pinFrame:controller?.suggestedPinFrame) }
         controller.onReselect = { [weak self,weak controller] rect in
             guard let self,let controller,self.imageWindows[id] === controller,let screenshot,
                   screenshot.allowsAdjustment,controller.annotationDocument.state.objects.isEmpty,!controller.canvas.hasDraft,

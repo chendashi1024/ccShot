@@ -39,7 +39,8 @@ import UniformTypeIdentifiers
     private var pinButton: NSButton!
     private var saveButton: NSButton!
     private var donePinButton: NSButton!
-    private var viewingFrame: CGRect?
+    private var pinChrome:PinChrome?
+    private var floatingEditor:Bool {screenshot != nil || pinned}
     private let styleRow = NSStackView()
     private let optionRow = NSStackView()
     private var toolButtons: [AnnotationTool: NSButton] = [:]
@@ -70,7 +71,7 @@ import UniformTypeIdentifiers
     private let paletteTray = NSStackView()
     private var finishTextButton: NSButton!
     private var cancelTextButton: NSButton!
-    private let editButton = NSButton(title: "标注", target: nil, action: nil)
+    private let editButton = ToolbarButton(title: "标注", target: nil, action: nil)
     private var undoButton: NSButton!
     private var redoButton: NSButton!
     private var editing: Bool
@@ -85,26 +86,29 @@ import UniformTypeIdentifiers
     convenience init(image: CGImage, pinned: Bool, preferences: AppPreferences = .shared) {
         self.init(annotationDocument: AnnotationDocument(image: image), pinned: pinned, preferences: preferences)
     }
-    init(annotationDocument: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared, screenshot:ScreenshotPresentation? = nil) {
+    init(annotationDocument: AnnotationDocument, pinned: Bool, preferences: AppPreferences = .shared, screenshot:ScreenshotPresentation? = nil,pinFrame:CGRect?=nil) {
         self.annotationDocument = annotationDocument; self.pinned = pinned; self.preferences = preferences; self.screenshot = pinned ? nil : screenshot
         canvas = AnnotationCanvas(document: annotationDocument, preferences: preferences)
         editing = !pinned
         let ratio = CGFloat(annotationDocument.baseImage.height) / CGFloat(annotationDocument.baseImage.width)
         let width: CGFloat = min(pinned ? 900 : 1040, max(pinned ? 420 : 880, CGFloat(annotationDocument.baseImage.width)))
         let height = min(780, max(pinned ? 260 : 360, width * ratio + 100))
-        let window = AnnotationWindow(contentRect: screenshot?.screenFrame ?? NSRect(x:0,y:0,width:width,height:height),styleMask:screenshot == nil ? [.titled,.closable,.resizable,.miniaturizable] : [.borderless],backing:.buffered,defer:false)
+        let pinScreen=pinFrame.flatMap {frame in NSScreen.screens.first {$0.frame.contains(CGPoint(x:frame.midX,y:frame.midY))}} ?? NSScreen.main
+        let pinRect=PinLayout.frame(pixels:CGSize(width:annotationDocument.baseImage.width,height:annotationDocument.baseImage.height),scale:pinScreen?.backingScaleFactor ?? 2,visible:pinScreen?.visibleFrame ?? CGRect(x:0,y:0,width:1200,height:800),preferred:pinFrame)
+        let rect=pinned ? pinRect : screenshot?.screenFrame ?? NSRect(x:0,y:0,width:width,height:height)
+        let window = AnnotationWindow(contentRect:rect,styleMask:pinned ? [.borderless,.resizable] : screenshot == nil ? [.titled,.closable,.resizable,.miniaturizable] : [.borderless],backing:.buffered,defer:false)
         window.title = pinned ? "CcShot · 钉图" : "CcShot"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: pinned ? 420 : 880, height: pinned ? 260 : 300)
         window.backgroundColor = CoreAppearance.surface
         if screenshot != nil {window.level = .screenSaver;window.collectionBehavior=[.canJoinAllSpaces,.fullScreenAuxiliary]}
-        if pinned { window.level = .floating; window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] }
+        if pinned { window.minSize=ratio>1 ? CGSize(width:32/ratio,height:32) : CGSize(width:32,height:32*ratio);window.contentAspectRatio=CGSize(width:annotationDocument.baseImage.width,height:annotationDocument.baseImage.height);window.backgroundColor = .clear;window.isOpaque=false;window.hasShadow=true;window.acceptsMouseMovedEvents=true;window.level = .floating; window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary] }
         super.init(window: window)
         window.delegate = self
         let root:NSView
         if let screenshot {
             let view=ScreenshotView(presentation:screenshot,imagePixels:CGSize(width:annotationDocument.baseImage.width,height:annotationDocument.baseImage.height));screenshotView=view;root=view
-        } else {root=CoreSurfaceView()}
+        } else if pinned {root=PinSurface()} else {root=CoreSurfaceView()}
         window.contentView = root
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
@@ -118,7 +122,7 @@ import UniformTypeIdentifiers
         toolRow.setCustomSpacing(12,after:redoButton)
         let spacer = NSView(); spacer.setContentHuggingPriority(.defaultLow,for:.horizontal)
         spacer.widthAnchor.constraint(greaterThanOrEqualToConstant:8).isActive = true
-        pinButton = button("钉住",#selector(pinImage)); saveButton = button("保存",#selector(saveImage)); copyButton = button("复制",screenshot == nil ? #selector(copy(_:)) : #selector(toolbarCopy))
+        pinButton = button("钉住",#selector(pinImage)); saveButton = button("保存",#selector(saveImage)); copyButton = button("复制",floatingEditor ? #selector(toolbarCopy) : #selector(copy(_:)))
         donePinButton = button("完成",#selector(toggleEditing))
         for value in [donePinButton,pinButton,saveButton,copyButton] { toolRow.addArrangedSubview(value!) }
         finishTextButton = button("完成文字",#selector(finishText)); cancelTextButton = button("取消",#selector(cancelText))
@@ -129,10 +133,10 @@ import UniformTypeIdentifiers
         editButton.target = self; editButton.action = #selector(toggleEditing); editButton.bezelStyle = .rounded; editButton.font = .systemFont(ofSize:14)
         viewerCopyButton = button("复制",#selector(copy(_:)))
         viewerRow.spacing = 8
-        for view in [editButton,viewerCopyButton,button("关闭",#selector(closeImage))] { viewerRow.addArrangedSubview(view!) }
+        for (view,symbol) in [(editButton,"pencil"),(viewerCopyButton!,"square.on.square"),(button("关闭",#selector(closeImage)),"xmark")] {view.image=NSImage(systemSymbolName:symbol,accessibilityDescription:view.title);(view as? ToolbarButton)?.refreshAppearance();viewerRow.addArrangedSubview(view)}
         canvas.menu = makeContextMenu()
         status.textColor = .labelColor; status.font = .systemFont(ofSize:13)
-        if screenshot != nil {configureScreenshot(root:root)} else {
+        if screenshot != nil {configureScreenshot(root:root)} else if pinned {configurePin(root:root)} else {
         let stack = NSStackView(views:[toolRow,viewerRow,styleRow,optionRow,canvas,status])
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(stack)
@@ -155,8 +159,8 @@ import UniformTypeIdentifiers
         screenshotView?.onAdjustmentBegin = { [weak self] in self?.invalidateRecognition() }
         screenshotView?.onAdjustmentCancel = { [weak self] in self?.recognize() }
         screenshotView?.onRegionChange = { [weak self] rect in self?.onReselect?(rect) ?? false }
-        status.onChange = { [weak self] in if self?.screenshot != nil {self?.layoutScreenshot()} }
-        updateControls(); if screenshot == nil {window.center()} else if let screenshot {window.setFrame(screenshot.screenFrame,display:false)}
+        status.onChange = { [weak self] in if self?.screenshot != nil {self?.layoutScreenshot()} else if self?.pinned == true {self?.layoutPin()} }
+        updateControls(); if screenshot == nil && !pinned {window.center()} else if let screenshot {window.setFrame(screenshot.screenFrame,display:false)}
         showWindow(nil); window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         window.handleCanvasKey = { [weak self] event in guard self?.screenshotView?.isAdjusting != true else {return false}; return self?.canvas.handleKey(event) ?? false }
@@ -176,6 +180,14 @@ import UniformTypeIdentifiers
             NSLayoutConstraint.activate([content.leadingAnchor.constraint(equalTo:panel.leadingAnchor,constant:8),content.trailingAnchor.constraint(equalTo:panel.trailingAnchor,constant:-8),content.topAnchor.constraint(equalTo:panel.topAnchor,constant:8),content.bottomAnchor.constraint(equalTo:panel.bottomAnchor,constant:-8)])
             root.addSubview(panel);return(panel,content)
         }
+        configureFloatingTools()
+        (toolbarPanel,toolbarContent)=panel([toolRow])
+        (parametersPanel,parametersContent)=panel([styleRow,optionRow])
+        viewerRow.isHidden=true
+        root.addSubview(status);root.chrome=[toolbarPanel!,parametersPanel!,status]
+        compactFloatingStyles()
+    }
+    private func configureFloatingTools() {
         for view in toolRow.arrangedSubviews {toolRow.removeArrangedSubview(view);view.removeFromSuperview()}
         let symbols:[AnnotationTool:String]=[.arrow:"arrow.up.right",.rectangle:"rectangle",.text:"textformat",.pen:"pencil",.mask:"rectangle.fill",.highlight:"highlighter",.number:"number.circle",.select:"cursorarrow"]
         for tool in [AnnotationTool.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
@@ -192,14 +204,13 @@ import UniformTypeIdentifiers
         if let select=toolButtons[.select] {select.title="";select.image=NSImage(systemSymbolName:"cursorarrow",accessibilityDescription:"选择文字或对象");toolRow.addArrangedSubview(select)}
         toolRow.addArrangedSubview(undoButton);toolRow.addArrangedSubview(redoButton);separator()
         for (button,symbol) in [(pinButton!,"pin"),(saveButton!,"square.and.arrow.down"),(copyButton!,"square.on.square")] {button.image=NSImage(systemSymbolName:symbol,accessibilityDescription:button.title);toolRow.addArrangedSubview(button)}
+        if pinned {donePinButton.image=NSImage(systemSymbolName:"checkmark",accessibilityDescription:"完成标注");toolRow.addArrangedSubview(donePinButton)}
         (copyButton as? ToolbarButton)?.primary=true
         toolRow.addArrangedSubview(iconButton("xmark","关闭（Esc）",#selector(closeImage)))
         toolRow.spacing=4
         for button in toolRow.arrangedSubviews.compactMap({$0 as? ToolbarButton}) {button.refreshAppearance()}
-        (toolbarPanel,toolbarContent)=panel([toolRow])
-        (parametersPanel,parametersContent)=panel([styleRow,optionRow])
-        viewerRow.isHidden=true
-        root.addSubview(status);root.chrome=[toolbarPanel!,parametersPanel!,status]
+    }
+    private func compactFloatingStyles() {
         paletteTray.setContentHuggingPriority(.required,for:.horizontal)
         for view in paletteTray.arrangedSubviews {
             for constraint in view.constraints where constraint.firstAttribute == .width && constraint.relation == .equal {constraint.constant=view === colorWell ? 28 : 22}
@@ -208,6 +219,44 @@ import UniformTypeIdentifiers
         for button in presetButtons {if let value=button as? ToolbarButton {value.compact=true}}
         status.font = .systemFont(ofSize:13)
     }
+    private func configurePin(root:NSView) {
+        guard let root=root as? PinSurface,let window else {return}
+        configureFloatingTools();compactFloatingStyles()
+        root.addSubview(canvas);canvas.autoresizingMask=[.width,.height]
+        root.onLayout={ [weak self] in self?.layoutPin() }
+        pinChrome=PinChrome(parent:window,root:root,owner:self,primaryRows:[toolRow,viewerRow],secondaryRows:[styleRow,optionRow,status])
+        pinChrome?.isAuxiliaryActive={ [weak self] in self?.colorWell.isActive == true && NSColorPanel.shared.isVisible }
+        var dragStart:(mouse:CGPoint,origin:CGPoint)?
+        canvas.onBackgroundDrag={ [weak self] event in
+            guard let window=self?.window else {return}
+            let mouse=window.convertPoint(toScreen:event.locationInWindow)
+            if event.type == .leftMouseDown {dragStart=(mouse,window.frame.origin);window.makeKeyAndOrderFront(nil)}
+            else if event.type == .leftMouseDragged,let start=dragStart {
+                window.setFrameOrigin(CGPoint(x:start.origin.x+mouse.x-start.mouse.x,y:start.origin.y+mouse.y-start.mouse.y))
+            } else if event.type == .leftMouseUp {dragStart=nil}
+        }
+        canvas.canStartTextSelection={ [weak self] point in
+            guard let self,!overlay.isHidden else {return false}
+            let local=overlay.convert(point,from:canvas)
+            // VisionKit 的文字命中查询以图片左上角为原点，AppKit 事件以左下角为原点。
+            return overlay.analysisHasText(at:CGPoint(x:local.x,y:overlay.bounds.maxY-local.y))
+        }
+    }
+    private func layoutPin() {
+        guard pinned,let root=window?.contentView else {return}
+        if canvas.frame != root.bounds {canvas.frame=root.bounds;overlay.frame=canvas.bounds;overlay.setContentsRectNeedsUpdate()}
+        let message=status.stringValue
+        status.isHidden=message==imageDimensions || message.hasPrefix("拖选文字后") || message == "正在编辑…"
+        pinChrome?.layout(editing:editing)
+    }
+    var suggestedPinFrame:CGRect? {
+        guard let window else {return nil}
+        return window.convertToScreen(canvas.convert(canvas.contentRect,to:nil))
+    }
+    func windowDidMove(_ notification:Notification) {if pinned {layoutPin()}}
+    func windowDidResize(_ notification:Notification) {if pinned {layoutPin()}}
+    func windowDidBecomeKey(_ notification:Notification) {pinChrome?.refreshVisibility()}
+    func windowDidResignKey(_ notification:Notification) {pinChrome?.refreshVisibility()}
     private func layoutScreenshot() {
         guard let root=screenshotView,let toolbarPanel,let parametersPanel,let toolbarContent,let parametersContent else {return}
         let primary=toolbarContent.fittingSize
@@ -237,7 +286,7 @@ import UniformTypeIdentifiers
         layoutScreenshot()
     }
     private func button(_ title: String, _ action: Selector) -> NSButton {
-        let button = screenshot == nil ? NSButton(title:title,target:self,action:action) : ToolbarButton(title:title,target:self,action:action); button.bezelStyle = .rounded; button.font = .systemFont(ofSize:14); button.heightAnchor.constraint(greaterThanOrEqualToConstant:28).isActive = true; return button
+        let button = floatingEditor ? ToolbarButton(title:title,target:self,action:action) : NSButton(title:title,target:self,action:action); button.bezelStyle = .rounded; button.font = .systemFont(ofSize:14); button.heightAnchor.constraint(greaterThanOrEqualToConstant:28).isActive = true; return button
     }
     private func iconButton(_ symbol: String, _ title: String, _ action: Selector) -> NSButton {
         let value = button("",action); value.image = NSImage(systemSymbolName:symbol,accessibilityDescription:title); value.imagePosition = .imageOnly
@@ -342,8 +391,8 @@ import UniformTypeIdentifiers
         toolRow.isHidden = !editing
         styleRow.isHidden = !editing || tool == .select
         viewerRow.isHidden = !pinned || editing
-        if screenshot == nil {window?.minSize = CGSize(width:editing ? 880 : 420,height:styleRow.isHidden ? (editing ? 300 : 260) : 480)}
-        if screenshot == nil, !styleRow.isHidden, let window, window.frame.height < 480 {
+        if screenshot == nil && !pinned {window?.minSize = CGSize(width:editing ? 880 : 420,height:styleRow.isHidden ? (editing ? 300 : 260) : 480)}
+        if screenshot == nil, !pinned, !styleRow.isHidden, let window, window.frame.height < 480 {
             var frame = window.frame; frame.origin.y -= 480-frame.height; frame.size.height = 480; setVisibleFrame(frame)
         }
         for (tool, button) in toolButtons {
@@ -356,9 +405,9 @@ import UniformTypeIdentifiers
         for control in presetButtons {control.isHidden=solidMask || tool == .text}
         widthSlider.isHidden = solidMask || tool == .text || strokeWidth; widthLabel.isHidden = widthSlider.isHidden
         strokeWidthField.isHidden = !strokeWidth
-        if window?.firstResponder !== strokeWidthField.currentEditor() { strokeWidthField.stringValue = "\(Int(style.width))" }
+        if strokeWidthField.window?.firstResponder !== strokeWidthField.currentEditor() { strokeWidthField.stringValue = "\(Int(style.width))" }
         fontSizeField.isHidden = tool != .text
-        if window?.firstResponder !== fontSizeField.currentEditor() { fontSizeField.stringValue = "\(Int(style.fontSize))" }
+        if fontSizeField.window?.firstResponder !== fontSizeField.currentEditor() { fontSizeField.stringValue = "\(Int(style.fontSize))" }
         paletteTray.isHidden = tool == .mask && !solidMask
         let width = tool == .text ? style.fontSize : tool == .mask ? style.maskStrength : style.width
         widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : tool == .number ? "大小" : "粗细"
@@ -395,10 +444,10 @@ import UniformTypeIdentifiers
         arrowPicker.isHidden = tool != .arrow; arrowTitle.isHidden = tool != .arrow
         numberLabel.isHidden = tool != .number; numberField.isHidden = tool != .number
         numberLabel.stringValue = canvas.selected == nil ? "下一号" : "编号"
-        if window?.firstResponder !== numberField.currentEditor() { numberField.stringValue = "\(canvas.selected?.number ?? annotationDocument.state.nextNumber)" }
+        if numberField.window?.firstResponder !== numberField.currentEditor() { numberField.stringValue = "\(canvas.selected?.number ?? annotationDocument.state.nextNumber)" }
         optionRow.isHidden = styleRow.isHidden || [.pen,.highlight,.text].contains(tool)
         let input = canvas.textEditor
-        pinButton.isHidden = pinned || (input != nil && screenshot == nil); saveButton.isHidden = input != nil && screenshot == nil; copyButton.isHidden = input != nil && screenshot == nil; donePinButton.isHidden = !pinned || input != nil
+        pinButton.isHidden = pinned || (input != nil && !floatingEditor); saveButton.isHidden = input != nil && !floatingEditor; copyButton.isHidden = input != nil && !floatingEditor; donePinButton.isHidden = !pinned || input != nil
         if let input {
             undoButton.isEnabled = input.undoManager?.canUndo == true && !input.hasMarkedText()
             redoButton.isEnabled = input.undoManager?.canRedo == true && !input.hasMarkedText()
@@ -409,7 +458,7 @@ import UniformTypeIdentifiers
         overlay.isHidden = canvas.hasDraft || canvas.tool != .select || canvas.selected != nil
         if status.stringValue.hasPrefix("拖选文字后") || status.stringValue.hasPrefix("没有发现文字") || status.stringValue == imageDimensions { status.stringValue = contextualStatus }
         updateCopyTitle()
-        if screenshot != nil {layoutScreenshot()}
+        if screenshot != nil {layoutScreenshot()} else if pinned {layoutPin()}
         canvas.needsDisplay = true
     }
     private var imageDimensions: String { "\(annotationDocument.baseImage.width) × \(annotationDocument.baseImage.height) px" }
@@ -419,10 +468,10 @@ import UniformTypeIdentifiers
     }
     private func updateCopyTitle() {
         let title = !overlay.isHidden && overlay.hasActiveTextSelection && !overlay.selectedText.isEmpty ? "复制文字" : "复制"
-        copyButton?.title = title; viewerCopyButton?.title = title; (copyButton as? ToolbarButton)?.refreshAppearance()
+        copyButton?.title = title; viewerCopyButton?.title = title; (copyButton as? ToolbarButton)?.refreshAppearance();(viewerCopyButton as? ToolbarButton)?.refreshAppearance()
         let help = title == "复制文字" ? "复制选中的文字" : "复制当前图片"; copyButton?.toolTip = help; viewerCopyButton?.toolTip = help
         canvas.menu = makeContextMenu()
-        if screenshot != nil {layoutScreenshot()}
+        if screenshot != nil {layoutScreenshot()} else if pinned {layoutPin()}
     }
     private func makeContextMenu() -> NSMenu {
         let menu = NSMenu()
@@ -507,19 +556,15 @@ import UniformTypeIdentifiers
         guard pinned else { return }
         guard canvas.finishTextEditing() else { return }
         window?.makeFirstResponder(canvas); canvas.cancelGesture(); canvas.chooseTool(.select)
-        if !editing, let window {
-            viewingFrame = window.frame; window.minSize = CGSize(width:880,height:300)
-            var frame = window.frame; frame.size.width = max(880,frame.width); frame.size.height = max(360,frame.height); setVisibleFrame(frame)
-        } else if let window {
-            window.minSize = CGSize(width:420,height:260)
-            if let viewingFrame { setVisibleFrame(CGRect(x:window.frame.minX,y:window.frame.maxY-viewingFrame.height,width:viewingFrame.width,height:viewingFrame.height)) }
-            viewingFrame = nil
-        }
         editing.toggle(); updateControls()
     }
     private func setVisibleFrame(_ proposed: CGRect) {
         guard let window else { return }
         var frame = proposed
+        if pinned,let screen=window.screen {
+            frame=PinLayout.frame(pixels:canvas.imageSize,scale:screen.backingScaleFactor,visible:screen.visibleFrame,preferred:proposed)
+            window.setFrame(frame,display:true);return
+        }
         if let visible = window.screen?.visibleFrame {
             frame.size.width = min(frame.width,visible.width); frame.size.height = min(frame.height,visible.height)
             frame.origin.x = max(visible.minX,min(frame.minX,visible.maxX-frame.width)); frame.origin.y = max(visible.minY,min(frame.minY,visible.maxY-frame.height))
@@ -611,7 +656,7 @@ import UniformTypeIdentifiers
         return true
     }
     private func prepareOutput()->Bool {
-        if screenshot != nil,canvas.textEditor != nil {return canvas.finishTextEditing()}
+        if floatingEditor,canvas.textEditor != nil {return canvas.finishTextEditing()}
         return true
     }
     @objc private func toolbarCopy() {
@@ -667,12 +712,80 @@ import UniformTypeIdentifiers
         else { close() }
     }
     func windowWillClose(_ notification: Notification) {
-        colorWell.suspend()
+        colorWell.suspend();pinChrome?.close();pinChrome=nil
         closed = true; generation += 1; recognition?.cancel(); recognition = nil; baseRegionsTask?.cancel(); baseRegionsTask = nil; overlay.analysis = nil; annotationDocument.onChange = nil; onClose?()
     }
 }
 
 extension ImageWindow {
+    func pinLayoutChecks() async -> [String:Bool] {
+        guard pinned,let window,let root=window.contentView,let pinChrome else {return [:]}
+        root.layoutSubtreeIfNeeded();layoutPin()
+        let original=window.frame
+        var checks=["borderless_pin":!window.styleMask.contains(.titled),"image_fills_pin":canvas.frame==root.bounds,
+                "image_aspect_preserved":abs(window.frame.width/window.frame.height-CGFloat(annotationDocument.baseImage.width)/CGFloat(annotationDocument.baseImage.height))<0.005,
+                "viewer_actions_outside_image_window":viewerRow.window !== window && viewerRow.window != nil,
+                "pin_stays_floating":window.level == .floating,
+                "output_keeps_source_pixels":stableImage()?.width==annotationDocument.baseImage.width && stableImage()?.height==annotationDocument.baseImage.height]
+        checks["viewer_has_only_three_actions"] = viewerRow.arrangedSubviews.compactMap{$0 as? NSButton}.map(\.title)==["标注","复制","关闭"]
+        checks["focus_shows_viewer_actions"] = pinChrome.primary.isVisible
+        toggleEditing()
+        checks["editing_keeps_image_frame"] = editing && window.frame==original && canvas.frame==root.bounds
+        for tool in [AnnotationTool.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
+            canvas.chooseTool(tool);layoutPin()
+            checks["floating_options_\(tool.title)"] = !styleRow.isHidden && pinChrome.secondary.isVisible && pinChrome.secondary.frame.width<700 && window.frame==original
+        }
+        canvas.chooseTool(.text);layoutPin();pinChrome.secondary.makeKeyAndOrderFront(nil);fontSizeField.selectText(nil)
+        let fieldEditor=fontSizeField.currentEditor();fieldEditor?.string="37";updateControls()
+        checks["child_field_keeps_uncommitted_number"] = fieldEditor?.string=="37"
+        pinChrome.secondary.makeFirstResponder(nil)
+        checks["child_field_commits_font_size"] = canvas.currentStyle.fontSize==37
+        window.makeKeyAndOrderFront(nil);window.makeFirstResponder(canvas)
+        var style=canvas.currentStyle;style.fontSize=24;canvas.changeStyle(style)
+        let local=CGPoint(x:canvas.bounds.width*0.2,y:canvas.bounds.height*0.6)
+        let mouse=NSEvent.mouseEvent(with:.leftMouseDown,location:canvas.convert(local,to:nil),modifierFlags:[],timestamp:0,windowNumber:window.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:1)!
+        canvas.mouseDown(with:mouse)
+        checks["pin_text_keeps_direct_outputs"] = canvas.textEditor != nil && !copyButton.isHidden && !saveButton.isHidden
+        if let input=canvas.textEditor {
+            input.setMarkedText("zhongwen",selectedRange:NSRange(location:8,length:0),replacementRange:NSRange(location:NSNotFound,length:0))
+            checks["pin_candidate_blocks_output"] = !prepareOutput() && annotationDocument.state.objects.isEmpty
+            input.insertText("中文",replacementRange:input.markedRange());input.unmarkText()
+            checks["pin_confirmed_text_commits_for_output"] = prepareOutput() && annotationDocument.state.objects.first?.text=="中文" && stableImage()?.width==annotationDocument.baseImage.width
+        }
+        annotationDocument.undo();canvas.chooseTool(.select);toggleEditing()
+        await recognitionForVerification?.value
+        checks["return_to_view_preserves_size"] = !editing && window.frame==original && canvas.frame==root.bounds
+        var textPoint:CGPoint?
+        for y in stride(from:8.0,to:Double(canvas.bounds.height),by:12) {
+            for x in stride(from:8.0,to:Double(canvas.bounds.width),by:12) {
+                let point=CGPoint(x:x,y:y)
+                if canvas.canStartTextSelection?(point)==true {textPoint=point;break}
+            }
+            if textPoint != nil {break}
+        }
+        checks["text_hit_goes_to_selection_layer"] = textPoint.map {canvas.hitTest($0) !== canvas} ?? false
+        let blank=CGPoint(x:canvas.bounds.maxX-3,y:3)
+        checks["blank_hit_allows_window_drag"] = canvas.canStartTextSelection?(blank)==false && canvas.hitTest(blank) === canvas
+        let sourceSample=stableImage().flatMap {PixelSampler.color(in:$0,x:0,y:0)}
+        window.alphaValue=0.25
+        checks["view_opacity_does_not_change_export"] = stableImage().flatMap {PixelSampler.color(in:$0,x:0,y:0)}==sourceSample
+        window.alphaValue=1;zoom(1.2)
+        checks["zoom_preserves_aspect_and_pixels"] = abs(window.frame.width/window.frame.height-canvas.imageSize.width/canvas.imageSize.height)<0.005 && stableImage()?.width==annotationDocument.baseImage.width
+        window.setFrame(original,display:true);layoutPin()
+        checks["text_hit_after_zoom_restore"] = textPoint.map {canvas.canStartTextSelection?($0)==true && canvas.hitTest($0) !== canvas} ?? false
+        status.stringValue="保存失败，请重试"
+        checks["real_error_has_visible_feedback"] = !status.isHidden && pinChrome.secondary.isVisible
+        status.stringValue=contextualStatus;layoutPin()
+        let other=AnnotationWindow(contentRect:CGRect(x:0,y:0,width:120,height:80),styleMask:.titled,backing:.buffered,defer:false)
+        other.isReleasedWhenClosed=false;other.makeKeyAndOrderFront(nil)
+        let exit=NSEvent.enterExitEvent(with:.mouseExited,location:.zero,modifierFlags:[],timestamp:0,windowNumber:window.windowNumber,context:nil,eventNumber:1,trackingNumber:1,userData:nil)!
+        for surface in [root,pinChrome.primary.contentView,pinChrome.secondary.contentView].compactMap({$0 as? PinSurface}) {surface.mouseExited(with:exit)}
+        pinChrome.refreshVisibility();try? await Task.sleep(for:.milliseconds(300))
+        checks["actions_hide_without_focus_or_hover"] = !pinChrome.primary.isVisible && !pinChrome.secondary.isVisible
+        window.makeKeyAndOrderFront(nil);other.close();pinChrome.refreshVisibility()
+        checks["focus_restores_actions"] = pinChrome.primary.isVisible
+        return checks
+    }
     func windowCaptureLayoutChecks(region:CGRect,pixels:CGSize)->[String:Bool] {
         guard let root=screenshotView else {return ["uses_inline_editor":false]}
         root.layoutSubtreeIfNeeded();layoutScreenshot()

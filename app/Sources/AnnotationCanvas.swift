@@ -7,6 +7,8 @@ import AppKit
     private(set) var selectedID: UUID?
     private(set) var previewImage: CGImage?
     var editingEnabled = true
+    var onBackgroundDrag:((NSEvent)->Void)?
+    var canStartTextSelection:((CGPoint)->Bool)?
     var onDocumentChanged: (() -> Void)?
     var onPreviewBegin: (() -> Void)?
     var onSelectionChanged: (() -> Void)?
@@ -69,6 +71,7 @@ import AppKit
         let local = convert(point, from: superview)
         guard bounds.contains(local) else { return nil }
         if textEditor != nil { return super.hitTest(point) }
+        if !editingEnabled,onBackgroundDrag != nil,canStartTextSelection?(local) != true {return self}
         if editingEnabled && (tool != .select || selectedID != nil || (canonical(local).flatMap { object(at: $0) } != nil)) { return self }
         return super.hitTest(point)
     }
@@ -117,7 +120,8 @@ import AppKit
         }
     }
     override func mouseDown(with event: NSEvent) {
-        guard editingEnabled, let point = canonical(convert(event.locationInWindow, from: nil)) else { return }
+        if !editingEnabled {onBackgroundDrag?(event);return}
+        guard let point = canonical(convert(event.locationInWindow, from: nil)) else { return }
         if textEditor != nil { _ = finishTextEditing(); return }
         window?.makeFirstResponder(self)
         // 已显示的控制点在当前工具下也应可拖动；空白区域继续绘制。
@@ -169,6 +173,7 @@ import AppKit
         return CGPoint(x: min(imageSize.width, max(0,start.x+cos(angle)*distance)), y: min(imageSize.height,max(0,start.y+sin(angle)*distance)))
     }
     override func mouseDragged(with event: NSEvent) {
+        if !editingEnabled {onBackgroundDrag?(event);return}
         guard let drag, let anchor, let point = canonical(convert(event.locationInWindow, from: nil), clamp: true) else { return }
         switch drag {
         case .draw:
@@ -230,6 +235,7 @@ import AppKit
         return accepted
     }
     override func mouseUp(with event: NSEvent) {
+        if !editingEnabled {onBackgroundDrag?(event);return}
         guard textEditor == nil, let object = draft else { return }
         let valid: Bool
         if object.tool == .rectangle || object.tool == .ellipse || object.tool == .mask && !object.style.maskBrush { valid = abs(object.end.x-object.start.x) >= 1 && abs(object.end.y-object.start.y) >= 1 }
