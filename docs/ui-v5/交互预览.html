@@ -118,9 +118,11 @@
 #ccshort-design .color-choice span{display:block;width:18px;height:18px;border-radius:50%;background:var(--mark-color)}
 #ccshort-design .color-choice[aria-pressed="true"]{border-color:var(--ink)}
 #ccshort-design .arrow-shapes{display:flex;gap:3px;border-left:1px solid var(--hair);padding-left:12px}
-#ccshort-design .arrow-shapes button{height:32px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif}
+#ccshort-design .arrow-shapes button{display:grid;place-items:center;width:58px;height:36px;padding:3px 7px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif}
 #ccshort-design .arrow-shapes button[aria-pressed="true"]{background:light-dark(#e1eedf,#405b45);color:light-dark(#28563b,#e0eddf)}
 #ccshort-design .desktop:not([data-mode="edit"]) .annotation-options{display:none}
+#ccshort-design .arrow-example{display:block;width:44px;height:28px}
+#ccshort-design .arrow-example svg{display:block;width:100%;height:100%}
 </style>
 <div id="ccshort-design">
   <div class="review-controls" aria-label="设计稿状态">
@@ -171,7 +173,7 @@
         <button class="color-choice" data-mark-color="#D39A25" style="--mark-color:#D39A25" aria-label="琥珀黄" data-tooltip="琥珀黄" aria-pressed="false"><span></span></button>
         <button class="color-choice" data-mark-color="#477BC7" style="--mark-color:#477BC7" aria-label="晴空蓝" data-tooltip="晴空蓝" aria-pressed="false"><span></span></button>
       </div>
-      <div class="arrow-shapes" role="group" aria-label="箭头形态"><button data-arrow-shape="straight" aria-pressed="false">直线</button><button data-arrow-shape="curved" aria-pressed="true">曲线</button></div>
+      <div class="arrow-shapes" role="group" aria-label="箭头形态"><button data-arrow-shape="straight" aria-label="直线箭头" data-tooltip="直线箭头" aria-pressed="false"><span class="arrow-example" aria-hidden="true"></span></button><button data-arrow-shape="curved" aria-label="曲线箭头" data-tooltip="曲线箭头" aria-pressed="true"><span class="arrow-example" aria-hidden="true"></span></button></div>
     </div>
     <div class="pinbar" hidden><button data-action="edit"><i data-lucide="pencil" aria-hidden="true"></i> 编辑</button><button data-action="save"><i data-lucide="download" aria-hidden="true"></i> 保存</button><button data-action="close" aria-label="关闭钉图"><i data-lucide="x" aria-hidden="true"></i></button></div>
     <div class="appmenu" hidden><button data-capture="区域截图">区域截图 <span>⌃⌥S</span></button><button data-capture="窗口截图">窗口截图</button><button data-capture="当前屏幕">当前屏幕</button><hr><button data-action="settings">设置…</button><hr><button data-action="quit">退出 ccShort</button></div>
@@ -189,7 +191,7 @@ const ns='http://www.w3.org/2000/svg';
 const presets={arrow:{color:'#D65F46',shape:'curved'},rect:{color:'#D65F46'}};
 const options=root.querySelector('.annotation-options');
 const names={capture:'框选',arrow:'箭头',rect:'画框',label:'文字',pen:'画笔',mask:'遮挡',highlight:'高亮',number:'序号',select:'选字'};
-const hints={capture:'框选：拖动四边的控制点调整范围。',arrow:'箭头：默认珊瑚橙曲线；下方只保留三个颜色和直线／曲线。',rect:'画框：默认珊瑚橙；下方可以换色，圆角和线宽保持统一。',label:'文字：直接输入内容，回车确认；不显示字体、字号和颜色面板。',pen:'画笔：固定绿色圆头笔，按住鼠标连续画。',mask:'遮挡：拖出实色遮挡区域，无需选择强度。',highlight:'高亮：拖出浅绿区域，不改变下方内容。',number:'序号：单击放置，数字自动递增。',select:'选字：在图中文字上拖选；右键可复制、全选，⌘C 复制后继续编辑。'};
+const hints={capture:'框选：拖动四边的控制点调整范围。',arrow:'箭头：默认珊瑚橙曲线；下方只保留三个颜色和两个箭头样例，默认选中曲线。',rect:'画框：默认珊瑚橙；下方可以换色，圆角和线宽保持统一。',label:'文字：直接输入内容，回车确认；不显示字体、字号和颜色面板。',pen:'画笔：固定绿色圆头笔，按住鼠标连续画。',mask:'遮挡：拖出实色遮挡区域，无需选择强度。',highlight:'高亮：拖出浅绿区域，不改变下方内容。',number:'序号：单击放置，数字自动递增。',select:'选字：在图中文字上拖选；右键可复制、全选，⌘C 复制后继续编辑。'};
 let tool='capture',marks=[],history=[],redo=[],sample=true,draft=null,drag=null,selected='',textPoint={x:420,y:218},timer,recording=false,lastFocus=null;
 function el(tag,attrs={}){const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));return e;}
 function segment(m){
@@ -266,6 +268,12 @@ root.querySelector('[data-copy]').addEventListener('click',copy);root.querySelec
 note.addEventListener('contextmenu',e=>{if(tool!=='select')return;e.preventDefault();const r=stage.getBoundingClientRect();context.hidden=false;context.style.left=Math.max(8,Math.min(e.clientX-r.left,r.width-context.offsetWidth-8))+'px';context.style.top=Math.max(8,Math.min(e.clientY-r.top,r.height-context.offsetHeight-8))+'px';context.querySelector('button').focus();setHint('右键菜单只保留复制和全选，不常驻遮挡文字。');});
 root.addEventListener('click',e=>{if(!context.contains(e.target))context.hidden=true;if(!appmenu.contains(e.target)&&!e.target.closest('[data-appmenu]'))appmenu.hidden=true;});
 root.addEventListener('keydown',e=>{if(recording){e.preventDefault();if(e.key==='Escape'){recording=false;root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut||'⌃⌥S';return;}if(['Meta','Control','Alt','Shift'].includes(e.key))return;if(!(e.metaKey||e.ctrlKey||e.altKey)){toast('请组合 Command、Control 或 Option 键');return;}root.dataset.shortcut=(e.ctrlKey?'⌃':'')+(e.altKey?'⌥':'')+(e.metaKey?'⌘':'')+(e.shiftKey?'⇧':'')+e.key.toUpperCase();root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut;recording=false;return;}if(e.target.matches('input,select,textarea'))return;if(e.key==='Escape'){if(!shade.hidden)closeSheet();else if(!context.hidden)context.hidden=true;else if(!appmenu.hidden)appmenu.hidden=true;else if(tool!=='capture')choose('capture');else complete(true);return;}if(!shade.hidden||stage.dataset.mode==='done')return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='c'){e.preventDefault();copy();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'&&tool==='select'){e.preventDefault();selectAll();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey&&redo.length){history.push(marks);marks=redo.pop();restoreCurrentStyle();paint();}else root.querySelector('[data-action="undo"]').click();}if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){e.preventDefault();complete();}});
+// 样例复用画布上的真实箭头路径，保证按钮所见与实际绘制一致。
+root.querySelectorAll('[data-arrow-shape]').forEach(button=>{
+ const preview=el('svg',{viewBox:'0 0 120 60','aria-hidden':'true'});
+ preview.append(el('path',{d:segment({a:{x:10,y:48},b:{x:107,y:13},shape:button.dataset.arrowShape}),fill:'none',stroke:'currentColor','stroke-width':5,'stroke-linecap':'round','stroke-linejoin':'round'}));
+ button.querySelector('.arrow-example').append(preview);
+});
 reset();
 })();
 </script>

@@ -1963,9 +1963,11 @@ html&gt;body{padding:0}&lt;/style&gt;
 #ccshort-design .color-choice span{display:block;width:18px;height:18px;border-radius:50%;background:var(--mark-color)}
 #ccshort-design .color-choice[aria-pressed=&quot;true&quot;]{border-color:var(--ink)}
 #ccshort-design .arrow-shapes{display:flex;gap:3px;border-left:1px solid var(--hair);padding-left:12px}
-#ccshort-design .arrow-shapes button{height:32px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,&quot;PingFang SC&quot;,sans-serif}
+#ccshort-design .arrow-shapes button{display:grid;place-items:center;width:58px;height:36px;padding:3px 7px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,&quot;PingFang SC&quot;,sans-serif}
 #ccshort-design .arrow-shapes button[aria-pressed=&quot;true&quot;]{background:light-dark(#e1eedf,#405b45);color:light-dark(#28563b,#e0eddf)}
 #ccshort-design .desktop:not([data-mode=&quot;edit&quot;]) .annotation-options{display:none}
+#ccshort-design .arrow-example{display:block;width:44px;height:28px}
+#ccshort-design .arrow-example svg{display:block;width:100%;height:100%}
 &lt;/style&gt;
 &lt;div id=&quot;ccshort-design&quot;&gt;
   &lt;div class=&quot;review-controls&quot; aria-label=&quot;设计稿状态&quot;&gt;
@@ -2016,7 +2018,7 @@ html&gt;body{padding:0}&lt;/style&gt;
         &lt;button class=&quot;color-choice&quot; data-mark-color=&quot;#D39A25&quot; style=&quot;--mark-color:#D39A25&quot; aria-label=&quot;琥珀黄&quot; data-tooltip=&quot;琥珀黄&quot; aria-pressed=&quot;false&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;/button&gt;
         &lt;button class=&quot;color-choice&quot; data-mark-color=&quot;#477BC7&quot; style=&quot;--mark-color:#477BC7&quot; aria-label=&quot;晴空蓝&quot; data-tooltip=&quot;晴空蓝&quot; aria-pressed=&quot;false&quot;&gt;&lt;span&gt;&lt;/span&gt;&lt;/button&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;arrow-shapes&quot; role=&quot;group&quot; aria-label=&quot;箭头形态&quot;&gt;&lt;button data-arrow-shape=&quot;straight&quot; aria-pressed=&quot;false&quot;&gt;直线&lt;/button&gt;&lt;button data-arrow-shape=&quot;curved&quot; aria-pressed=&quot;true&quot;&gt;曲线&lt;/button&gt;&lt;/div&gt;
+      &lt;div class=&quot;arrow-shapes&quot; role=&quot;group&quot; aria-label=&quot;箭头形态&quot;&gt;&lt;button data-arrow-shape=&quot;straight&quot; aria-label=&quot;直线箭头&quot; data-tooltip=&quot;直线箭头&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;arrow-example&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;&lt;/button&gt;&lt;button data-arrow-shape=&quot;curved&quot; aria-label=&quot;曲线箭头&quot; data-tooltip=&quot;曲线箭头&quot; aria-pressed=&quot;true&quot;&gt;&lt;span class=&quot;arrow-example&quot; aria-hidden=&quot;true&quot;&gt;&lt;/span&gt;&lt;/button&gt;&lt;/div&gt;
     &lt;/div&gt;
     &lt;div class=&quot;pinbar&quot; hidden&gt;&lt;button data-action=&quot;edit&quot;&gt;&lt;i data-lucide=&quot;pencil&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt; 编辑&lt;/button&gt;&lt;button data-action=&quot;save&quot;&gt;&lt;i data-lucide=&quot;download&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt; 保存&lt;/button&gt;&lt;button data-action=&quot;close&quot; aria-label=&quot;关闭钉图&quot;&gt;&lt;i data-lucide=&quot;x&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;&lt;/div&gt;
     &lt;div class=&quot;appmenu&quot; hidden&gt;&lt;button data-capture=&quot;区域截图&quot;&gt;区域截图 &lt;span&gt;⌃⌥S&lt;/span&gt;&lt;/button&gt;&lt;button data-capture=&quot;窗口截图&quot;&gt;窗口截图&lt;/button&gt;&lt;button data-capture=&quot;当前屏幕&quot;&gt;当前屏幕&lt;/button&gt;&lt;hr&gt;&lt;button data-action=&quot;settings&quot;&gt;设置…&lt;/button&gt;&lt;hr&gt;&lt;button data-action=&quot;quit&quot;&gt;退出 ccShort&lt;/button&gt;&lt;/div&gt;
@@ -2034,7 +2036,7 @@ const ns=&#x27;http://www.w3.org/2000/svg&#x27;;
 const presets={arrow:{color:&#x27;#D65F46&#x27;,shape:&#x27;curved&#x27;},rect:{color:&#x27;#D65F46&#x27;}};
 const options=root.querySelector(&#x27;.annotation-options&#x27;);
 const names={capture:&#x27;框选&#x27;,arrow:&#x27;箭头&#x27;,rect:&#x27;画框&#x27;,label:&#x27;文字&#x27;,pen:&#x27;画笔&#x27;,mask:&#x27;遮挡&#x27;,highlight:&#x27;高亮&#x27;,number:&#x27;序号&#x27;,select:&#x27;选字&#x27;};
-const hints={capture:&#x27;框选：拖动四边的控制点调整范围。&#x27;,arrow:&#x27;箭头：默认珊瑚橙曲线；下方只保留三个颜色和直线／曲线。&#x27;,rect:&#x27;画框：默认珊瑚橙；下方可以换色，圆角和线宽保持统一。&#x27;,label:&#x27;文字：直接输入内容，回车确认；不显示字体、字号和颜色面板。&#x27;,pen:&#x27;画笔：固定绿色圆头笔，按住鼠标连续画。&#x27;,mask:&#x27;遮挡：拖出实色遮挡区域，无需选择强度。&#x27;,highlight:&#x27;高亮：拖出浅绿区域，不改变下方内容。&#x27;,number:&#x27;序号：单击放置，数字自动递增。&#x27;,select:&#x27;选字：在图中文字上拖选；右键可复制、全选，⌘C 复制后继续编辑。&#x27;};
+const hints={capture:&#x27;框选：拖动四边的控制点调整范围。&#x27;,arrow:&#x27;箭头：默认珊瑚橙曲线；下方只保留三个颜色和两个箭头样例，默认选中曲线。&#x27;,rect:&#x27;画框：默认珊瑚橙；下方可以换色，圆角和线宽保持统一。&#x27;,label:&#x27;文字：直接输入内容，回车确认；不显示字体、字号和颜色面板。&#x27;,pen:&#x27;画笔：固定绿色圆头笔，按住鼠标连续画。&#x27;,mask:&#x27;遮挡：拖出实色遮挡区域，无需选择强度。&#x27;,highlight:&#x27;高亮：拖出浅绿区域，不改变下方内容。&#x27;,number:&#x27;序号：单击放置，数字自动递增。&#x27;,select:&#x27;选字：在图中文字上拖选；右键可复制、全选，⌘C 复制后继续编辑。&#x27;};
 let tool=&#x27;capture&#x27;,marks=[],history=[],redo=[],sample=true,draft=null,drag=null,selected=&#x27;&#x27;,textPoint={x:420,y:218},timer,recording=false,lastFocus=null;
 function el(tag,attrs={}){const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=&gt;e.setAttribute(k,String(v)));return e;}
 function segment(m){
@@ -2111,6 +2113,12 @@ root.querySelector(&#x27;[data-copy]&#x27;).addEventListener(&#x27;click&#x27;,c
 note.addEventListener(&#x27;contextmenu&#x27;,e=&gt;{if(tool!==&#x27;select&#x27;)return;e.preventDefault();const r=stage.getBoundingClientRect();context.hidden=false;context.style.left=Math.max(8,Math.min(e.clientX-r.left,r.width-context.offsetWidth-8))+&#x27;px&#x27;;context.style.top=Math.max(8,Math.min(e.clientY-r.top,r.height-context.offsetHeight-8))+&#x27;px&#x27;;context.querySelector(&#x27;button&#x27;).focus();setHint(&#x27;右键菜单只保留复制和全选，不常驻遮挡文字。&#x27;);});
 root.addEventListener(&#x27;click&#x27;,e=&gt;{if(!context.contains(e.target))context.hidden=true;if(!appmenu.contains(e.target)&amp;&amp;!e.target.closest(&#x27;[data-appmenu]&#x27;))appmenu.hidden=true;});
 root.addEventListener(&#x27;keydown&#x27;,e=&gt;{if(recording){e.preventDefault();if(e.key===&#x27;Escape&#x27;){recording=false;root.querySelector(&#x27;[data-shortcut]&#x27;).textContent=root.dataset.shortcut||&#x27;⌃⌥S&#x27;;return;}if([&#x27;Meta&#x27;,&#x27;Control&#x27;,&#x27;Alt&#x27;,&#x27;Shift&#x27;].includes(e.key))return;if(!(e.metaKey||e.ctrlKey||e.altKey)){toast(&#x27;请组合 Command、Control 或 Option 键&#x27;);return;}root.dataset.shortcut=(e.ctrlKey?&#x27;⌃&#x27;:&#x27;&#x27;)+(e.altKey?&#x27;⌥&#x27;:&#x27;&#x27;)+(e.metaKey?&#x27;⌘&#x27;:&#x27;&#x27;)+(e.shiftKey?&#x27;⇧&#x27;:&#x27;&#x27;)+e.key.toUpperCase();root.querySelector(&#x27;[data-shortcut]&#x27;).textContent=root.dataset.shortcut;recording=false;return;}if(e.target.matches(&#x27;input,select,textarea&#x27;))return;if(e.key===&#x27;Escape&#x27;){if(!shade.hidden)closeSheet();else if(!context.hidden)context.hidden=true;else if(!appmenu.hidden)appmenu.hidden=true;else if(tool!==&#x27;capture&#x27;)choose(&#x27;capture&#x27;);else complete(true);return;}if(!shade.hidden||stage.dataset.mode===&#x27;done&#x27;)return;if((e.metaKey||e.ctrlKey)&amp;&amp;e.key.toLowerCase()===&#x27;c&#x27;){e.preventDefault();copy();}if((e.metaKey||e.ctrlKey)&amp;&amp;e.key.toLowerCase()===&#x27;a&#x27;&amp;&amp;tool===&#x27;select&#x27;){e.preventDefault();selectAll();}if((e.metaKey||e.ctrlKey)&amp;&amp;e.key.toLowerCase()===&#x27;z&#x27;){e.preventDefault();if(e.shiftKey&amp;&amp;redo.length){history.push(marks);marks=redo.pop();restoreCurrentStyle();paint();}else root.querySelector(&#x27;[data-action=&quot;undo&quot;]&#x27;).click();}if(e.key===&#x27;Enter&#x27;&amp;&amp;e.target.tagName!==&#x27;BUTTON&#x27;){e.preventDefault();complete();}});
+// 样例复用画布上的真实箭头路径，保证按钮所见与实际绘制一致。
+root.querySelectorAll(&#x27;[data-arrow-shape]&#x27;).forEach(button=&gt;{
+ const preview=el(&#x27;svg&#x27;,{viewBox:&#x27;0 0 120 60&#x27;,&#x27;aria-hidden&#x27;:&#x27;true&#x27;});
+ preview.append(el(&#x27;path&#x27;,{d:segment({a:{x:10,y:48},b:{x:107,y:13},shape:button.dataset.arrowShape}),fill:&#x27;none&#x27;,stroke:&#x27;currentColor&#x27;,&#x27;stroke-width&#x27;:5,&#x27;stroke-linecap&#x27;:&#x27;round&#x27;,&#x27;stroke-linejoin&#x27;:&#x27;round&#x27;}));
+ button.querySelector(&#x27;.arrow-example&#x27;).append(preview);
+});
 reset();
 })();
 &lt;/script&gt;
