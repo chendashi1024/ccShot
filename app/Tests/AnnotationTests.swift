@@ -6,6 +6,21 @@ import AppKit
         let context = CGContext(data: nil, width: 200, height: 100, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         context.setFillColor(NSColor.white.cgColor); context.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
         let base = context.makeImage()!
+        let defaultArrow = AnnotationObject(tool: .arrow, style: .initial(.arrow), start: CGPoint(x: 20, y: 50), end: CGPoint(x: 180, y: 50))
+        let arrowImage = AnnotationRenderer.render(base: base, objects: [defaultArrow])!
+        precondition(PixelSampler.color(in: arrowImage, x: 90, y: 47)!.green < 100, "默认箭杆至少覆盖 6 个像素")
+        let retina = AnnotationStyle.defaultScale(imageSize: CGSize(width: 2400, height: 1600), displayedWidth: 1200)
+        let fitted = AnnotationStyle.defaultScale(imageSize: CGSize(width: 3840, height: 2160), displayedWidth: 960)
+        let small = AnnotationStyle.defaultScale(imageSize: CGSize(width: 180, height: 80), displayedWidth: 90)
+        precondition(retina == 2 && fitted == 4 && small < 1, "默认样式兼顾 Retina、大图缩放和小选区")
+        precondition(AnnotationStyle.initial(.arrow, scale: retina).width == 12 && AnnotationStyle.initial(.arrow, scale: fitted).width == 24)
+        precondition(AnnotationStyle.initial(.text, scale: retina).fontSize == 40 && AnnotationStyle.initial(.highlight, scale: retina).width == 40)
+        precondition(AnnotationTool.allCases.allSatisfy { AnnotationStyle.initial($0, scale: fitted).valid })
+        var shortArrow = defaultArrow
+        shortArrow.end = CGPoint(x: 32, y: 50)
+        shortArrow.style = .initial(.arrow, scale: retina)
+        let shortImage = AnnotationRenderer.render(base: base, objects: [shortArrow])!
+        precondition(shortArrow.arrowHeadLength < 12 && PixelSampler.color(in: shortImage, x: 10, y: 49)!.hex == "#FFFFFF", "短箭头不能在起点后画出尖端")
         let doc = AnnotationDocument(image: base)
         let empty = doc.state
         for index in 0..<120 {
@@ -85,9 +100,9 @@ import AppKit
         defer { store.removePersistentDomain(forName: suite) }
         let prefs = AppPreferences(store: store); var lineStyle = AnnotationStyle.initial(.line); lineStyle.width = 12
         prefs.setAnnotationStyle(lineStyle, for: .line)
-        precondition(AppPreferences(store: store).annotationStyle(for: .line).width == 12 && prefs.annotationStyle(for: .rectangle).width == 4, "工具样式独立记忆")
+        precondition(AppPreferences(store: store).annotationStyle(for: .line, scale: fitted).width == 12 && prefs.annotationStyle(for: .rectangle, scale: retina).width == 8, "旧偏好保持原值，未调整的工具使用新的默认值")
         store.set(Data("bad".utf8), forKey: "ccshot.annotation.style.line.v1")
-        precondition(prefs.annotationStyle(for: .line) == .initial(.line), "损坏样式应合法回退")
+        precondition(prefs.annotationStyle(for: .line, scale: retina) == .initial(.line, scale: retina), "损坏样式应合法回退")
         print("通过：120步撤销重做、样式事务、对象变换、统一像素、独立钉图与样式记忆")
     }
 }

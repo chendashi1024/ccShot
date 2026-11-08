@@ -52,11 +52,30 @@ struct AnnotationStyle: Codable, Equatable {
     var textBackground = false
     var backgroundColor = AnnotationColor(red:1,green:0.96,blue:0.72)
     var valid: Bool { fontSize.isFinite && (8...200).contains(fontSize) && backgroundColor.valid && fillOpacity.isFinite && (0...1).contains(fillOpacity) && color.valid && width.isFinite && (1...80).contains(width) && maskStrength.isFinite && (4...80).contains(maskStrength) && cornerRadius.isFinite && (0...80).contains(cornerRadius) }
-    static func initial(_ tool: AnnotationTool) -> Self {
+    static func defaultScale(imageSize: CGSize, displayedWidth: CGFloat) -> CGFloat {
+        guard displayedWidth > 0 else { return 1 }
+        // 从画面上的点数换算成导出像素，小选区限制放大幅度。
+        return max(0.65, min(4, imageSize.width / displayedWidth, min(imageSize.width, imageSize.height) / 128))
+    }
+    static func initial(_ tool: AnnotationTool, scale: CGFloat = 1) -> Self {
+        func pixels(_ points: CGFloat, lower: CGFloat = 1, upper: CGFloat = 80) -> CGFloat {
+            min(upper, max(lower, (points * scale).rounded()))
+        }
         var style = Self()
-        if tool == .highlight { style.width = 18; style.color = .palette[2] }
-        if tool == .number { style.width = 6 }
-        if tool == .mask { style.width = 32; style.color = .palette[6] }
+        style.width = pixels(4)
+        switch tool {
+        case .arrow: style.width = pixels(6)
+        case .rectangle: style.cornerRadius = pixels(3)
+        case .text: style.fontSize = pixels(20, lower: 8, upper: 200)
+        case .mask:
+            style.width = pixels(24)
+            style.maskStrength = pixels(16, lower: 4)
+            style.color = .palette[6]
+        case .highlight:
+            style.width = pixels(20)
+            style.color = .palette[2]
+        default: break
+        }
         return style
     }
 }
@@ -77,6 +96,11 @@ struct AnnotationObject: Equatable {
     }
     // 中间拖点始终落在曲线上；二次贝塞尔控制点由它反推。
     var arrowMidpoint: CGPoint { arrowPoint(at: 0.5) }
+    var arrowHeadLength: CGFloat {
+        let box = strokePath.boundingBoxOfPath
+        let fraction = style.arrowHead == .double ? 0.45 : 0.7
+        return min(max(12, style.width * 3), hypot(box.width, box.height) * fraction)
+    }
     func arrowPoint(at t: CGFloat) -> CGPoint {
         let c = curveControl ?? CGPoint(x:(start.x+end.x)/2,y:(start.y+end.y)/2)
         let u = 1-t
@@ -145,7 +169,7 @@ struct AnnotationObject: Equatable {
                 if distance(point,previous,next) <= padding { return true }
                 previous = next
             }
-            let headRadius = max(12,style.width*3)
+            let headRadius = max(padding, arrowHeadLength)
             return hypot(point.x-end.x,point.y-end.y) <= headRadius || style.arrowHead == .double && hypot(point.x-start.x,point.y-start.y) <= headRadius
         case .line: return distance(point,start,end) <= padding
         case .text: return bounds.insetBy(dx:-tolerance,dy:-tolerance).contains(point)

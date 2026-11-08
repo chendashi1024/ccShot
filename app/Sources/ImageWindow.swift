@@ -274,6 +274,7 @@ import UniformTypeIdentifiers
     }
     func windowDidMove(_ notification:Notification) {if pinned {layoutPin()}}
     func windowDidResize(_ notification:Notification) {if pinned {layoutPin()}}
+    func windowDidEndLiveResize(_ notification: Notification) { updateControls() }
     func windowDidBecomeKey(_ notification:Notification) {pinChrome?.refreshVisibility()}
     func windowDidResignKey(_ notification:Notification) {pinChrome?.refreshVisibility()}
     private func layoutScreenshot() {
@@ -416,7 +417,7 @@ import UniformTypeIdentifiers
         }
     }
     private func updateControls() {
-        let tool = canvas.currentTool, style = canvas.currentStyle
+        let tool = canvas.currentTool
         canvas.editingEnabled = editing
         toolRow.isHidden = !editing
         styleRow.isHidden = !editing || tool == .select
@@ -425,6 +426,7 @@ import UniformTypeIdentifiers
         if screenshot == nil, !pinned, !styleRow.isHidden, let window, window.frame.height < 480 {
             var frame = window.frame; frame.origin.y -= 480-frame.height; frame.size.height = 480; setVisibleFrame(frame)
         }
+        let style = canvas.currentStyle
         for (tool, button) in toolButtons {
             let selected = tool == canvas.tool; button.state = selected ? .on : .off
             button.bezelColor = selected ? CoreAppearance.accent : nil; button.contentTintColor = selected ? .white : .labelColor; (button as? ToolbarButton)?.refreshAppearance()
@@ -443,11 +445,19 @@ import UniformTypeIdentifiers
         widthTitle.stringValue = tool == .text ? "字号" : tool == .mask ? "强度" : tool == .number ? "大小" : "粗细"
         widthSlider.minValue = tool == .text ? 8 : tool == .mask ? 4 : 1; widthSlider.maxValue = tool == .text ? 200 : 80
         widthSlider.doubleValue = Double(width); widthLabel.stringValue = "\(Int(width)) px";
-        let presetWidths = tool == .text ? [16,24,32,48] : tool == .mask ? [8,16,32,64] : [2,4,8,16]
-        for (button, value) in zip(presetButtons,presetWidths) {
-            button.isHidden = solidMask || tool == .text || strokeWidth && value == 16
+        let presetWidths: [CGFloat]
+        switch tool {
+        case .highlight: presetWidths = [12, 20, 28, 36]
+        case .mask: presetWidths = [8, 16, 24, 32]
+        case .number: presetWidths = [2, 3, 4, 6]
+        default: presetWidths = [2, 4, 6, 10]
+        }
+        for (index, button) in presetButtons.enumerated() {
+            let points = presetWidths[index]
+            let value = min(80, max(tool == .mask ? 4 : 1, Int((points * canvas.defaultStyleScale).rounded())))
+            button.isHidden = solidMask || tool == .text || strokeWidth && index == 3
             button.title = strokeWidth ? "" : "\(value)"; button.tag = value
-            button.image = strokeWidth ? stylePreview("width",width:CGFloat(value)) : nil
+            button.image = strokeWidth ? stylePreview("width", width: tool == .highlight ? points / 3 : points) : nil
             button.imagePosition = strokeWidth ? .imageOnly : .noImage
             button.identifier = NSUserInterfaceItemIdentifier("style-width-\(value)")
             button.toolTip = "\(widthTitle.stringValue) \(value) px"; button.setAccessibilityLabel(button.toolTip)

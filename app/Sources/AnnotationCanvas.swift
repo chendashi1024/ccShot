@@ -30,9 +30,13 @@ import AppKit
     private var fullDraftPreview = false
     var hasDraft: Bool { drag != nil || textEditor != nil }
     var selected: AnnotationObject? { document.state.objects.first { $0.id == selectedID } }
-    var currentStyle: AnnotationStyle { (textEditor != nil ? draft?.style : nil) ?? selected?.style ?? preferences.annotationStyle(for: tool) }
+    var currentStyle: AnnotationStyle { (textEditor != nil ? draft?.style : nil) ?? selected?.style ?? newStyle(for: tool) }
     var currentTool: AnnotationTool { textEditor != nil ? .text : selected?.tool ?? tool }
     var imageSize: CGSize { CGSize(width: document.baseImage.width, height: document.baseImage.height) }
+    var defaultStyleScale: CGFloat { AnnotationStyle.defaultScale(imageSize: imageSize, displayedWidth: contentRect.width) }
+    private func newStyle(for tool: AnnotationTool) -> AnnotationStyle {
+        preferences.annotationStyle(for: tool, scale: defaultStyleScale)
+    }
     var contentRect: CGRect {
         let scale = min(bounds.width / imageSize.width, bounds.height / imageSize.height)
         let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
@@ -150,7 +154,7 @@ import AppKit
             guard let object = object(at: point) else { deselect(); return }
             selectedID = object.id; onSelectionChanged?(); begin(.move(object), at: point, object: object)
         } else {
-            let style = preferences.annotationStyle(for: tool)
+            let style = newStyle(for: tool)
             if tool == .number {
                 let radius = min(style.width * 4, min(imageSize.width, imageSize.height)/2)
                 let center = CGPoint(x: min(max(radius, point.x), imageSize.width-radius), y: min(max(radius, point.y), imageSize.height-radius))
@@ -325,7 +329,7 @@ extension AnnotationCanvas {
     private func beginTextEditing(_ original: AnnotationObject?, at point: CGPoint) {
         guard imageSize.width >= 40, imageSize.height >= 32 else { onError?("截图太小，无法放入文字"); return }
         cancelGesture()
-        var object = original ?? AnnotationObject(tool:.text,style:preferences.annotationStyle(for:.text),start:point,end:point)
+        var object = original ?? AnnotationObject(tool: .text, style: newStyle(for: .text), start: point, end: point)
         let previousText = object.text
         let topLeft = original.map { CGPoint(x:$0.bounds.minX,y:$0.bounds.maxY) } ?? CGPoint(x:min(point.x,imageSize.width-40),y:max(min(imageSize.height,point.y),min(100,imageSize.height)))
         textTopLeft = topLeft

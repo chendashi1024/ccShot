@@ -30,8 +30,9 @@ import CoreImage
             context.addPath(object.strokePath); context.strokePath()
             if object.tool == .arrow {
                 context.setLineDash(phase: 0, lengths: [])
-                arrow(at: object.end, from: object.curveControl == object.end ? object.start : (object.curveControl ?? object.start), style: style, context: context)
-                if style.arrowHead == .double { arrow(at: object.start, from: object.curveControl == object.start ? object.end : (object.curveControl ?? object.end), style: style, context: context) }
+                let headLength = object.arrowHeadLength
+                arrow(at: object.end, from: object.curveControl == object.end ? object.start : (object.curveControl ?? object.start), length: headLength, head: style.arrowHead, context: context)
+                if style.arrowHead == .double { arrow(at: object.start, from: object.curveControl == object.start ? object.end : (object.curveControl ?? object.end), length: headLength, head: .double, context: context) }
             }
         case .pen, .highlight:
             guard let first = object.points.first else { return true }
@@ -89,14 +90,13 @@ import CoreImage
         guard let output = CIFilter(name: name, parameters: [kCIInputImageKey: input.clampedToExtent(), parameter: strength])?.outputImage?.cropped(to: input.extent) else { return nil }
         return filterContext.createCGImage(output, from: input.extent)
     }
-    private static func arrow(at tip: CGPoint, from start: CGPoint, style: AnnotationStyle, context: CGContext) {
+    private static func arrow(at tip: CGPoint, from start: CGPoint, length: CGFloat, head: ArrowHead, context: CGContext) {
         guard hypot(tip.x-start.x, tip.y-start.y) > 0 else { return }
         let angle = atan2(tip.y-start.y, tip.x-start.x)
-        let size = max(12, style.width * 3)
-        let left = CGPoint(x: tip.x - size*cos(angle-0.45), y: tip.y - size*sin(angle-0.45))
-        let right = CGPoint(x: tip.x - size*cos(angle+0.45), y: tip.y - size*sin(angle+0.45))
+        let left = CGPoint(x: tip.x - length*cos(angle-0.45), y: tip.y - length*sin(angle-0.45))
+        let right = CGPoint(x: tip.x - length*cos(angle+0.45), y: tip.y - length*sin(angle+0.45))
         context.move(to: left); context.addLine(to: tip); context.addLine(to: right)
-        if style.arrowHead == .open { context.strokePath() }
+        if head == .open { context.strokePath() }
         else { context.closePath(); context.fillPath() }
     }
 }

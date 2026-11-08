@@ -77,8 +77,11 @@ extension ImageWindow {
         let buttons = descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }
         buttons.first(where: { $0.title == "画框" })?.performClick(nil)
         editor.window!.contentView!.layoutSubtreeIfNeeded()
-        descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.first(where: { $0.identifier?.rawValue == "style-width-8" })?.performClick(nil)
-        result["style_buttons_route_to_current_tool"] = canvas.tool == .rectangle && preferences.annotationStyle(for: .rectangle).width == 8 && document.state.objects.first?.style.width == 12
+        let preset = descendants(editor.window!.contentView!).compactMap { $0 as? NSButton }.last {
+            !$0.isHidden && $0.identifier?.rawValue.hasPrefix("style-width-") == true
+        }
+        preset?.performClick(nil)
+        result["style_buttons_route_to_current_tool"] = canvas.tool == .rectangle && preset.map { preferences.annotationStyle(for: .rectangle).width == CGFloat($0.tag) } == true && document.state.objects.first?.style.width == 12
         canvas.chooseTool(.arrow)
         canvas.mouseDown(with: mouse(.leftMouseDown, CGPoint(x: 100,y:100)))
         canvas.mouseDragged(with: mouse(.leftMouseDragged, CGPoint(x: 250,y:150)))

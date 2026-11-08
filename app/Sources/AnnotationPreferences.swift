@@ -1,9 +1,9 @@
 import AppKit
 
 extension AppPreferences {
-    func annotationStyle(for tool: AnnotationTool) -> AnnotationStyle {
+    func annotationStyle(for tool: AnnotationTool, scale: CGFloat = 1) -> AnnotationStyle {
         let key = "ccshot.annotation.style.\(tool.rawValue).v1"
-        guard let data = store.data(forKey: key), let style = try? JSONDecoder().decode(AnnotationStyle.self, from: data), style.valid else { return .initial(tool) }
+        guard let data = store.data(forKey: key), let style = try? JSONDecoder().decode(AnnotationStyle.self, from: data), style.valid else { return .initial(tool, scale: scale) }
         return style
     }
     func setAnnotationStyle(_ style: AnnotationStyle, for tool: AnnotationTool) {
