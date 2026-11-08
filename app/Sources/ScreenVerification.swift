@@ -34,7 +34,7 @@ import QuartzCore
             let frame = CGRect(x:floor(visible.midX-460),y:floor(visible.maxY-480),width:920,height:440)
             window.setFrame(frame,display:true); window.contentView?.layoutSubtreeIfNeeded()
             await pin.recognitionForVerification?.value
-            window.title = "CcShot · 双屏样本 \(index+1)"; window.display(); CATransaction.flush()
+            window.title = "ccShot · 双屏样本 \(index+1)"; window.display(); CATransaction.flush()
             do {
                 let content = try await SCShareableContent.excludingDesktopWindows(false,onScreenWindowsOnly:true)
                 guard let target = content.windows.first(where:{$0.windowID == UInt32(window.windowNumber) && $0.owningApplication?.processID == ProcessInfo.processInfo.processIdentifier}) else { throw WindowCapture.CaptureError.missing }

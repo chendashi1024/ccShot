@@ -14,7 +14,7 @@ for asset in sorted(set(re.findall(r'assets/[a-z-]+\.(?:png|jpg)', fragment))):
     mime = 'image/png' if path.suffix == '.png' else 'image/jpeg'
     fragment = fragment.replace(asset, f'data:{mime};base64,' + base64.b64encode(path.read_bytes()).decode())
 assert len(fragment.encode()) < 1_000_000, '会话预览需保持小于 1 MB'
-document = '<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ccShort · 完全免费的 Mac 截图工具</title><style>body{margin:0;background:#fafbf7}</style></head><body>\n' + fragment + '\n</body></html>\n'
+document = '<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ccShot · 完全免费的 Mac 截图工具</title><style>body{margin:0;background:#fafbf7}</style></head><body>\n' + fragment + '\n</body></html>\n'
 (root / 'index.html').write_text(document)
 if args.inline_output:
     if not args.inline_output.parent.is_dir():

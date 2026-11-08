@@ -52,7 +52,7 @@ import Carbon
     private let pinRecorder: ShortcutRecorder
     private let directory = NSTextField(labelWithString: "")
     private let permission = NSTextField(labelWithString: "")
-    private let login = NSButton(checkboxWithTitle: "登录时启动 ccShort", target: nil, action: nil)
+    private let login = NSButton(checkboxWithTitle: "登录时启动 ccShot", target: nil, action: nil)
     private let loginStatus = NSTextField(labelWithString: "")
     private let loginSettings = NSButton(title: "打开登录项设置", target: nil, action: nil)
     private let error = NSTextField(wrappingLabelWithString: "")
@@ -69,7 +69,7 @@ import Carbon
         captureRecorder = ShortcutRecorder(preferences.captureShortcut)
         pinRecorder = ShortcutRecorder(preferences.pinShortcut)
         let panel = SettingsPanel(contentRect: NSRect(x: 0, y: 0, width: 720, height: 240), styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        panel.title = "ccShort · 设置"; panel.isReleasedWhenClosed = false
+        panel.title = "ccShot · 设置"; panel.isReleasedWhenClosed = false
         super.init(window: panel)
         panel.delegate = self
         let root = CoreSurfaceView(); panel.contentView = root

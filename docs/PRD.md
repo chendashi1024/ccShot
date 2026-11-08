@@ -1,4 +1,4 @@
-# CcShot · MVP 产品需求文档（PRD）
+# ccShot · MVP 产品需求文档（PRD）
 
 > 开源、Mac 原生、中文用户顺手的截图工具：截完文字直接可选，一键问自己的 AI；标注样式一眼能调。第一版 3 周做完。
 >
@@ -36,7 +36,7 @@
 
 | 项目 | 内容 |
 |---|---|
-| 产品名 | **CcShot**（已定，作者名字缩写 cc + Shot；大小写固定为 CcShot） |
+| 产品名 | **ccShot**（已定，作者名字缩写 cc + Shot；大小写固定为 ccShot） |
 | 目标用户 | 用 Mac 的中文用户：程序员、学生、做内容的人；现在用 Snipaste、系统截图或微信截图 |
 | 要解决的痛点 | 截图里的字复制不出来；Snipaste 免费版没有 OCR；标注的粗细、样式藏得深；截完想问 AI 要来回切 App |
 | 成功标准 | 从按下快捷键到复制出文字不超过 3 步；从截图到 AI 回答只需一个键 |
@@ -49,7 +49,7 @@
 | PixPin | 否 | 有，钉图上文字默认可选（本地识别） | 只有会员 AI 翻译，不能自带 Key 问答 | 免费；会员 198 元终身 |
 | eSearch | 是（7.4k star） | 框选后 OCR | 可自定义多模态模型接口 | 免费；Electron，非原生 |
 | Ta | 是（69 star） | 有取字 | AI 识图，多家厂商，Key 存钥匙串 | 免费；8 月刚起步 |
-| **CcShot** | 是 | 截完即可选（系统 Live Text 同款） | 一键问，默认 DeepSeek，预填国内主流厂商 | 免费 |
+| **ccShot** | 是 | 截完即可选（系统 Live Text 同款） | 一键问，默认 DeepSeek，预填国内主流厂商 | 免费 |
 
 - 截图美化（加背景、改比例）付费产品里已经有：Xnapper $29.99 起，CleanShot X 有背景工具。**开源同类（macshot、Capso、better-shot、capcap、eSearch、Snapzy）也都已经有美化，Ta 在做。所以美化是"标配"，不是卖点**，我们做免费的基础版，参照 OpenScreen 的画面合成面板，截完一键出 1920×1080 的图。
 - 功能上的空位已经不大，我们赢在三件事：**原生的轻和快、截完就能选字、标注样式一眼能调**，再加上对中文用户顺手的 AI 预设。
@@ -299,7 +299,7 @@ DeepSeek 旧模型名 `deepseek-chat` 和 `deepseek-reasoner` 已在 2026-07-24 
 
 - 不买苹果开发者账号（99 美元/年），**不签名公证**，只做 ad-hoc 签名。理由：项目本身是开源的，个人为此付费签名不太合适。
 - 只在 **GitHub Releases** 发 `.dmg` / `.zip`；可选自建 Homebrew tap（官方 Homebrew 从 2026-09-01 起已停用过不了 Gatekeeper 的 App，所以进不了官方 cask）。
-- README 配首次打开图解：系统设置 → 隐私与安全性 → 仍要打开，或运行 `xattr -dr com.apple.quarantine /Applications/CcShot.app`。
+- README 配首次打开图解：系统设置 → 隐私与安全性 → 仍要打开，或运行 `xattr -dr com.apple.quarantine /Applications/ccShot.app`。
 - 升级后可能要重新授权屏幕录制（见第 9 节）。
 - 以后有赞助再考虑正式签名。
 
@@ -329,7 +329,7 @@ DeepSeek 旧模型名 `deepseek-chat` 和 `deepseek-reasoner` 已在 2026-07-24 
 
 | 问题 | 选项 | 建议 / 状态 |
 |---|---|---|
-| 产品名（已定） | — | **CcShot**，见 [决策记录.md](决策记录.md) |
+| 产品名（已定） | — | **ccShot**，见 [决策记录.md](决策记录.md) |
 | 开发者账号（已定） | 不买 99 美元/年账号，不签名公证 | 已定：ad-hoc 签名，只在 GitHub Releases 发；可选自建 Homebrew tap；以后有赞助再考虑正式签名 |
 | Sparkle 自动更新 | 放 MVP / 顺延到 1.1 | 建议顺延到 1.1，给美化腾时间；待用户确认 |
 | 最低系统版本 | macOS 13+ / macOS 14+ | 14+ 省掉截一帧视频流的额外工作；同类里 better-shot、capcap 要 14+，Capso 要 15+（待验证） |

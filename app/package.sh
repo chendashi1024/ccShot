@@ -7,16 +7,16 @@ if [ -n "$(git status --porcelain -- Sources Resources Tests build.sh check.sh c
   exit 1
 fi
 revision=$(git rev-parse HEAD)
-CCSHORT_SIGNING_IDENTITY=- bash build.sh
+CCSHOT_SIGNING_IDENTITY=- bash build.sh
 package_dir="build/packages/$revision"
 mkdir -p "$package_dir"
-archive="$package_dir/ccShort-0.1.0-dev-arm64.zip"
+archive="$package_dir/ccShot-0.1.0-dev-arm64.zip"
 if [ -e "$archive" ]; then
   echo "同版本试用包已存在，请核对已有清单，不覆盖。" >&2
   exit 1
 fi
-codesign --verify --deep --strict build/ccShort.app
-/usr/bin/ditto -c -k --keepParent --sequesterRsrc build/ccShort.app "$archive"
+codesign --verify --deep --strict build/ccShot.app
+/usr/bin/ditto -c -k --keepParent --sequesterRsrc build/ccShot.app "$archive"
 cp 试用说明.md "$package_dir/试用说明.md"
 python3 - "$revision" "$archive" <<'PY'
 import hashlib,json,pathlib,subprocess,sys

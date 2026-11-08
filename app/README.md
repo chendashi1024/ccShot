@@ -1,10 +1,10 @@
-# ccShort 原生开发底座
+# ccShot 原生开发底座
 
-最低构建目标 macOS 14、arm64；目前只在 macOS 15.4.1 本机验证。使用已有 Xcode，无第三方依赖；构建生成本地 ad-hoc 签名的 `build/ccShort.app`，不安装到 Applications。
+最低构建目标 macOS 14、arm64；目前只在 macOS 15.4.1 本机验证。使用已有 Xcode，无第三方依赖；构建生成本地 ad-hoc 签名的 `build/ccShot.app`，不安装到 Applications。
 
 ```bash
 bash build.sh
-open build/ccShort.app
+open build/ccShot.app
 ```
 
 点菜单栏的四角 C 图标，选择「区域截图」。默认 F1、Control+Option+S 注册为截图键，可在设置重新录入截图键；F3 在当前截图中钉图，否则钉剪贴板；实体全局快捷键仍待验证，不把注册成功视为可用。缺少屏幕录制权限时，点「请求授权」会由 macOS 提示授权。
@@ -14,7 +14,7 @@ open build/ccShort.app
 受控界面演示（仅虚构样本，不截桌面）：
 
 ```bash
-build/ccShort.app/Contents/MacOS/CcShot --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png"
+build/ccShot.app/Contents/MacOS/ccShot --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png"
 ```
 
 增加 `--select` 可在屏幕上铺开虚构样本测试框选。它不是屏幕截图的性能或多屏证据。
@@ -110,7 +110,7 @@ T 后在图片中点击输入；支持中文、换行、emoji、字号、加粗�
 
 应用构建输入提交后运行 `bash package.sh`，脚本会构建并验证ad-hoc签名，生成源码版本目录下的ZIP、试用说明及SHA256清单；同版本已有包不会覆盖。该操作不安装、不公开上传、不授予系统权限。首次权限提示提供打开系统设置或暂不；当前仅验证引导与取消，未撤销本机权限或代替本人授权。
 
-历史试用产物（已发现整屏Retina分辨率问题，须使用修复后新包）：`build/packages/efc4fd10d5f23986e8c10860be4faf71b036bf95/CcShot-0.1.0-dev-arm64.zip`，346181字节，源码 `efc4fd10`。独立解压后的签名、程序文件及源码版本已核验，详见 `verification-2026-11-03-candidate.json`；未安装或公开发布。
+历史试用产物（已发现整屏Retina分辨率问题，须使用修复后新包）：`build/packages/efc4fd10d5f23986e8c10860be4faf71b036bf95/ccShot-0.1.0-dev-arm64.zip`，346181字节，源码 `efc4fd10`。独立解压后的签名、程序文件及源码版本已核验，详见 `verification-2026-11-03-candidate.json`；未安装或公开发布。
 
 
 ## 真实整屏截图与Esc修复（2026-11-03）
@@ -121,7 +121,7 @@ T 后在图片中点击输入；支持中文、换行、emoji、字号、加粗�
 
 CUA实际从真实快照拖出选区、完成并选字；八个字符和单字“三”复制精确。修复Esc先清原生选区再转发导致关窗的问题，现在第一次清选区、第二次关闭。剪贴板探针仅用于固定样本；一次失败断言曾未恢复任务前剪贴板，已如实记录并修复失败分支的恢复，不记录原内容。
 
-最新修复包：`build/packages/6b579339262edc95fed882e43f95140a5995a1e8/CcShot-0.1.0-dev-arm64.zip`，378254字节，源码 `6b579339`；替代上述efc4历史包。解压签名、二进制与源码版本核对通过，未安装验收或公开发布，详见 `verification-2026-11-03-retina-candidate.json`。
+最新修复包：`build/packages/6b579339262edc95fed882e43f95140a5995a1e8/ccShot-0.1.0-dev-arm64.zip`，378254字节，源码 `6b579339`；替代上述efc4历史包。解压签名、二进制与源码版本核对通过，未安装验收或公开发布，详见 `verification-2026-11-03-retina-candidate.json`。
 
 
 ## 性能、识字与内存基线（2026-11-03）
@@ -168,7 +168,7 @@ CUA实际从真实快照拖出选区、完成并选字；八个字符和单字�
 
 ### 自动样式与实心遮挡试用包（2026-11-03）
 
-源码 `f09def9c808633c633a44c09b4f64ac4b38df8d4` 的本地ZIP已生成（431477字节），路径 `CcShot/app/build/packages/f09def9c808633c633a44c09b4f64ac4b38df8d4/CcShot-0.1.0-dev-arm64.zip`。包含整屏Retina/Esc修复、实心遮挡、安全选字、自动样式与图形参数。独立临时解压的签名、二进制、源码版本、架构、最低构建目标、中文声明与试用说明一致性通过，验证副本已移除。证据 `app/verification-2026-11-03-core-candidate.json`。此包替代6b579339的旧试用包；未安装、未新增权限、未公开发布。实体键、真实中文候选、混合缩放及安装升级仍未验，完整目标继续进行。
+源码 `f09def9c808633c633a44c09b4f64ac4b38df8d4` 的本地ZIP已生成（431477字节），路径 `ccShot/app/build/packages/f09def9c808633c633a44c09b4f64ac4b38df8d4/ccShot-0.1.0-dev-arm64.zip`。包含整屏Retina/Esc修复、实心遮挡、安全选字、自动样式与图形参数。独立临时解压的签名、二进制、源码版本、架构、最低构建目标、中文声明与试用说明一致性通过，验证副本已移除。证据 `app/verification-2026-11-03-core-candidate.json`。此包替代6b579339的旧试用包；未安装、未新增权限、未公开发布。实体键、真实中文候选、混合缩放及安装升级仍未验，完整目标继续进行。
 
 ## 文字工具简化（2026-11-03）
 
@@ -179,7 +179,7 @@ CUA实际从真实快照拖出选区、完成并选字；八个字符和单字�
 
 ### 文字工具单排试用包（2026-11-03）
 
-已将文字工具单排改动纳入本地包，源码 `dff9c76857bca22672a83cdced433681031cebb8`，ZIP 434017字节，路径 `CcShot/app/build/packages/dff9c76857bca22672a83cdced433681031cebb8/CcShot-0.1.0-dev-arm64.zip`。解压签名、二进制/源码版本、arm64/macOS14目标、试用说明和文字样式验证哈希核对通过，临时副本已移除。证据 `app/verification-2026-11-03-text-candidate.json`，替代f09def9c包。未安装或发布。已请求本人补真实键盘唤起和中文候选结果，并按GOALS第7节请求本地安装验收授权；答复前不执行依赖步骤。混合1x/2x无对应设备，已知首次识字时延和异常卷测试边界继续保留；完整目标未完成。
+已将文字工具单排改动纳入本地包，源码 `dff9c76857bca22672a83cdced433681031cebb8`，ZIP 434017字节，路径 `ccShot/app/build/packages/dff9c76857bca22672a83cdced433681031cebb8/ccShot-0.1.0-dev-arm64.zip`。解压签名、二进制/源码版本、arm64/macOS14目标、试用说明和文字样式验证哈希核对通过，临时副本已移除。证据 `app/verification-2026-11-03-text-candidate.json`，替代f09def9c包。未安装或发布。已请求本人补真实键盘唤起和中文候选结果，并按GOALS第7节请求本地安装验收授权；答复前不执行依赖步骤。混合1x/2x无对应设备，已知首次识字时延和异常卷测试边界继续保留；完整目标未完成。
 
 ## 观众复评中的连续操作修正（2026-11-03）
 
@@ -196,9 +196,9 @@ CUA实际从真实快照拖出选区、完成并选字；八个字符和单字�
 
 ### 最新UI补包与无响应排查（2026-11-03）
 
-用户反馈“好像没反应”并询问UI是否同步。核对后发现后续观众复评和箭头拖弯已进源码、尚未进入dff9c768旧包；现补包至源码 `312e12da21fa3b8226d535387866a4dd5be61413`，ZIP 449117字节，路径 `CcShot/app/build/packages/312e12da21fa3b8226d535387866a4dd5be61413/CcShot-0.1.0-dev-arm64.zip`。解压签名、源码/二进制、构建清单和弯箭头证据哈希核对通过，临时副本已移除。证据 `app/verification-2026-11-03-current-ui-candidate.json`。
+用户反馈“好像没反应”并询问UI是否同步。核对后发现后续观众复评和箭头拖弯已进源码、尚未进入dff9c768旧包；现补包至源码 `312e12da21fa3b8226d535387866a4dd5be61413`，ZIP 449117字节，路径 `ccShot/app/build/packages/312e12da21fa3b8226d535387866a4dd5be61413/ccShot-0.1.0-dev-arm64.zip`。解压签名、源码/二进制、构建清单和弯箭头证据哈希核对通过，临时副本已移除。证据 `app/verification-2026-11-03-current-ui-candidate.json`。
 
-排查开始时未见CcShot进程；已通过CUA启动正常开发版（不传fixture），确认单个进程并保持运行。菜单栏应用读取两次超时，未证实热键回调，不将“未运行”当作用户此前无响应的已确认根因，也未改热键代码。用户随后要求App路径，已交付 `CcShot/app/build/CcShot.app`。未安装、新增权限或操作剪贴板，安装授权和真实键盘/输入法结果仍未取得。
+排查开始时未见ccShot进程；已通过CUA启动正常开发版（不传fixture），确认单个进程并保持运行。菜单栏应用读取两次超时，未证实热键回调，不将“未运行”当作用户此前无响应的已确认根因，也未改热键代码。用户随后要求App路径，已交付 `ccShot/app/build/ccShot.app`。未安装、新增权限或操作剪贴板，安装授权和真实键盘/输入法结果仍未取得。
 
 
 ### 框选直接输出入口（2026-11-03）
@@ -228,7 +228,7 @@ CUA实际从真实快照拖出选区、完成并选字；八个字符和单字�
 
 `--fixture <样本> --inline-smoke-test <报告.json>` 运行原生布局、输出隔离、输入事务和屏幕变化检查，不写剪贴板，不代表真实拼音候选测试。`check.sh` 已接入该消费者和独立布局检查；本轮实际运行范围见 `verification-2026-11-04-inline-editor.json`。
 
-区域与窗口捕获路径均已接入原位结构；内容优先钉图、五场景完整还原及最终包仍需继续。当前用户使用的 `build/CcShot.app` 未被这一模块替换。
+区域与窗口捕获路径均已接入原位结构；内容优先钉图、五场景完整还原及最终包仍需继续。当前用户使用的 `build/ccShot.app` 未被这一模块替换。
 
 
 ## 窗口原位接入（2026-11-04）

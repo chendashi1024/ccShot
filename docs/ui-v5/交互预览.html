@@ -1,141 +1,141 @@
 <style>
-#ccshort-design {font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;}
-#ccshort-design .review-controls {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding-right:100px}
-#ccshort-design .review-controls .design-label {margin-left:auto;font-size:12px;color:light-dark(#647168,#b0bcb4)}
-#ccshort-design .desktop {--leaf:#35765A;--soft:#E1EEDF;--ink:light-dark(#29382f,#e7ede7);--sub:light-dark(#718076,#a0b0a4);--surface:light-dark(#fafcf8,#25352d);--hair:light-dark(#e2e8de,#425247);position:relative;overflow:hidden;isolation:isolate;min-height:600px;border-radius:20px;background:light-dark(#dbe5d4,#172a22);color:var(--ink);font-size:14px;line-height:1.5}
-#ccshort-design .wallpaper {position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 8% 92%,light-dark(#aec4a7,#254b38),transparent 58%),radial-gradient(ellipse at 88% 18%,light-dark(#f0f2dc,#345541),transparent 60%)}
-#ccshort-design .wallpaper:after {content:"";position:absolute;width:850px;height:400px;top:310px;left:22%;border-radius:50%;background:light-dark(#c1d2b5,#284e38);transform:rotate(-24deg);opacity:.42}
-#ccshort-design .menubar {height:34px;padding:0 22px;display:flex;align-items:center;gap:22px;background:light-dark(#edf2e7b8,#1b2d24ba);font-size:12px}
-#ccshort-design .brand {font-weight:650;display:flex;align-items:center;gap:7px}
-#ccshort-design .menubar .time {margin-left:auto}
-#ccshort-design .back-window {position:absolute;left:7%;right:7%;top:65px;height:450px;border-radius:23px;background:light-dark(#f8faf3,#29392e);box-shadow:0 24px 65px #13291f16;overflow:hidden}
-#ccshort-design .window-top {height:40px;display:flex;gap:7px;align-items:center;padding:0 18px;border-bottom:1px solid var(--hair);font-size:12px;color:var(--sub)}
-#ccshort-design .traffic {width:9px;height:9px;border-radius:50%;background:#ed8d82}
-#ccshort-design .traffic:nth-child(2) {background:#e4c66f}
-#ccshort-design .traffic:nth-child(3) {background:#8ebb86}
-#ccshort-design .window-top span:last-child {margin:auto}
-#ccshort-design .underlay-text {position:absolute;left:28px;top:75px;display:grid;gap:20px;color:var(--sub);font-size:12px}
-#ccshort-design .veil {position:absolute;inset:34px 0 0;background:light-dark(#203c2c22,#08180d49);pointer-events:none}
-#ccshort-design .composition {position:relative;width:min(670px,calc(100% - 120px));margin:79px auto 0}
-#ccshort-design .dimensions {position:absolute;left:16px;top:-36px;display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:12px;background:light-dark(#fbfdf7,#2a3b30);box-shadow:0 3px 12px #162c1810;font-size:11px;font-variant-numeric:tabular-nums;color:var(--sub)}
-#ccshort-design .note {position:relative;border-radius:30px;background:light-dark(#fffef9,#202e27);min-height:358px;padding:28px 34px;box-shadow:0 0 0 2px light-dark(#80a88c,#9cc3a3),0 14px 36px #143c271a;box-sizing:border-box}
-#ccshort-design .note .eyebrow {font-size:12px;color:var(--sub);margin:0 0 12px}
-#ccshort-design .note h2 {font-size:29px;line-height:1.35;letter-spacing:-.8px;font-weight:600;margin:0 0 13px;color:var(--ink)}
-#ccshort-design .intro {font-size:16px;line-height:1.85;margin:0;color:var(--sub);position:relative;z-index:2}
-#ccshort-design .intro .selectable {border-radius:4px;padding:2px 0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-#ccshort-design [data-state="text"] .intro .selectable {background:light-dark(#cee4c8,#42694b);color:light-dark(#254e35,#edf5e8)}
-#ccshort-design .note hr {border:0;border-top:1px solid var(--hair);margin:24px 0 18px}
-#ccshort-design .task-heading {font-weight:550;font-size:14px;margin:0 0 12px}
-#ccshort-design .tasks {display:grid;gap:12px;font-size:14px;color:var(--sub)}
-#ccshort-design .task {display:flex;align-items:center;gap:12px}
-#ccshort-design .checkbox {width:14px;height:14px;border:1.4px solid light-dark(#bac6b6,#69806c);border-radius:5px;flex:none}
-#ccshort-design .landscape {position:absolute;right:34px;top:33px;width:155px;height:105px;border-radius:23px;overflow:hidden;background:light-dark(#e9ebd9,#455440)}
-#ccshort-design .sun {position:absolute;right:22px;top:16px;width:22px;height:22px;border-radius:50%;background:#d5b67e}
-#ccshort-design .hill {position:absolute;width:160px;height:85px;border-radius:55% 75% 0 0;left:-28px;top:49px;background:#b1c3a2;transform:rotate(-16deg)}
-#ccshort-design .hill.front {left:44px;top:68px;background:#5f8669;transform:rotate(12deg)}
-#ccshort-design .art-caption {position:absolute;right:34px;top:148px;font-size:10px;letter-spacing:1px;color:var(--sub)}
-#ccshort-design .handle {position:absolute;width:10px;height:10px;border-radius:4px;background:light-dark(#f9fdf6,#e5f0df);box-shadow:0 0 0 1.5px #6c9477;pointer-events:none}
-#ccshort-design .handle.n {top:-5px;left:calc(50% - 5px)}
-#ccshort-design .handle.s {bottom:-5px;left:calc(50% - 5px)}
-#ccshort-design .handle.w {left:-5px;top:calc(50% - 5px)}
-#ccshort-design .handle.e {right:-5px;top:calc(50% - 5px)}
-#ccshort-design .crop-cursor {position:absolute;right:-20px;bottom:-19px;color:light-dark(#234c32,#e8f2e3);filter:drop-shadow(0 1px 1px white)}
-#ccshort-design .crop-cursor svg {width:27px;height:27px}
-#ccshort-design .marking {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;overflow:visible}
-#ccshort-design [data-state="annotation"] .marking {display:block}
-#ccshort-design .annotation-label {display:none;position:absolute;right:49px;top:203px;color:light-dark(var(--leaf),#a3cfac);font-size:16px;font-weight:600;transform:rotate(-4deg)}
-#ccshort-design [data-state="annotation"] .annotation-label {display:block}
-#ccshort-design .toolbar {position:relative;display:flex;align-items:center;gap:4px;padding:9px 10px;width:max-content;max-width:calc(100% - 48px);margin:27px auto 0;border-radius:23px;background:var(--surface);box-shadow:0 15px 35px #17312422,inset 0 1px 0 light-dark(#ffffff,#4a5e4f);box-sizing:border-box}
-#ccshort-design .tool {appearance:none;border:none;color:var(--ink);background:transparent;width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;font:inherit;transition:background .15s}
-#ccshort-design .tool:hover {background:light-dark(#eef2e9,#344b3b)}
-#ccshort-design .tool.active {background:light-dark(#dfedd9,#426047);color:light-dark(#397549,#dbecd5)}
-#ccshort-design .tool svg {width:20px;height:20px;stroke-width:1.8}
-#ccshort-design .divider {height:22px;width:1px;background:var(--hair);margin:0 5px;flex:none}
-#ccshort-design .copy {border:none;background:var(--leaf);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;height:40px;padding:0 14px;font:500 13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:80px;white-space:nowrap}
-#ccshort-design .copy svg {width:16px;height:16px}
-#ccshort-design [data-state="annotation"] .crop-cursor,#ccshort-design [data-state="text"] .crop-cursor {display:none}
-#ccshort-design [data-state="text"] .handle {opacity:.55}
-#ccshort-design .demo-toast {position:absolute;bottom:50px;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:12px;background:var(--surface);font-size:12px;box-shadow:0 5px 20px #17312422;white-space:nowrap}
-#ccshort-design .demo-toast:empty {display:none}
-@media(max-width:760px) {#ccshort-design .composition {width:calc(100% - 60px)}#ccshort-design .toolbar{gap:1px;padding:8px}#ccshort-design .tool{width:32px}#ccshort-design .toolbar .optional {display:none}#ccshort-design .landscape{width:118px;right:25px}#ccshort-design .note h2{font-size:25px}#ccshort-design .art-caption{right:25px}#ccshort-design .annotation-label{right:28px}#ccshort-design .note{padding:28px}}
-@media(prefers-reduced-motion:reduce){#ccshort-design *{transition:none!important}}
-#ccshort-design .context-actions {position:absolute;z-index:10;width:166px;padding:5px;background:var(--surface);border-radius:13px;box-shadow:0 8px 28px #13291f28}
-#ccshort-design .context-actions[hidden] {display:none}
-#ccshort-design .context-actions button {display:flex;justify-content:space-between;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
-#ccshort-design .context-actions button:hover {background:light-dark(#e1eedf,#405b45)}
-#ccshort-design .context-actions button span {color:var(--sub)}
-#ccshort-design [data-all="true"] .note h2,#ccshort-design [data-all="true"] .task-heading,#ccshort-design [data-all="true"] .task>span:last-child,#ccshort-design [data-all="true"] .eyebrow {background:light-dark(#cee4c8,#42694b);color:var(--ink);width:fit-content;border-radius:3px}
-#ccshort-design .review-controls{padding-right:90px}
-#ccshort-design .review-controls label:first-child{display:flex;gap:8px;align-items:center}
-#ccshort-design .review-note{font-size:13px;margin:12px 0 0;color:light-dark(#52685a,#b7cabc)}
-#ccshort-design .desktop{min-height:630px;color-scheme:light}
-#ccshort-design .brand{background:none;border:0;color:inherit;font:600 12px inherit;padding:3px 6px;border-radius:6px}
-#ccshort-design button:disabled{opacity:.35}
-#ccshort-design .drawing{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:hidden;border-radius:30px;touch-action:none;cursor:crosshair}
-#ccshort-design .drawing *{pointer-events:none}
-#ccshort-design .desktop[data-tool="capture"] .drawing,#ccshort-design .desktop[data-tool="select"] .drawing{pointer-events:none}
-#ccshort-design .desktop[data-tool="select"] .note{cursor:text}
-#ccshort-design .desktop:not([data-tool="select"]) .note{user-select:none}
-#ccshort-design .note ::selection{background:#cee4c8;color:#254e35}
-#ccshort-design .text-entry{position:absolute;z-index:5;top:202px;left:405px;width:210px;border:1.5px solid #87a88a;background:light-dark(#f1f6eb,#344d39);color:light-dark(#35765a,#add7ac);font:500 20px -apple-system,"PingFang SC",sans-serif;padding:8px 10px;border-radius:12px}
-#ccshort-design .text-entry[hidden]{display:none}
-#ccshort-design .pinbar{position:relative;z-index:4;display:flex;justify-content:center;gap:6px;margin:24px auto 0;width:max-content;background:var(--surface);padding:7px;border-radius:17px;box-shadow:0 12px 30px #163e2722}
-#ccshort-design .pinbar button{display:flex;align-items:center;gap:7px;background:none;border:0;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif;padding:8px 12px;border-radius:10px}
-#ccshort-design .pinbar svg{width:16px;height:16px}
-#ccshort-design .desktop[data-mode="pin"] .dimensions,#ccshort-design .desktop[data-mode="pin"] .handle,#ccshort-design .desktop[data-mode="pin"] .crop-cursor,#ccshort-design .desktop[data-mode="pin"] .toolbar{display:none}
-#ccshort-design .desktop[data-mode="pin"] .note{box-shadow:0 18px 55px #17312444}
-#ccshort-design .desktop:not([data-tool="capture"]) .crop-cursor{display:none}
-#ccshort-design .appmenu{position:absolute;top:38px;left:18px;width:220px;padding:6px;border-radius:14px;background:var(--surface);z-index:15;box-shadow:0 15px 35px #18312533}
-#ccshort-design .appmenu button{display:flex;justify-content:space-between;border:0;background:transparent;color:var(--ink);width:100%;padding:9px 11px;border-radius:8px;font:13px -apple-system,"PingFang SC",sans-serif}
-#ccshort-design .appmenu span{color:var(--sub)}
-#ccshort-design .appmenu hr{border:0;border-top:1px solid var(--hair);margin:5px}
-#ccshort-design .appmenu button:hover,#ccshort-design .pinbar button:hover{background:light-dark(#e1eedf,#405b45)}
-#ccshort-design .sheet-shade{position:absolute;inset:34px 0 0;background:#142a2538;z-index:20;display:grid;place-items:center}
-#ccshort-design .sheet{width:min(380px,calc(100% - 40px));padding:27px;background:var(--surface);border:1px solid var(--hair);border-radius:26px;box-shadow:0 24px 70px #17292044;box-sizing:border-box}
-#ccshort-design .sheet h3,#ccshort-design .result h3{font:600 20px -apple-system,"PingFang SC",sans-serif;margin:0 0 23px;color:var(--ink)}
-#ccshort-design .sheet label{display:grid;gap:7px;margin:16px 0;font-size:13px}
-#ccshort-design .sheet input,#ccshort-design .sheet select{box-sizing:border-box;border:1px solid var(--hair);border-radius:10px;background:light-dark(#fffefb,#1e2c24);color:var(--ink);padding:10px 12px;width:100%;font:14px -apple-system,"PingFang SC",sans-serif}
-#ccshort-design .sheet button,#ccshort-design .result button{border:1px solid var(--hair);border-radius:11px;background:light-dark(#f0f4ec,#344a3b);color:var(--ink);padding:8px 16px;font:13px -apple-system,"PingFang SC",sans-serif}
-#ccshort-design .sheet button.primary,#ccshort-design .result button{background:var(--leaf);border-color:var(--leaf);color:white}
-#ccshort-design .sheet-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:25px}
-#ccshort-design .setting-row{display:flex;align-items:center;justify-content:space-between;gap:22px;margin:22px 0;font-size:13px}
-#ccshort-design .setting-row select{width:auto}
-#ccshort-design .result{position:relative;margin:120px auto 50px;background:var(--surface);border-radius:28px;padding:30px;width:min(360px,calc(100% - 50px));box-sizing:border-box;text-align:center;box-shadow:0 18px 60px #15322622}
-#ccshort-design .result>svg{width:35px;height:35px;color:light-dark(#35765a,#a3cfac);margin-bottom:16px}
-#ccshort-design .result p{font-size:14px;color:var(--sub);margin:0 0 20px}
-#ccshort-design .result blockquote{font-size:14px;color:var(--ink);margin:0 0 20px;padding:12px;background:light-dark(#e6efe0,#3c5541);border-radius:12px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
-#ccshort-design .desktop[data-mode="done"] .composition,#ccshort-design .desktop[data-mode="done"] .toolbar{display:none}
-#ccshort-design [hidden]{display:none!important}
-#ccshort-design .toolbar{flex-wrap:wrap;justify-content:center}
-#ccshort-design .demo-toast{z-index:25;bottom:14px;white-space:normal;max-width:calc(100% - 40px)}
-@media(max-width:760px){#ccshort-design .toolbar .optional{display:inline-flex}#ccshort-design .landscape{display:none}#ccshort-design .composition{width:calc(100% - 40px)}#ccshort-design .text-entry{left:45%;width:45%}#ccshort-design .note{padding:24px}#ccshort-design .review-controls{padding-right:0}#ccshort-design .review-controls .design-label{margin-left:0}}
+#ccShot-design {font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;}
+#ccShot-design .review-controls {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding-right:100px}
+#ccShot-design .review-controls .design-label {margin-left:auto;font-size:12px;color:light-dark(#647168,#b0bcb4)}
+#ccShot-design .desktop {--leaf:#35765A;--soft:#E1EEDF;--ink:light-dark(#29382f,#e7ede7);--sub:light-dark(#718076,#a0b0a4);--surface:light-dark(#fafcf8,#25352d);--hair:light-dark(#e2e8de,#425247);position:relative;overflow:hidden;isolation:isolate;min-height:600px;border-radius:20px;background:light-dark(#dbe5d4,#172a22);color:var(--ink);font-size:14px;line-height:1.5}
+#ccShot-design .wallpaper {position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 8% 92%,light-dark(#aec4a7,#254b38),transparent 58%),radial-gradient(ellipse at 88% 18%,light-dark(#f0f2dc,#345541),transparent 60%)}
+#ccShot-design .wallpaper:after {content:"";position:absolute;width:850px;height:400px;top:310px;left:22%;border-radius:50%;background:light-dark(#c1d2b5,#284e38);transform:rotate(-24deg);opacity:.42}
+#ccShot-design .menubar {height:34px;padding:0 22px;display:flex;align-items:center;gap:22px;background:light-dark(#edf2e7b8,#1b2d24ba);font-size:12px}
+#ccShot-design .brand {font-weight:650;display:flex;align-items:center;gap:7px}
+#ccShot-design .menubar .time {margin-left:auto}
+#ccShot-design .back-window {position:absolute;left:7%;right:7%;top:65px;height:450px;border-radius:23px;background:light-dark(#f8faf3,#29392e);box-shadow:0 24px 65px #13291f16;overflow:hidden}
+#ccShot-design .window-top {height:40px;display:flex;gap:7px;align-items:center;padding:0 18px;border-bottom:1px solid var(--hair);font-size:12px;color:var(--sub)}
+#ccShot-design .traffic {width:9px;height:9px;border-radius:50%;background:#ed8d82}
+#ccShot-design .traffic:nth-child(2) {background:#e4c66f}
+#ccShot-design .traffic:nth-child(3) {background:#8ebb86}
+#ccShot-design .window-top span:last-child {margin:auto}
+#ccShot-design .underlay-text {position:absolute;left:28px;top:75px;display:grid;gap:20px;color:var(--sub);font-size:12px}
+#ccShot-design .veil {position:absolute;inset:34px 0 0;background:light-dark(#203c2c22,#08180d49);pointer-events:none}
+#ccShot-design .composition {position:relative;width:min(670px,calc(100% - 120px));margin:79px auto 0}
+#ccShot-design .dimensions {position:absolute;left:16px;top:-36px;display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:12px;background:light-dark(#fbfdf7,#2a3b30);box-shadow:0 3px 12px #162c1810;font-size:11px;font-variant-numeric:tabular-nums;color:var(--sub)}
+#ccShot-design .note {position:relative;border-radius:30px;background:light-dark(#fffef9,#202e27);min-height:358px;padding:28px 34px;box-shadow:0 0 0 2px light-dark(#80a88c,#9cc3a3),0 14px 36px #143c271a;box-sizing:border-box}
+#ccShot-design .note .eyebrow {font-size:12px;color:var(--sub);margin:0 0 12px}
+#ccShot-design .note h2 {font-size:29px;line-height:1.35;letter-spacing:-.8px;font-weight:600;margin:0 0 13px;color:var(--ink)}
+#ccShot-design .intro {font-size:16px;line-height:1.85;margin:0;color:var(--sub);position:relative;z-index:2}
+#ccShot-design .intro .selectable {border-radius:4px;padding:2px 0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+#ccShot-design [data-state="text"] .intro .selectable {background:light-dark(#cee4c8,#42694b);color:light-dark(#254e35,#edf5e8)}
+#ccShot-design .note hr {border:0;border-top:1px solid var(--hair);margin:24px 0 18px}
+#ccShot-design .task-heading {font-weight:550;font-size:14px;margin:0 0 12px}
+#ccShot-design .tasks {display:grid;gap:12px;font-size:14px;color:var(--sub)}
+#ccShot-design .task {display:flex;align-items:center;gap:12px}
+#ccShot-design .checkbox {width:14px;height:14px;border:1.4px solid light-dark(#bac6b6,#69806c);border-radius:5px;flex:none}
+#ccShot-design .landscape {position:absolute;right:34px;top:33px;width:155px;height:105px;border-radius:23px;overflow:hidden;background:light-dark(#e9ebd9,#455440)}
+#ccShot-design .sun {position:absolute;right:22px;top:16px;width:22px;height:22px;border-radius:50%;background:#d5b67e}
+#ccShot-design .hill {position:absolute;width:160px;height:85px;border-radius:55% 75% 0 0;left:-28px;top:49px;background:#b1c3a2;transform:rotate(-16deg)}
+#ccShot-design .hill.front {left:44px;top:68px;background:#5f8669;transform:rotate(12deg)}
+#ccShot-design .art-caption {position:absolute;right:34px;top:148px;font-size:10px;letter-spacing:1px;color:var(--sub)}
+#ccShot-design .handle {position:absolute;width:10px;height:10px;border-radius:4px;background:light-dark(#f9fdf6,#e5f0df);box-shadow:0 0 0 1.5px #6c9477;pointer-events:none}
+#ccShot-design .handle.n {top:-5px;left:calc(50% - 5px)}
+#ccShot-design .handle.s {bottom:-5px;left:calc(50% - 5px)}
+#ccShot-design .handle.w {left:-5px;top:calc(50% - 5px)}
+#ccShot-design .handle.e {right:-5px;top:calc(50% - 5px)}
+#ccShot-design .crop-cursor {position:absolute;right:-20px;bottom:-19px;color:light-dark(#234c32,#e8f2e3);filter:drop-shadow(0 1px 1px white)}
+#ccShot-design .crop-cursor svg {width:27px;height:27px}
+#ccShot-design .marking {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;overflow:visible}
+#ccShot-design [data-state="annotation"] .marking {display:block}
+#ccShot-design .annotation-label {display:none;position:absolute;right:49px;top:203px;color:light-dark(var(--leaf),#a3cfac);font-size:16px;font-weight:600;transform:rotate(-4deg)}
+#ccShot-design [data-state="annotation"] .annotation-label {display:block}
+#ccShot-design .toolbar {position:relative;display:flex;align-items:center;gap:4px;padding:9px 10px;width:max-content;max-width:calc(100% - 48px);margin:27px auto 0;border-radius:23px;background:var(--surface);box-shadow:0 15px 35px #17312422,inset 0 1px 0 light-dark(#ffffff,#4a5e4f);box-sizing:border-box}
+#ccShot-design .tool {appearance:none;border:none;color:var(--ink);background:transparent;width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;font:inherit;transition:background .15s}
+#ccShot-design .tool:hover {background:light-dark(#eef2e9,#344b3b)}
+#ccShot-design .tool.active {background:light-dark(#dfedd9,#426047);color:light-dark(#397549,#dbecd5)}
+#ccShot-design .tool svg {width:20px;height:20px;stroke-width:1.8}
+#ccShot-design .divider {height:22px;width:1px;background:var(--hair);margin:0 5px;flex:none}
+#ccShot-design .copy {border:none;background:var(--leaf);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;height:40px;padding:0 14px;font:500 13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:80px;white-space:nowrap}
+#ccShot-design .copy svg {width:16px;height:16px}
+#ccShot-design [data-state="annotation"] .crop-cursor,#ccShot-design [data-state="text"] .crop-cursor {display:none}
+#ccShot-design [data-state="text"] .handle {opacity:.55}
+#ccShot-design .demo-toast {position:absolute;bottom:50px;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:12px;background:var(--surface);font-size:12px;box-shadow:0 5px 20px #17312422;white-space:nowrap}
+#ccShot-design .demo-toast:empty {display:none}
+@media(max-width:760px) {#ccShot-design .composition {width:calc(100% - 60px)}#ccShot-design .toolbar{gap:1px;padding:8px}#ccShot-design .tool{width:32px}#ccShot-design .toolbar .optional {display:none}#ccShot-design .landscape{width:118px;right:25px}#ccShot-design .note h2{font-size:25px}#ccShot-design .art-caption{right:25px}#ccShot-design .annotation-label{right:28px}#ccShot-design .note{padding:28px}}
+@media(prefers-reduced-motion:reduce){#ccShot-design *{transition:none!important}}
+#ccShot-design .context-actions {position:absolute;z-index:10;width:166px;padding:5px;background:var(--surface);border-radius:13px;box-shadow:0 8px 28px #13291f28}
+#ccShot-design .context-actions[hidden] {display:none}
+#ccShot-design .context-actions button {display:flex;justify-content:space-between;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+#ccShot-design .context-actions button:hover {background:light-dark(#e1eedf,#405b45)}
+#ccShot-design .context-actions button span {color:var(--sub)}
+#ccShot-design [data-all="true"] .note h2,#ccShot-design [data-all="true"] .task-heading,#ccShot-design [data-all="true"] .task>span:last-child,#ccShot-design [data-all="true"] .eyebrow {background:light-dark(#cee4c8,#42694b);color:var(--ink);width:fit-content;border-radius:3px}
+#ccShot-design .review-controls{padding-right:90px}
+#ccShot-design .review-controls label:first-child{display:flex;gap:8px;align-items:center}
+#ccShot-design .review-note{font-size:13px;margin:12px 0 0;color:light-dark(#52685a,#b7cabc)}
+#ccShot-design .desktop{min-height:630px;color-scheme:light}
+#ccShot-design .brand{background:none;border:0;color:inherit;font:600 12px inherit;padding:3px 6px;border-radius:6px}
+#ccShot-design button:disabled{opacity:.35}
+#ccShot-design .drawing{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:hidden;border-radius:30px;touch-action:none;cursor:crosshair}
+#ccShot-design .drawing *{pointer-events:none}
+#ccShot-design .desktop[data-tool="capture"] .drawing,#ccShot-design .desktop[data-tool="select"] .drawing{pointer-events:none}
+#ccShot-design .desktop[data-tool="select"] .note{cursor:text}
+#ccShot-design .desktop:not([data-tool="select"]) .note{user-select:none}
+#ccShot-design .note ::selection{background:#cee4c8;color:#254e35}
+#ccShot-design .text-entry{position:absolute;z-index:5;top:202px;left:405px;width:210px;border:1.5px solid #87a88a;background:light-dark(#f1f6eb,#344d39);color:light-dark(#35765a,#add7ac);font:500 20px -apple-system,"PingFang SC",sans-serif;padding:8px 10px;border-radius:12px}
+#ccShot-design .text-entry[hidden]{display:none}
+#ccShot-design .pinbar{position:relative;z-index:4;display:flex;justify-content:center;gap:6px;margin:24px auto 0;width:max-content;background:var(--surface);padding:7px;border-radius:17px;box-shadow:0 12px 30px #163e2722}
+#ccShot-design .pinbar button{display:flex;align-items:center;gap:7px;background:none;border:0;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif;padding:8px 12px;border-radius:10px}
+#ccShot-design .pinbar svg{width:16px;height:16px}
+#ccShot-design .desktop[data-mode="pin"] .dimensions,#ccShot-design .desktop[data-mode="pin"] .handle,#ccShot-design .desktop[data-mode="pin"] .crop-cursor,#ccShot-design .desktop[data-mode="pin"] .toolbar{display:none}
+#ccShot-design .desktop[data-mode="pin"] .note{box-shadow:0 18px 55px #17312444}
+#ccShot-design .desktop:not([data-tool="capture"]) .crop-cursor{display:none}
+#ccShot-design .appmenu{position:absolute;top:38px;left:18px;width:220px;padding:6px;border-radius:14px;background:var(--surface);z-index:15;box-shadow:0 15px 35px #18312533}
+#ccShot-design .appmenu button{display:flex;justify-content:space-between;border:0;background:transparent;color:var(--ink);width:100%;padding:9px 11px;border-radius:8px;font:13px -apple-system,"PingFang SC",sans-serif}
+#ccShot-design .appmenu span{color:var(--sub)}
+#ccShot-design .appmenu hr{border:0;border-top:1px solid var(--hair);margin:5px}
+#ccShot-design .appmenu button:hover,#ccShot-design .pinbar button:hover{background:light-dark(#e1eedf,#405b45)}
+#ccShot-design .sheet-shade{position:absolute;inset:34px 0 0;background:#142a2538;z-index:20;display:grid;place-items:center}
+#ccShot-design .sheet{width:min(380px,calc(100% - 40px));padding:27px;background:var(--surface);border:1px solid var(--hair);border-radius:26px;box-shadow:0 24px 70px #17292044;box-sizing:border-box}
+#ccShot-design .sheet h3,#ccShot-design .result h3{font:600 20px -apple-system,"PingFang SC",sans-serif;margin:0 0 23px;color:var(--ink)}
+#ccShot-design .sheet label{display:grid;gap:7px;margin:16px 0;font-size:13px}
+#ccShot-design .sheet input,#ccShot-design .sheet select{box-sizing:border-box;border:1px solid var(--hair);border-radius:10px;background:light-dark(#fffefb,#1e2c24);color:var(--ink);padding:10px 12px;width:100%;font:14px -apple-system,"PingFang SC",sans-serif}
+#ccShot-design .sheet button,#ccShot-design .result button{border:1px solid var(--hair);border-radius:11px;background:light-dark(#f0f4ec,#344a3b);color:var(--ink);padding:8px 16px;font:13px -apple-system,"PingFang SC",sans-serif}
+#ccShot-design .sheet button.primary,#ccShot-design .result button{background:var(--leaf);border-color:var(--leaf);color:white}
+#ccShot-design .sheet-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:25px}
+#ccShot-design .setting-row{display:flex;align-items:center;justify-content:space-between;gap:22px;margin:22px 0;font-size:13px}
+#ccShot-design .setting-row select{width:auto}
+#ccShot-design .result{position:relative;margin:120px auto 50px;background:var(--surface);border-radius:28px;padding:30px;width:min(360px,calc(100% - 50px));box-sizing:border-box;text-align:center;box-shadow:0 18px 60px #15322622}
+#ccShot-design .result>svg{width:35px;height:35px;color:light-dark(#35765a,#a3cfac);margin-bottom:16px}
+#ccShot-design .result p{font-size:14px;color:var(--sub);margin:0 0 20px}
+#ccShot-design .result blockquote{font-size:14px;color:var(--ink);margin:0 0 20px;padding:12px;background:light-dark(#e6efe0,#3c5541);border-radius:12px;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
+#ccShot-design .desktop[data-mode="done"] .composition,#ccShot-design .desktop[data-mode="done"] .toolbar{display:none}
+#ccShot-design [hidden]{display:none!important}
+#ccShot-design .toolbar{flex-wrap:wrap;justify-content:center}
+#ccShot-design .demo-toast{z-index:25;bottom:14px;white-space:normal;max-width:calc(100% - 40px)}
+@media(max-width:760px){#ccShot-design .toolbar .optional{display:inline-flex}#ccShot-design .landscape{display:none}#ccShot-design .composition{width:calc(100% - 40px)}#ccShot-design .text-entry{left:45%;width:45%}#ccShot-design .note{padding:24px}#ccShot-design .review-controls{padding-right:0}#ccShot-design .review-controls .design-label{margin-left:0}}
 
-#ccshort-design .desktop{min-height:660px}
-#ccshort-design .composition{margin-top:60px}
-#ccshort-design .annotation-options{position:relative;z-index:4;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 40px);padding:8px 12px;margin:12px auto 0;background:var(--surface);border-radius:17px;box-shadow:0 8px 24px #17312418;box-sizing:border-box}
-#ccshort-design .palette{display:flex;gap:6px;align-items:center}
-#ccshort-design .color-choice{width:30px;height:30px;display:grid;place-items:center;padding:5px;border:1.5px solid transparent;border-radius:50%;background:transparent}
-#ccshort-design .color-choice span{display:block;width:18px;height:18px;border-radius:50%;background:var(--mark-color)}
-#ccshort-design .color-choice[aria-pressed="true"]{border-color:var(--ink)}
-#ccshort-design .arrow-shapes{display:flex;gap:3px;border-left:1px solid var(--hair);padding-left:12px}
-#ccshort-design .arrow-shapes button{display:grid;place-items:center;width:58px;height:36px;padding:3px 7px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif}
-#ccshort-design .arrow-shapes button[aria-pressed="true"]{background:light-dark(#e1eedf,#405b45);color:light-dark(#28563b,#e0eddf)}
-#ccshort-design .desktop:not([data-mode="edit"]) .annotation-options{display:none}
-#ccshort-design .arrow-example{display:block;width:44px;height:28px}
-#ccshort-design .arrow-example svg{display:block;width:100%;height:100%}
-#ccshort-design .location-field{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--hair);border-radius:12px;background:light-dark(#fffefb,#1e2c24)}
-#ccshort-design .location-field output{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px;color:var(--ink)}
-#ccshort-design .location-field button{flex:none;padding:6px 10px}
-#ccshort-design .folder-error{font-size:13px;color:light-dark(#a8362b,#ffb4a9);margin:8px 0}
+#ccShot-design .desktop{min-height:660px}
+#ccShot-design .composition{margin-top:60px}
+#ccShot-design .annotation-options{position:relative;z-index:4;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 40px);padding:8px 12px;margin:12px auto 0;background:var(--surface);border-radius:17px;box-shadow:0 8px 24px #17312418;box-sizing:border-box}
+#ccShot-design .palette{display:flex;gap:6px;align-items:center}
+#ccShot-design .color-choice{width:30px;height:30px;display:grid;place-items:center;padding:5px;border:1.5px solid transparent;border-radius:50%;background:transparent}
+#ccShot-design .color-choice span{display:block;width:18px;height:18px;border-radius:50%;background:var(--mark-color)}
+#ccShot-design .color-choice[aria-pressed="true"]{border-color:var(--ink)}
+#ccShot-design .arrow-shapes{display:flex;gap:3px;border-left:1px solid var(--hair);padding-left:12px}
+#ccShot-design .arrow-shapes button{display:grid;place-items:center;width:58px;height:36px;padding:3px 7px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif}
+#ccShot-design .arrow-shapes button[aria-pressed="true"]{background:light-dark(#e1eedf,#405b45);color:light-dark(#28563b,#e0eddf)}
+#ccShot-design .desktop:not([data-mode="edit"]) .annotation-options{display:none}
+#ccShot-design .arrow-example{display:block;width:44px;height:28px}
+#ccShot-design .arrow-example svg{display:block;width:100%;height:100%}
+#ccShot-design .location-field{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--hair);border-radius:12px;background:light-dark(#fffefb,#1e2c24)}
+#ccShot-design .location-field output{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px;color:var(--ink)}
+#ccShot-design .location-field button{flex:none;padding:6px 10px}
+#ccShot-design .folder-error{font-size:13px;color:light-dark(#a8362b,#ffb4a9);margin:8px 0}
 </style>
-<div id="ccshort-design">
+<div id="ccShot-design">
   <div class="review-controls" aria-label="设计稿状态">
     <label class="form-label"><span style="white-space:nowrap">查看</span> <select class="form-select" data-jump aria-label="查看功能"><option value="capture">框选</option><option value="arrow">箭头</option><option value="rect">画框</option><option value="label">文字</option><option value="pen">画笔</option><option value="mask">遮挡</option><option value="highlight">高亮</option><option value="number">序号</option><option value="select">选字与右键</option><option value="pin">钉图</option><option value="save">保存</option><option value="appmenu">菜单栏</option><option value="settings">设置</option><option value="done">完成</option></select></label>
     <button class="btn" data-reset>恢复样例</button><label class="form-check"><input type="checkbox" class="form-check-input" data-dark><span class="form-check-label">深色</span></label><span class="design-label">交互预览 · 不操作系统文件</span>
   </div>
-  <div class="desktop" data-state="capture" aria-label="ccShort 绿色圆角设计">
+  <div class="desktop" data-state="capture" aria-label="ccShot 绿色圆角设计">
     <div class="wallpaper"></div>
-    <div class="menubar"><button class="brand" data-appmenu data-tooltip="打开 ccShort 菜单"><i data-lucide="scan" aria-hidden="true"></i> ccShort</button><span class="time">周日  11:08</span></div>
+    <div class="menubar"><button class="brand" data-appmenu data-tooltip="打开 ccShot 菜单"><i data-lucide="scan" aria-hidden="true"></i> ccShot</button><span class="time">周日  11:08</span></div>
     <div class="back-window"><div class="window-top"><span class="traffic"></span><span class="traffic"></span><span class="traffic"></span><span>工作手记</span></div><div class="underlay-text"><span>我的笔记</span><span>本周计划</span><span>阅读摘录</span></div></div>
     <div class="veil"></div>
     <div class="composition">
@@ -180,8 +180,8 @@
       <div class="arrow-shapes" role="group" aria-label="箭头形态"><button data-arrow-shape="straight" aria-label="直线箭头" data-tooltip="直线箭头" aria-pressed="false"><span class="arrow-example" aria-hidden="true"></span></button><button data-arrow-shape="curved" aria-label="曲线箭头" data-tooltip="曲线箭头" aria-pressed="true"><span class="arrow-example" aria-hidden="true"></span></button></div>
     </div>
     <div class="pinbar" hidden><button data-action="edit"><i data-lucide="pencil" aria-hidden="true"></i> 编辑</button><button data-action="save"><i data-lucide="download" aria-hidden="true"></i> 保存</button><button data-action="close" aria-label="关闭钉图"><i data-lucide="x" aria-hidden="true"></i></button></div>
-    <div class="appmenu" hidden><button data-capture="区域截图">区域截图 <span>⌃⌥S</span></button><button data-capture="窗口截图">窗口截图</button><button data-capture="当前屏幕">当前屏幕</button><hr><button data-action="settings">设置…</button><hr><button data-action="quit">退出 ccShort</button></div>
-    <div class="sheet-shade" hidden><section class="sheet" role="dialog" aria-modal="true" aria-label="保存图片"><form data-save-form hidden><h3>保存图片</h3><label>名称<input name="filename" value="截图 2026-11-08.png" required maxlength="80"></label><label>保存位置</label><div class="location-field"><output data-save-folder aria-label="本次保存位置">~/Desktop</output><button type="button" data-choose-folder="save">更改…</button></div><div class="sheet-actions"><button type="button" data-cancel>取消</button><button class="primary" type="button" data-save-confirm>保存</button></div></form><div data-settings-panel hidden><h3>设置</h3><div class="setting-row"><span>截图快捷键</span><button data-shortcut>⌃⌥S</button></div><div class="location-setting"><label>默认保存位置</label><div class="location-field"><output data-default-folder aria-label="默认保存位置">~/Desktop</output><button type="button" data-choose-folder="settings">更改…</button></div></div><div class="sheet-actions"><button class="primary" data-cancel>完成</button></div></div><div data-folder-panel hidden><h3>选择文件夹</h3><label for="ccshort-folder-path">文件夹路径</label><input id="ccshort-folder-path" placeholder="~/Documents/项目资料" required aria-describedby="ccshort-folder-error"><p id="ccshort-folder-error" class="folder-error" role="alert" hidden>请输入文件夹路径</p><div class="sheet-actions"><button type="button" data-folder-cancel>取消</button><button type="button" class="primary" data-folder-confirm>选择</button></div></div></section></div>
+    <div class="appmenu" hidden><button data-capture="区域截图">区域截图 <span>⌃⌥S</span></button><button data-capture="窗口截图">窗口截图</button><button data-capture="当前屏幕">当前屏幕</button><hr><button data-action="settings">设置…</button><hr><button data-action="quit">退出 ccShot</button></div>
+    <div class="sheet-shade" hidden><section class="sheet" role="dialog" aria-modal="true" aria-label="保存图片"><form data-save-form hidden><h3>保存图片</h3><label>名称<input name="filename" value="截图 2026-11-08.png" required maxlength="80"></label><label>保存位置</label><div class="location-field"><output data-save-folder aria-label="本次保存位置">~/Desktop</output><button type="button" data-choose-folder="save">更改…</button></div><div class="sheet-actions"><button type="button" data-cancel>取消</button><button class="primary" type="button" data-save-confirm>保存</button></div></form><div data-settings-panel hidden><h3>设置</h3><div class="setting-row"><span>截图快捷键</span><button data-shortcut>⌃⌥S</button></div><div class="location-setting"><label>默认保存位置</label><div class="location-field"><output data-default-folder aria-label="默认保存位置">~/Desktop</output><button type="button" data-choose-folder="settings">更改…</button></div></div><div class="sheet-actions"><button class="primary" data-cancel>完成</button></div></div><div data-folder-panel hidden><h3>选择文件夹</h3><label for="ccShot-folder-path">文件夹路径</label><input id="ccShot-folder-path" placeholder="~/Documents/项目资料" required aria-describedby="ccShot-folder-error"><p id="ccShot-folder-error" class="folder-error" role="alert" hidden>请输入文件夹路径</p><div class="sheet-actions"><button type="button" data-folder-cancel>取消</button><button type="button" class="primary" data-folder-confirm>选择</button></div></div></section></div>
     <div class="result" hidden><i data-lucide="check" aria-hidden="true"></i><h3>已完成</h3><p data-result></p><blockquote hidden></blockquote><button data-new>再截一张</button></div>
     <div class="context-actions" hidden aria-label="文字操作"><button data-copy>复制 <span>⌘C</span></button><button data-select-all>全选 <span>⌘A</span></button></div>
     <div class="demo-toast" role="status"></div>
@@ -190,7 +190,7 @@
 </div>
 <script>
 (()=>{
-const root=document.getElementById('ccshort-design'),stage=root.querySelector('.desktop'),svg=root.querySelector('.drawing'),note=root.querySelector('.note'),entry=root.querySelector('.text-entry'),context=root.querySelector('.context-actions'),appmenu=root.querySelector('.appmenu'),shade=root.querySelector('.sheet-shade'),finish=root.querySelector('[data-finish]'),jump=root.querySelector('[data-jump]');
+const root=document.getElementById('ccShot-design'),stage=root.querySelector('.desktop'),svg=root.querySelector('.drawing'),note=root.querySelector('.note'),entry=root.querySelector('.text-entry'),context=root.querySelector('.context-actions'),appmenu=root.querySelector('.appmenu'),shade=root.querySelector('.sheet-shade'),finish=root.querySelector('[data-finish]'),jump=root.querySelector('[data-jump]');
 const ns='http://www.w3.org/2000/svg';
 let defaultFolder='~/Desktop',saveFolder=defaultFolder,folderTarget='save';
 const presets={arrow:{color:'#D65F46',shape:'curved'},rect:{color:'#D65F46'}};
@@ -259,11 +259,11 @@ root.querySelector('[data-save-form]').addEventListener('submit',e=>{e.preventDe
 root.querySelector('[data-save-form]').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('input[name="filename"]')){e.preventDefault();e.stopPropagation();savePreview();}});
 function renderFolders(){root.querySelector('[data-save-folder]').textContent=saveFolder;root.querySelector('[data-default-folder]').textContent=defaultFolder;}
 function returnFromFolder(){root.querySelector('[data-folder-panel]').hidden=true;root.querySelector('[data-save-form]').hidden=folderTarget!=='save';root.querySelector('[data-settings-panel]').hidden=folderTarget!=='settings';root.querySelector('.sheet').setAttribute('aria-label',folderTarget==='save'?'保存图片':'设置');setHint(folderTarget==='save'?'保存：本次位置可自由选择，不改变默认位置。':'设置：以后保存时从这里选定的默认位置开始。');root.querySelector('[data-choose-folder="'+folderTarget+'"]').focus();}
-root.querySelectorAll('[data-choose-folder]').forEach(button=>button.addEventListener('click',()=>{folderTarget=button.dataset.chooseFolder;root.querySelector('[data-save-form]').hidden=true;root.querySelector('[data-settings-panel]').hidden=true;root.querySelector('[data-folder-panel]').hidden=false;root.querySelector('.sheet').setAttribute('aria-label','选择文件夹');root.querySelector('#ccshort-folder-error').hidden=true;const input=root.querySelector('#ccshort-folder-path');input.value=folderTarget==='save'?saveFolder:defaultFolder;input.setAttribute('aria-invalid','false');input.focus();input.select();setHint('文件夹选择演示：可输入任意路径；正式 App 使用系统选择器浏览文件夹，不限三个位置。');}));
+root.querySelectorAll('[data-choose-folder]').forEach(button=>button.addEventListener('click',()=>{folderTarget=button.dataset.chooseFolder;root.querySelector('[data-save-form]').hidden=true;root.querySelector('[data-settings-panel]').hidden=true;root.querySelector('[data-folder-panel]').hidden=false;root.querySelector('.sheet').setAttribute('aria-label','选择文件夹');root.querySelector('#ccShot-folder-error').hidden=true;const input=root.querySelector('#ccShot-folder-path');input.value=folderTarget==='save'?saveFolder:defaultFolder;input.setAttribute('aria-invalid','false');input.focus();input.select();setHint('文件夹选择演示：可输入任意路径；正式 App 使用系统选择器浏览文件夹，不限三个位置。');}));
 root.querySelector('[data-folder-cancel]').addEventListener('click',returnFromFolder);
-function confirmFolder(){const input=root.querySelector('#ccshort-folder-path'),value=input.value.trim();if(!value){root.querySelector('#ccshort-folder-error').hidden=false;input.setAttribute('aria-invalid','true');input.focus();return;}if(folderTarget==='save')saveFolder=value;else defaultFolder=value;renderFolders();returnFromFolder();}
+function confirmFolder(){const input=root.querySelector('#ccShot-folder-path'),value=input.value.trim();if(!value){root.querySelector('#ccShot-folder-error').hidden=false;input.setAttribute('aria-invalid','true');input.focus();return;}if(folderTarget==='save')saveFolder=value;else defaultFolder=value;renderFolders();returnFromFolder();}
 root.querySelector('[data-folder-confirm]').addEventListener('click',confirmFolder);
-root.querySelector('#ccshort-folder-path').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();confirmFolder();}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();returnFromFolder();}});
+root.querySelector('#ccShot-folder-path').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();confirmFolder();}if(e.key==='Escape'){e.preventDefault();e.stopPropagation();returnFromFolder();}});
 root.querySelector('[data-shortcut]').addEventListener('click',e=>{recording=true;e.target.textContent='请按快捷键';});
 function point(e){const r=svg.getBoundingClientRect();return{x:Math.max(0,Math.min(670,(e.clientX-r.left)/r.width*670)),y:Math.max(0,Math.min(360,(e.clientY-r.top)/r.height*360))};}
 svg.addEventListener('pointerdown',e=>{if(stage.dataset.mode==='pin'||!shade.hidden)return;if(!names[tool]||['select','capture'].includes(tool))return;e.preventDefault();context.hidden=true;const p=point(e);if(tool==='label'){openText(p);return;}if(tool==='number'){append({kind:'number',a:p,number:sample?1:marks.filter(m=>m.kind==='number').length+1});return;}svg.setPointerCapture(e.pointerId);drag=p;draft=withStyle(tool==='pen'?{kind:tool,points:[p]}:{kind:tool,a:p,b:p});if(sample){marks=[];sample=false;}paint();});

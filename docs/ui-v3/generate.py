@@ -320,7 +320,7 @@ async function activate(el) {
       await navigator.clipboard.write([new ClipboardItem({'image/png':imageBlob()})]);announce('示例图片已复制。');
     }
     if(name==='save') {
-      const url=URL.createObjectURL(await imageBlob());const link=document.createElement('a');link.href=url;link.download='CcShot-示例截图.png';link.click();
+      const url=URL.createObjectURL(await imageBlob());const link=document.createElement('a');link.href=url;link.download='ccShot-示例截图.png';link.click();
       setTimeout(()=>URL.revokeObjectURL(url),10000);announce('已发起示例 PNG 下载；请在浏览器下载记录中查看。');
     }
   } catch(error) {announce('操作未完成：'+(error.message || '浏览器未允许此操作。'));}
@@ -343,9 +343,9 @@ def main():
         (ROOT/f'{name}.svg').write_text(drawing,encoding='utf-8')
         nav.append(f'<button data-scene="{name}" aria-pressed="{str(i==0).lower()}">{label}</button>')
         boards.append(f'<section class="scene" data-scene-id="{name}" {"hidden" if i else ""}>{drawing.replace(chr(34)+"img"+chr(34),chr(34)+"group"+chr(34),1)}</section>')
-    html='''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CcShot · 核心功能版试稿</title><style>
+    html='''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ccShot · 核心功能版试稿</title><style>
 *{box-sizing:border-box}body{margin:0;background:#edf0e9;color:#282d2a;font:14px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:1000px}header{height:76px;padding:0 34px;display:flex;align-items:center;gap:24px;background:#fafbf8;border-bottom:1px solid #d5dcd1}.brand{font-size:22px;font-weight:650;letter-spacing:-.7px}.draft{font-size:13px;color:#626c65}nav{display:flex;gap:4px;margin:auto}nav button{background:none;border:0;border-radius:8px;padding:9px 20px;font:inherit;color:#626c65;cursor:pointer}nav button[aria-pressed=true]{background:#e2eadf;color:#285c53;font-weight:600}a{color:#506a57;text-decoration:none}main{max-width:1500px;margin:24px auto;padding:0 30px}.scene{border-radius:12px;overflow:hidden;border:1px solid #c6d0c2;box-shadow:0 18px 60px #334d3620}.scene[hidden]{display:none}.scene>svg{display:block;width:100%;height:auto}.scene g[role=button]{cursor:pointer}.scene g[role=button]:hover>rect:first-of-type{filter:brightness(.97)}.scene g[role=button]:focus-visible{outline:2px solid #285c53;outline-offset:3px}button:focus-visible,a:focus-visible{outline:2px solid #285c53;outline-offset:3px}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:54px;color:#626c65;font-size:13px}
-</style></head><body><header><span class="brand">CcShot</span><span class="draft">核心功能版 · 设计演示</span><nav aria-label="设计画面">'''+''.join(nav)+'''</nav><a href="../UI参考与设计.md">设计说明 ↗</a></header><main>'''+''.join(boards)+'''<footer><span id="status" role="status" aria-live="polite"></span><a href="../ui-v2/设计稿.html">上一版 ↗</a></footer></main><script>'''+SCRIPT+'</script></body></html>'
+</style></head><body><header><span class="brand">ccShot</span><span class="draft">核心功能版 · 设计演示</span><nav aria-label="设计画面">'''+''.join(nav)+'''</nav><a href="../UI参考与设计.md">设计说明 ↗</a></header><main>'''+''.join(boards)+'''<footer><span id="status" role="status" aria-live="polite"></span><a href="../ui-v2/设计稿.html">上一版 ↗</a></footer></main><script>'''+SCRIPT+'</script></body></html>'
     (ROOT/'设计稿.html').write_text(html,encoding='utf-8')
     print('已生成五个 SVG 画板和离线设计演示。')
     import sys

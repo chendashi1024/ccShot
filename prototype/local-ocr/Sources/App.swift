@@ -45,7 +45,7 @@ import Carbon
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
-        window.title = "CcShot · 本地选字技术原型"
+        window.title = "ccShot · 本地选字技术原型"
         window.minSize = NSSize(width: 760, height: 450)
         window.center()
         let root = window.contentView!
@@ -87,7 +87,7 @@ import Carbon
         ])
         let menu = NSMenu()
         let appItem = NSMenuItem()
-        appItem.submenu = NSMenu(title: "CcShot")
+        appItem.submenu = NSMenu(title: "ccShot")
         appItem.submenu?.addItem(withTitle: "退出原型", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(appItem)
         let edit = NSMenuItem()

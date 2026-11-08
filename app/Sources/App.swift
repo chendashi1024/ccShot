@@ -21,22 +21,22 @@ import QuartzCore
         NSApp.setActivationPolicy(.accessory)
         if let appearance = argument("--appearance") { NSApp.appearance = NSAppearance(named:appearance == "light" ? .aqua : .darkAqua) }
         let menu = NSMenu()
-        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("设置…", #selector(openSettings), ","), ("退出 ccShort", #selector(quit), "q")] {
+        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("设置…", #selector(openSettings), ","), ("退出 ccShot", #selector(quit), "q")] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
             item.target = self
             menu.addItem(item)
         }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         if let button = statusItem.button {
-            button.setAccessibilityLabel("ccShort")
-            button.toolTip = "ccShort"
+            button.setAccessibilityLabel("ccShot")
+            button.toolTip = "ccShot"
             if let iconURL = Bundle.main.url(forResource: "StatusIcon", withExtension: "pdf"),
                let icon = NSImage(contentsOf: iconURL) {
                 icon.isTemplate = true
                 button.image = icon
                 button.imagePosition = .imageOnly
             } else {
-                button.title = "ccShort"
+                button.title = "ccShot"
             }
         }
         statusItem.menu = menu
@@ -195,7 +195,7 @@ import QuartzCore
         let sourceFrame=screen.frame
         let sourceDisplayID=(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
         let window = SelectionWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
-        window.title = "ccShort · 框选"
+        window.title = "ccShot · 框选"
         window.level = .screenSaver
         window.isOpaque = true
         window.acceptsMouseMovedEvents = true
@@ -312,7 +312,7 @@ import QuartzCore
     }
     private func showPermissionGuide() {
         let alert = NSAlert(); alert.messageText = "需要屏幕录制权限"
-        alert.informativeText = "请允许当前的 ccShort 录制屏幕。授权后重新打开 ccShort，再开始截图。"
+        alert.informativeText = "请允许当前的 ccShot 录制屏幕。授权后重新打开 ccShot，再开始截图。"
         alert.addButton(withTitle: "请求授权")
         alert.addButton(withTitle: "打开系统设置")
         alert.addButton(withTitle: "暂不")
@@ -549,7 +549,7 @@ import QuartzCore
     }
 }
 
-@main struct CcShot {
+@main struct ccShot {
     @MainActor static func main() {
         let app = NSApplication.shared
         let delegate = AppController()

@@ -1,81 +1,81 @@
 <style>
-#ccshort-design {font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;}
-#ccshort-design .review-controls {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding-right:100px}
-#ccshort-design .review-controls .design-label {margin-left:auto;font-size:12px;color:light-dark(#647168,#b0bcb4)}
-#ccshort-design .desktop {--leaf:#35765A;--soft:#E1EEDF;--ink:light-dark(#29382f,#e7ede7);--sub:light-dark(#718076,#a0b0a4);--surface:light-dark(#fafcf8,#25352d);--hair:light-dark(#e2e8de,#425247);position:relative;overflow:hidden;isolation:isolate;min-height:600px;border-radius:20px;background:light-dark(#dbe5d4,#172a22);color:var(--ink);font-size:14px;line-height:1.5}
-#ccshort-design .wallpaper {position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 8% 92%,light-dark(#aec4a7,#254b38),transparent 58%),radial-gradient(ellipse at 88% 18%,light-dark(#f0f2dc,#345541),transparent 60%)}
-#ccshort-design .wallpaper:after {content:"";position:absolute;width:850px;height:400px;top:310px;left:22%;border-radius:50%;background:light-dark(#c1d2b5,#284e38);transform:rotate(-24deg);opacity:.42}
-#ccshort-design .menubar {height:34px;padding:0 22px;display:flex;align-items:center;gap:22px;background:light-dark(#edf2e7b8,#1b2d24ba);font-size:12px}
-#ccshort-design .brand {font-weight:650;display:flex;align-items:center;gap:7px}
-#ccshort-design .menubar .time {margin-left:auto}
-#ccshort-design .back-window {position:absolute;left:7%;right:7%;top:65px;height:450px;border-radius:23px;background:light-dark(#f8faf3,#29392e);box-shadow:0 24px 65px #13291f16;overflow:hidden}
-#ccshort-design .window-top {height:40px;display:flex;gap:7px;align-items:center;padding:0 18px;border-bottom:1px solid var(--hair);font-size:12px;color:var(--sub)}
-#ccshort-design .traffic {width:9px;height:9px;border-radius:50%;background:#ed8d82}
-#ccshort-design .traffic:nth-child(2) {background:#e4c66f}
-#ccshort-design .traffic:nth-child(3) {background:#8ebb86}
-#ccshort-design .window-top span:last-child {margin:auto}
-#ccshort-design .underlay-text {position:absolute;left:28px;top:75px;display:grid;gap:20px;color:var(--sub);font-size:12px}
-#ccshort-design .veil {position:absolute;inset:34px 0 0;background:light-dark(#203c2c22,#08180d49);pointer-events:none}
-#ccshort-design .composition {position:relative;width:min(670px,calc(100% - 120px));margin:79px auto 0}
-#ccshort-design .dimensions {position:absolute;left:16px;top:-36px;display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:12px;background:light-dark(#fbfdf7,#2a3b30);box-shadow:0 3px 12px #162c1810;font-size:11px;font-variant-numeric:tabular-nums;color:var(--sub)}
-#ccshort-design .note {position:relative;border-radius:30px;background:light-dark(#fffef9,#202e27);min-height:358px;padding:28px 34px;box-shadow:0 0 0 2px light-dark(#80a88c,#9cc3a3),0 14px 36px #143c271a;box-sizing:border-box}
-#ccshort-design .note .eyebrow {font-size:12px;color:var(--sub);margin:0 0 12px}
-#ccshort-design .note h2 {font-size:29px;line-height:1.35;letter-spacing:-.8px;font-weight:600;margin:0 0 13px;color:var(--ink)}
-#ccshort-design .intro {font-size:16px;line-height:1.85;margin:0;color:var(--sub);position:relative;z-index:2}
-#ccshort-design .intro .selectable {border-radius:4px;padding:2px 0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
-#ccshort-design [data-state="text"] .intro .selectable {background:light-dark(#cee4c8,#42694b);color:light-dark(#254e35,#edf5e8)}
-#ccshort-design .note hr {border:0;border-top:1px solid var(--hair);margin:24px 0 18px}
-#ccshort-design .task-heading {font-weight:550;font-size:14px;margin:0 0 12px}
-#ccshort-design .tasks {display:grid;gap:12px;font-size:14px;color:var(--sub)}
-#ccshort-design .task {display:flex;align-items:center;gap:12px}
-#ccshort-design .checkbox {width:14px;height:14px;border:1.4px solid light-dark(#bac6b6,#69806c);border-radius:5px;flex:none}
-#ccshort-design .landscape {position:absolute;right:34px;top:33px;width:155px;height:105px;border-radius:23px;overflow:hidden;background:light-dark(#e9ebd9,#455440)}
-#ccshort-design .sun {position:absolute;right:22px;top:16px;width:22px;height:22px;border-radius:50%;background:#d5b67e}
-#ccshort-design .hill {position:absolute;width:160px;height:85px;border-radius:55% 75% 0 0;left:-28px;top:49px;background:#b1c3a2;transform:rotate(-16deg)}
-#ccshort-design .hill.front {left:44px;top:68px;background:#5f8669;transform:rotate(12deg)}
-#ccshort-design .art-caption {position:absolute;right:34px;top:148px;font-size:10px;letter-spacing:1px;color:var(--sub)}
-#ccshort-design .handle {position:absolute;width:10px;height:10px;border-radius:4px;background:light-dark(#f9fdf6,#e5f0df);box-shadow:0 0 0 1.5px #6c9477;pointer-events:none}
-#ccshort-design .handle.n {top:-5px;left:calc(50% - 5px)}
-#ccshort-design .handle.s {bottom:-5px;left:calc(50% - 5px)}
-#ccshort-design .handle.w {left:-5px;top:calc(50% - 5px)}
-#ccshort-design .handle.e {right:-5px;top:calc(50% - 5px)}
-#ccshort-design .crop-cursor {position:absolute;right:-20px;bottom:-19px;color:light-dark(#234c32,#e8f2e3);filter:drop-shadow(0 1px 1px white)}
-#ccshort-design .crop-cursor svg {width:27px;height:27px}
-#ccshort-design .marking {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;overflow:visible}
-#ccshort-design [data-state="annotation"] .marking {display:block}
-#ccshort-design .annotation-label {display:none;position:absolute;right:49px;top:203px;color:light-dark(var(--leaf),#a3cfac);font-size:16px;font-weight:600;transform:rotate(-4deg)}
-#ccshort-design [data-state="annotation"] .annotation-label {display:block}
-#ccshort-design .toolbar {position:relative;display:flex;align-items:center;gap:4px;padding:9px 10px;width:max-content;max-width:calc(100% - 48px);margin:27px auto 0;border-radius:23px;background:var(--surface);box-shadow:0 15px 35px #17312422,inset 0 1px 0 light-dark(#ffffff,#4a5e4f);box-sizing:border-box}
-#ccshort-design .tool {appearance:none;border:none;color:var(--ink);background:transparent;width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;font:inherit;transition:background .15s}
-#ccshort-design .tool:hover {background:light-dark(#eef2e9,#344b3b)}
-#ccshort-design .tool.active {background:light-dark(#dfedd9,#426047);color:light-dark(#397549,#dbecd5)}
-#ccshort-design .tool svg {width:20px;height:20px;stroke-width:1.8}
-#ccshort-design .divider {height:22px;width:1px;background:var(--hair);margin:0 5px;flex:none}
-#ccshort-design .copy {border:none;background:var(--leaf);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;height:40px;padding:0 14px;font:500 13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:80px;white-space:nowrap}
-#ccshort-design .copy svg {width:16px;height:16px}
-#ccshort-design [data-state="annotation"] .crop-cursor,#ccshort-design [data-state="text"] .crop-cursor {display:none}
-#ccshort-design [data-state="text"] .handle {opacity:.55}
-#ccshort-design .demo-toast {position:absolute;bottom:50px;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:12px;background:var(--surface);font-size:12px;box-shadow:0 5px 20px #17312422;white-space:nowrap}
-#ccshort-design .demo-toast:empty {display:none}
-@media(max-width:760px) {#ccshort-design .composition {width:calc(100% - 60px)}#ccshort-design .toolbar{gap:1px;padding:8px}#ccshort-design .tool{width:32px}#ccshort-design .toolbar .optional {display:none}#ccshort-design .landscape{width:118px;right:25px}#ccshort-design .note h2{font-size:25px}#ccshort-design .art-caption{right:25px}#ccshort-design .annotation-label{right:28px}#ccshort-design .note{padding:28px}}
-@media(prefers-reduced-motion:reduce){#ccshort-design *{transition:none!important}}
-#ccshort-design .context-actions {position:absolute;z-index:10;width:166px;padding:5px;background:var(--surface);border-radius:13px;box-shadow:0 8px 28px #13291f28}
-#ccshort-design .context-actions[hidden] {display:none}
-#ccshort-design .context-actions button {display:flex;justify-content:space-between;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
-#ccshort-design .context-actions button:hover {background:light-dark(#e1eedf,#405b45)}
-#ccshort-design .context-actions button span {color:var(--sub)}
-#ccshort-design [data-all="true"] .note h2,#ccshort-design [data-all="true"] .task-heading,#ccshort-design [data-all="true"] .task>span:last-child,#ccshort-design [data-all="true"] .eyebrow {background:light-dark(#cee4c8,#42694b);color:var(--ink);width:fit-content;border-radius:3px}
+#ccShot-design {font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;}
+#ccShot-design .review-controls {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding-right:100px}
+#ccShot-design .review-controls .design-label {margin-left:auto;font-size:12px;color:light-dark(#647168,#b0bcb4)}
+#ccShot-design .desktop {--leaf:#35765A;--soft:#E1EEDF;--ink:light-dark(#29382f,#e7ede7);--sub:light-dark(#718076,#a0b0a4);--surface:light-dark(#fafcf8,#25352d);--hair:light-dark(#e2e8de,#425247);position:relative;overflow:hidden;isolation:isolate;min-height:600px;border-radius:20px;background:light-dark(#dbe5d4,#172a22);color:var(--ink);font-size:14px;line-height:1.5}
+#ccShot-design .wallpaper {position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 8% 92%,light-dark(#aec4a7,#254b38),transparent 58%),radial-gradient(ellipse at 88% 18%,light-dark(#f0f2dc,#345541),transparent 60%)}
+#ccShot-design .wallpaper:after {content:"";position:absolute;width:850px;height:400px;top:310px;left:22%;border-radius:50%;background:light-dark(#c1d2b5,#284e38);transform:rotate(-24deg);opacity:.42}
+#ccShot-design .menubar {height:34px;padding:0 22px;display:flex;align-items:center;gap:22px;background:light-dark(#edf2e7b8,#1b2d24ba);font-size:12px}
+#ccShot-design .brand {font-weight:650;display:flex;align-items:center;gap:7px}
+#ccShot-design .menubar .time {margin-left:auto}
+#ccShot-design .back-window {position:absolute;left:7%;right:7%;top:65px;height:450px;border-radius:23px;background:light-dark(#f8faf3,#29392e);box-shadow:0 24px 65px #13291f16;overflow:hidden}
+#ccShot-design .window-top {height:40px;display:flex;gap:7px;align-items:center;padding:0 18px;border-bottom:1px solid var(--hair);font-size:12px;color:var(--sub)}
+#ccShot-design .traffic {width:9px;height:9px;border-radius:50%;background:#ed8d82}
+#ccShot-design .traffic:nth-child(2) {background:#e4c66f}
+#ccShot-design .traffic:nth-child(3) {background:#8ebb86}
+#ccShot-design .window-top span:last-child {margin:auto}
+#ccShot-design .underlay-text {position:absolute;left:28px;top:75px;display:grid;gap:20px;color:var(--sub);font-size:12px}
+#ccShot-design .veil {position:absolute;inset:34px 0 0;background:light-dark(#203c2c22,#08180d49);pointer-events:none}
+#ccShot-design .composition {position:relative;width:min(670px,calc(100% - 120px));margin:79px auto 0}
+#ccShot-design .dimensions {position:absolute;left:16px;top:-36px;display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:12px;background:light-dark(#fbfdf7,#2a3b30);box-shadow:0 3px 12px #162c1810;font-size:11px;font-variant-numeric:tabular-nums;color:var(--sub)}
+#ccShot-design .note {position:relative;border-radius:30px;background:light-dark(#fffef9,#202e27);min-height:358px;padding:28px 34px;box-shadow:0 0 0 2px light-dark(#80a88c,#9cc3a3),0 14px 36px #143c271a;box-sizing:border-box}
+#ccShot-design .note .eyebrow {font-size:12px;color:var(--sub);margin:0 0 12px}
+#ccShot-design .note h2 {font-size:29px;line-height:1.35;letter-spacing:-.8px;font-weight:600;margin:0 0 13px;color:var(--ink)}
+#ccShot-design .intro {font-size:16px;line-height:1.85;margin:0;color:var(--sub);position:relative;z-index:2}
+#ccShot-design .intro .selectable {border-radius:4px;padding:2px 0;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+#ccShot-design [data-state="text"] .intro .selectable {background:light-dark(#cee4c8,#42694b);color:light-dark(#254e35,#edf5e8)}
+#ccShot-design .note hr {border:0;border-top:1px solid var(--hair);margin:24px 0 18px}
+#ccShot-design .task-heading {font-weight:550;font-size:14px;margin:0 0 12px}
+#ccShot-design .tasks {display:grid;gap:12px;font-size:14px;color:var(--sub)}
+#ccShot-design .task {display:flex;align-items:center;gap:12px}
+#ccShot-design .checkbox {width:14px;height:14px;border:1.4px solid light-dark(#bac6b6,#69806c);border-radius:5px;flex:none}
+#ccShot-design .landscape {position:absolute;right:34px;top:33px;width:155px;height:105px;border-radius:23px;overflow:hidden;background:light-dark(#e9ebd9,#455440)}
+#ccShot-design .sun {position:absolute;right:22px;top:16px;width:22px;height:22px;border-radius:50%;background:#d5b67e}
+#ccShot-design .hill {position:absolute;width:160px;height:85px;border-radius:55% 75% 0 0;left:-28px;top:49px;background:#b1c3a2;transform:rotate(-16deg)}
+#ccShot-design .hill.front {left:44px;top:68px;background:#5f8669;transform:rotate(12deg)}
+#ccShot-design .art-caption {position:absolute;right:34px;top:148px;font-size:10px;letter-spacing:1px;color:var(--sub)}
+#ccShot-design .handle {position:absolute;width:10px;height:10px;border-radius:4px;background:light-dark(#f9fdf6,#e5f0df);box-shadow:0 0 0 1.5px #6c9477;pointer-events:none}
+#ccShot-design .handle.n {top:-5px;left:calc(50% - 5px)}
+#ccShot-design .handle.s {bottom:-5px;left:calc(50% - 5px)}
+#ccShot-design .handle.w {left:-5px;top:calc(50% - 5px)}
+#ccShot-design .handle.e {right:-5px;top:calc(50% - 5px)}
+#ccShot-design .crop-cursor {position:absolute;right:-20px;bottom:-19px;color:light-dark(#234c32,#e8f2e3);filter:drop-shadow(0 1px 1px white)}
+#ccShot-design .crop-cursor svg {width:27px;height:27px}
+#ccShot-design .marking {position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none;overflow:visible}
+#ccShot-design [data-state="annotation"] .marking {display:block}
+#ccShot-design .annotation-label {display:none;position:absolute;right:49px;top:203px;color:light-dark(var(--leaf),#a3cfac);font-size:16px;font-weight:600;transform:rotate(-4deg)}
+#ccShot-design [data-state="annotation"] .annotation-label {display:block}
+#ccShot-design .toolbar {position:relative;display:flex;align-items:center;gap:4px;padding:9px 10px;width:max-content;max-width:calc(100% - 48px);margin:27px auto 0;border-radius:23px;background:var(--surface);box-shadow:0 15px 35px #17312422,inset 0 1px 0 light-dark(#ffffff,#4a5e4f);box-sizing:border-box}
+#ccShot-design .tool {appearance:none;border:none;color:var(--ink);background:transparent;width:38px;height:38px;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;padding:0;flex:none;font:inherit;transition:background .15s}
+#ccShot-design .tool:hover {background:light-dark(#eef2e9,#344b3b)}
+#ccShot-design .tool.active {background:light-dark(#dfedd9,#426047);color:light-dark(#397549,#dbecd5)}
+#ccShot-design .tool svg {width:20px;height:20px;stroke-width:1.8}
+#ccShot-design .divider {height:22px;width:1px;background:var(--hair);margin:0 5px;flex:none}
+#ccShot-design .copy {border:none;background:var(--leaf);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;height:40px;padding:0 14px;font:500 13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:80px;white-space:nowrap}
+#ccShot-design .copy svg {width:16px;height:16px}
+#ccShot-design [data-state="annotation"] .crop-cursor,#ccShot-design [data-state="text"] .crop-cursor {display:none}
+#ccShot-design [data-state="text"] .handle {opacity:.55}
+#ccShot-design .demo-toast {position:absolute;bottom:50px;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:12px;background:var(--surface);font-size:12px;box-shadow:0 5px 20px #17312422;white-space:nowrap}
+#ccShot-design .demo-toast:empty {display:none}
+@media(max-width:760px) {#ccShot-design .composition {width:calc(100% - 60px)}#ccShot-design .toolbar{gap:1px;padding:8px}#ccShot-design .tool{width:32px}#ccShot-design .toolbar .optional {display:none}#ccShot-design .landscape{width:118px;right:25px}#ccShot-design .note h2{font-size:25px}#ccShot-design .art-caption{right:25px}#ccShot-design .annotation-label{right:28px}#ccShot-design .note{padding:28px}}
+@media(prefers-reduced-motion:reduce){#ccShot-design *{transition:none!important}}
+#ccShot-design .context-actions {position:absolute;z-index:10;width:166px;padding:5px;background:var(--surface);border-radius:13px;box-shadow:0 8px 28px #13291f28}
+#ccShot-design .context-actions[hidden] {display:none}
+#ccShot-design .context-actions button {display:flex;justify-content:space-between;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+#ccShot-design .context-actions button:hover {background:light-dark(#e1eedf,#405b45)}
+#ccShot-design .context-actions button span {color:var(--sub)}
+#ccShot-design [data-all="true"] .note h2,#ccShot-design [data-all="true"] .task-heading,#ccShot-design [data-all="true"] .task>span:last-child,#ccShot-design [data-all="true"] .eyebrow {background:light-dark(#cee4c8,#42694b);color:var(--ink);width:fit-content;border-radius:3px}
 </style>
-<div id="ccshort-design">
+<div id="ccShot-design">
   <div class="review-controls" aria-label="设计稿状态">
     <button class="btn btn-primary" data-scene="capture" aria-pressed="true">框选</button>
     <button class="btn" data-scene="annotation" aria-pressed="false">标注</button>
     <button class="btn" data-scene="text" aria-pressed="false">选字</button>
-    <span class="design-label">ccShort · 设计预览</span>
+    <span class="design-label">ccShot · 设计预览</span>
   </div>
-  <div class="desktop" data-state="capture" aria-label="ccShort 绿色圆角设计">
+  <div class="desktop" data-state="capture" aria-label="ccShot 绿色圆角设计">
     <div class="wallpaper"></div>
-    <div class="menubar"><span class="brand"><i data-lucide="scan" aria-hidden="true"></i> ccShort</span><span>文件</span><span class="menu-extra">编辑</span><span class="menu-extra">显示</span><span class="time">周日  11:08</span></div>
+    <div class="menubar"><span class="brand"><i data-lucide="scan" aria-hidden="true"></i> ccShot</span><span>文件</span><span class="menu-extra">编辑</span><span class="menu-extra">显示</span><span class="time">周日  11:08</span></div>
     <div class="back-window"><div class="window-top"><span class="traffic"></span><span class="traffic"></span><span class="traffic"></span><span>工作手记</span></div><div class="underlay-text"><span>我的笔记</span><span>本周计划</span><span>阅读摘录</span></div></div>
     <div class="veil"></div>
     <div class="composition">
@@ -118,7 +118,7 @@
 </div>
 <script>
 (()=>{
-const root=document.getElementById('ccshort-design');
+const root=document.getElementById('ccShot-design');
 const stage=root.querySelector('.desktop');
 const menu=root.querySelector('.context-actions');
 const finish=root.querySelector('[data-finish]');

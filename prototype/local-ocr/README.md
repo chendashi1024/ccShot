@@ -1,4 +1,4 @@
-# CcShot 本地 OCR 技术原型
+# ccShot 本地 OCR 技术原型
 
 不是完整App或正式视觉稿。Swift/AppKit + Apple VisionKit，macOS14+、Apple Silicon；仅在本机15.4.1验证。无第三方依赖、无云OCR。
 
@@ -14,7 +14,7 @@ bash run-benchmark.sh
 ## 打开受控样本
 
 ```bash
-open build/CcShotPrototype.app --args --fixture "$PWD/results/2026-11-03-native-01/fixtures/01-01.png" --evidence "$PWD/results/2026-11-03-native-01/ui-manual.jsonl"
+open build/ccShotPrototype.app --args --fixture "$PWD/results/2026-11-03-native-01/fixtures/01-01.png" --evidence "$PWD/results/2026-11-03-native-01/ui-manual.jsonl"
 ```
 
 直接拖选图中中文，⌘C或按钮复制。先载入样本，再按“验证样本窗口快照”，只截本App的窗口；该按钮需要已有屏幕录制授权。没有授权只提示，不申请。

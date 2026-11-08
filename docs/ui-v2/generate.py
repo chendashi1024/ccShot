@@ -241,7 +241,7 @@ def slider(y,label,value,name):
 
 
 def beauty():
-    out=desktop()+panel(115,88,1210,731,14,'#f5f5f7')+dots(139,113)+text(248,118,'CcShot',14,INK,600)
+    out=desktop()+panel(115,88,1210,731,14,'#f5f5f7')+dots(139,113)+text(248,118,'ccShot',14,INK,600)
     out+=line(116,141,1324,141,'#d7d9dd')+line(378,142,378,773,'#d7d9dd')
     out+=button(1018,97,92,'返回标注','annotate')+button(1120,97,82,'保存',disabled=True)+button(1212,97,92,'复制',primary=True,disabled=True)
     out+=text(151,181,'背景',15,INK,600)
@@ -288,7 +288,7 @@ def toggle(x,y,active=False):
 
 def settings():
     out=desktop()+rect(0,32,1440,868,'#34435e',extra='opacity=".08"')+panel(391,90,658,722,14,'#f7f7f9')
-    out+=dots(414,115)+text(720,120,'CcShot 设置',14,INK,600,'text-anchor="middle"')+line(392,140,1048,140,'#d7d9de')
+    out+=dots(414,115)+text(720,120,'ccShot 设置',14,INK,600,'text-anchor="middle"')+line(392,140,1048,140,'#d7d9de')
     out+=text(422,179,'快捷键',13,'#555c66',600)+rect(416,192,608,129,'white',9,'#e1e3e7')
     for i,(name,key) in enumerate([('开始截图','F1'),('钉住截图 / 剪贴板','F3'),('备选截图快捷键','⌃ ⌥ S')]):
         yy=220+i*41
@@ -309,7 +309,7 @@ SCENES=[('annotate','标注',annotate),('capture','框选',capture),('selection'
 
 
 def svg(scene,label,content):
-    result=f'<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="CcShot {label}设计试稿" style="font-family:{FONT}"><title>CcShot · {label} · 示例画面</title>'+defs()+content+'</svg>'
+    result=f'<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-label="ccShot {label}设计试稿" style="font-family:{FONT}"><title>ccShot · {label} · 示例画面</title>'+defs()+content+'</svg>'
     # 每块画板的资源 ID 独立，嵌入同一页面不会误用别的画板渐变或裁切。
     import re
     ids=re.findall(r'id="([^"]+)"',result)
@@ -474,9 +474,9 @@ def main():
         nav.append(f'<button data-scene="{name}" aria-pressed="{str(i==0).lower()}">{label}</button>')
         interactive=drawing.replace('role="img"','role="group"')
         boards.append(f'<section class="scene" data-scene-id="{name}" {"hidden" if i else ""}>{interactive}</section>')
-    html='''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CcShot · 界面试稿 v2</title><style>
+    html='''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ccShot · 界面试稿 v2</title><style>
 *{box-sizing:border-box}body{margin:0;background:#edeef1;color:#292c32;font:14px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:1000px}header{height:74px;padding:0 32px;display:flex;align-items:center;gap:18px;background:#fff;border-bottom:1px solid #dddfe4}.brand{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:650;letter-spacing:-.5px}.brand svg{width:28px;height:28px}.draft{font-size:12px;font-weight:400;letter-spacing:0;color:#747981;border-left:1px solid #dfe2e7;padding-left:16px}nav{display:flex;padding:4px;gap:2px;margin:auto;background:#f1f2f4;border-radius:9px}nav button{border:0;background:none;font:inherit;font-size:13px;color:#676e78;padding:7px 18px;border-radius:6px;cursor:pointer}nav button[aria-pressed=true]{background:#fff;color:#22272e;box-shadow:0 1px 4px #172a4122}header>a{font-size:12px;color:#727986;text-decoration:none}main{max-width:1512px;margin:24px auto;padding:0 28px}.scene{border:1px solid #c7cdd7;border-radius:12px;overflow:hidden;box-shadow:0 18px 60px #34476a1f}.scene[hidden]{display:none}.scene>svg{display:block;width:100%;height:auto}.scene g[role=button][tabindex]{cursor:pointer}.scene g[role=button][tabindex]:hover>rect:first-of-type{filter:brightness(.97)}.scene g[role=button]:focus-visible,.scene g[role=slider]:focus-visible{outline:2px solid #087ff5;outline-offset:4px}.scene g[aria-disabled=true]{cursor:not-allowed}.scene g[role=slider]{cursor:ew-resize;touch-action:none}footer{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:52px;color:#68727f;font-size:12px}footer a{color:#68727f;text-decoration:none}button:focus-visible,a:focus-visible{outline:2px solid #087ff5;outline-offset:3px}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
-</style></head><body><header><div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#087ff5"/><path d="M8 12V8h4M16 8h4v4M20 16v4h-4M12 20H8v-4" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>CcShot<span class="draft">界面试稿 · 示例内容</span></div><nav aria-label="设计画面">'''+''.join(nav)+'''</nav><a href="../UI参考与设计.md">参考说明 ↗</a></header><main>'''+''.join(boards)+'''<footer><span id="hint" role="status" aria-live="polite"></span><a href="../界面草案.html">查看第一版草案 ↗</a></footer></main><script>'''+SCRIPT+'</script></body></html>'
+</style></head><body><header><div class="brand"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="8" fill="#087ff5"/><path d="M8 12V8h4M16 8h4v4M20 16v4h-4M12 20H8v-4" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"/></svg>ccShot<span class="draft">界面试稿 · 示例内容</span></div><nav aria-label="设计画面">'''+''.join(nav)+'''</nav><a href="../UI参考与设计.md">参考说明 ↗</a></header><main>'''+''.join(boards)+'''<footer><span id="hint" role="status" aria-live="polite"></span><a href="../界面草案.html">查看第一版草案 ↗</a></footer></main><script>'''+SCRIPT+'</script></body></html>'
     (ROOT/'设计稿.html').write_text(html,encoding='utf-8')
     print('已生成 7 个 SVG 设计画板与离线网页试稿。')
     import sys

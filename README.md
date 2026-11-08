@@ -1,4 +1,4 @@
-# ccShort
+# ccShot
 
 免费的 Mac 原生截图标注项目。截图后直接拖选文字，常用标注、复制、保存和钉图就在手边；本地功能不需要账号、网络或 API Key。
 
@@ -17,18 +17,18 @@ AI、美化与高级设置按最新要求延期，完整44项需求继续保留�
 ```bash
 cd app
 bash build.sh
-open build/ccShort.app
+open build/ccShot.app
 ```
 
 点菜单栏的四角 C 图标，选择 **区域截图**。默认 F1（部分系统设置下需 Fn+F1）或 Control+Option+S；F3 钉住当前截图或剪贴板。区域确定后进入原生编辑窗，直接拖选文字，或使用首排工具；回车或点「完成」复制所选文字，没有选字时复制图片，然后关闭编辑窗。⌘C 使用相同规则，保留编辑窗。钉图可编辑、保存或关闭。
 
 保存使用 macOS 系统窗口，可浏览任意可写文件夹。初始位置来自设置中的默认保存位置，临时改选只作用于本次。
 
-首次截图时可在引导中点「请求授权」。在系统提示或「隐私与安全性 → 屏幕与系统音频录制」里允许 ccShort，然后重新打开。
+首次截图时可在引导中点「请求授权」。在系统提示或「隐私与安全性 → 屏幕与系统音频录制」里允许 ccShot，然后重新打开。
 
-日常使用请固定从「应用程序」打开 ccShort，升级时替换同一份应用。若列表里已有旧的 ccShort，但新版仍被拒绝，先退出 ccShort，再用 `tccutil reset ScreenCapture com.ccshot.dev` 清除该应用的屏幕录制记录，打开新版重新授权。
+日常使用请固定从「应用程序」打开 ccShot，升级时替换同一份应用。若新版仍被拒绝，先退出 ccShot，再用 `tccutil reset ScreenCapture com.ccshot.dev` 清除该应用的屏幕录制记录，打开新版重新授权。
 
-默认的本地试用包使用 ad-hoc 签名，重新构建可能需要重新授权。已有 Apple Development 签名证书时，可在本机开发构建中设置 `CCSHORT_SIGNING_IDENTITY` 为证书在钥匙串里的完整名称，再运行 `app/build.sh`。后续本机更新请沿用同一签名身份。
+默认的本地试用包使用 ad-hoc 签名，重新构建可能需要重新授权。已有 Apple Development 签名证书时，可在本机开发构建中设置 `CCSHOT_SIGNING_IDENTITY` 为证书在钥匙串里的完整名称，再运行 `app/build.sh`。后续本机更新请沿用同一签名身份。
 
 ## 验证与文档
 

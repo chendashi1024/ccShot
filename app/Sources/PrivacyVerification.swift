@@ -70,7 +70,7 @@ import QuartzCore
             document.commit(previewState); editor.canvas.chooseTool(.mask)
             await editor.recognitionForVerification?.value
             if CGPreflightScreenCaptureAccess(), let window = editor.window {
-                window.title = "CcShot · 遮挡样本"; window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
+                window.title = "ccShot · 遮挡样本"; window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
                 do {
                     let image = try await WindowCapture.capture(id:UInt32(window.windowNumber),ownerPID:ProcessInfo.processInfo.processIdentifier)
                     guard let data = ImageWindow.encoded(image,type:.png) else { throw SafeTextImage.PreparationError.allocation }

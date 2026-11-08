@@ -20,7 +20,7 @@ enum FixtureFactory {
     static let passages: [(String, String)] = [
         ("日常中文", "今天下午三点半，我们在图书馆门口见面。\n请带上笔记本电脑，提前检查电量和网络。\n截图里的文字应该可以直接选择、复制。"),
         ("产品说明", "这是一款开源的本地截图工具，不需要注册账号。\n先按快捷键，再选择文字，最后复制到剪贴板。\n图片只在本机处理，识别过程不会上传截图。"),
-        ("中英混排", "CcShot 使用 Apple VisionKit 在 Mac 上识别文字。\n打开 README.md，检查 API Key 是否已经填写。\n按 Command + C 复制，版本号为 v0.1.0。"),
+        ("中英混排", "ccShot 使用 Apple VisionKit 在 Mac 上识别文字。\n打开 README.md，检查 API Key 是否已经填写。\n按 Command + C 复制，版本号为 v0.1.0。"),
         ("数字标点", "订单编号：20261103，合计金额：¥128.50。\n折扣为 15%，联系电话：13800138000。\n日期：2026-11-03；时间：09:30；数量：108。"),
         ("繁体中文", "這是一段繁體中文，測試截圖中的文字辨識。\n請選取需要的句子，複製後貼到筆記軟體。\n檔案儲存在本機，不會傳送到雲端伺服器。"),
         ("代码与路径", "错误提示：FileNotFoundError，找不到指定文件。\n路径：/Users/demo/Documents/report_2026.txt\nif count >= 10: print(\"测试成功\")"),
@@ -83,7 +83,7 @@ enum FixtureFactory {
 
 @MainActor func runBenchmark(fixturesDirectory: URL, output: URL) async throws {
     guard ImageAnalyzer.isSupported else {
-        throw NSError(domain: "CcShotPrototype", code: 3, userInfo: [NSLocalizedDescriptionKey: "本机不支持 ImageAnalyzer"])
+        throw NSError(domain: "ccShotPrototype", code: 3, userInfo: [NSLocalizedDescriptionKey: "本机不支持 ImageAnalyzer"])
     }
     let fixtures = try FixtureFactory.generate(at: fixturesDirectory)
     let analyzer = ImageAnalyzer()

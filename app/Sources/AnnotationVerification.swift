@@ -175,7 +175,7 @@ extension ImageWindow {
         // 样式随选中工具自动出现；旧 --show-style 参数保留兼容，不再额外点击。
         await editor.recognitionForVerification?.value
         guard CGPreflightScreenCaptureAccess(), let window = editor.window else { return false }
-        window.title = pinned ? "CcShot · 钉图样本" : "CcShot · 标注样本"
+        window.title = pinned ? "ccShot · 钉图样本" : "ccShot · 标注样本"
         window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
         do {
             let snapshot = try await WindowCapture.capture(id: UInt32(window.windowNumber), ownerPID: ProcessInfo.processInfo.processIdentifier)

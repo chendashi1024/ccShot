@@ -69,7 +69,7 @@ import QuartzCore
         checks["rendered_text_is_recognizable"] = editor.recognizedTextForVerification.contains("VBC") && editor.recognizedTextForVerification.contains("第二行")
         if let previewPath {
             if CGPreflightScreenCaptureAccess(), let window = editor.window {
-                window.title = "CcShot · 文字样本"; window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
+                window.title = "ccShot · 文字样本"; window.contentView?.layoutSubtreeIfNeeded(); window.display(); CATransaction.flush()
                 do {
                     let image = try await WindowCapture.capture(id:UInt32(window.windowNumber),ownerPID:ProcessInfo.processInfo.processIdentifier)
                     guard let data = ImageWindow.encoded(image,type:.png) else { throw SafeTextImage.PreparationError.allocation }
