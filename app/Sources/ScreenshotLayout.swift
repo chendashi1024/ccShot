@@ -19,27 +19,46 @@ enum ScreenshotLayout {
         let scale=min(viewport.width/capture.width,viewport.height/capture.height)
         let background=CGRect(x:(viewport.width-capture.width*scale)/2,y:(viewport.height-capture.height*scale)/2,width:capture.width*scale,height:capture.height*scale)
         let image=CGRect(x:background.minX+region.minX*scale,y:background.minY+region.minY*scale,width:region.width*scale,height:region.height*scale)
-        let safeWidth=viewport.width-24,safeHeight=viewport.height-24
-        let tw=min(toolbar.width,safeWidth),th=min(toolbar.height,safeHeight)
-        let hasParameters=parameters.width>0 && parameters.height>0
-        let ph=hasParameters ? min(parameters.height,max(0,safeHeight-th-12)) : 0
-        // 为通常的两行参数预留位置，切换工具时首排不因面板出现而跳动。
-        let reserve=min(max(116,ph),max(0,safeHeight-th-12))
-        let groupHeight=th+12+reserve
-        let actualBelow = hasParameters ? 12 + ph : 0
-        let y:CGFloat
-        if image.minY-28-groupHeight>=12 {y=image.minY-28-th}
-        else if image.maxY+28+groupHeight<=viewport.height-12 {y=image.maxY+28+reserve+12}
-        // 常用预留空间放不下时，按当前面板高度重新判断，能避开图片就不遮住图片。
-        else if image.minY-28-th-actualBelow>=12 {y=image.minY-28-th}
-        else if image.maxY+28+th+actualBelow<=viewport.height-12 {y=image.maxY+28+actualBelow}
-        else {y=max(12,min(image.minY+12,viewport.height-12-groupHeight))+reserve+12}
-        let x=max(12,min(image.midX-tw/2,viewport.width-12-tw))
-        let primary=CGRect(x:x,y:y,width:tw,height:th)
-        var panel:CGRect?
-        if hasParameters {
-            let pw=min(parameters.width,safeWidth)
-            panel=CGRect(x:max(12,min(x+8,viewport.width-12-pw)),y:y-12-ph,width:pw,height:ph)
+        let screenPadding: CGFloat = 12
+        let toolbarGap: CGFloat = 14
+        let parameterGap: CGFloat = 8
+        let safeWidth = viewport.width - 2 * screenPadding
+        let safeHeight = viewport.height - 2 * screenPadding
+        let toolbarWidth = min(toolbar.width, safeWidth)
+        let toolbarHeight = min(toolbar.height, safeHeight)
+        let availableHeight = max(0, safeHeight - toolbarHeight - parameterGap)
+        let parameterHeight = parameters.width > 0 ? min(parameters.height, availableHeight) : 0
+        // 首排靠近选区，样式面板放在首排远离选区的一侧。
+        let reservedSpace = parameterGap + min(max(116, parameterHeight), availableHeight)
+        let neededSpace = parameterHeight > 0 ? parameterGap + parameterHeight : 0
+        let belowY = image.minY - toolbarGap - toolbarHeight
+        let aboveY = image.maxY + toolbarGap
+        let roomBelow = belowY - screenPadding
+        let roomAbove = viewport.height - screenPadding - aboveY - toolbarHeight
+        let y: CGFloat
+        let parametersAbove: Bool
+        if roomBelow >= reservedSpace || (roomAbove < reservedSpace && roomBelow >= neededSpace) {
+            y = belowY
+            parametersAbove = false
+        } else if roomAbove >= neededSpace {
+            y = aboveY
+            parametersAbove = true
+        } else if roomBelow >= roomAbove {
+            // 大选区放不下两排时，先把首排保在边缘，参数再向内侧展开。
+            y = min(max(screenPadding, belowY), viewport.height - screenPadding - toolbarHeight - neededSpace)
+            parametersAbove = true
+        } else {
+            y = max(screenPadding + neededSpace, min(aboveY, viewport.height - screenPadding - toolbarHeight))
+            parametersAbove = false
+        }
+        let x = max(screenPadding, min(image.midX - toolbarWidth / 2, viewport.width - screenPadding - toolbarWidth))
+        let primary = CGRect(x: x, y: y, width: toolbarWidth, height: toolbarHeight)
+        var panel: CGRect?
+        if parameterHeight > 0 {
+            let width = min(parameters.width, safeWidth)
+            let panelY = parametersAbove ? primary.maxY + parameterGap : primary.minY - parameterGap - parameterHeight
+            panel = CGRect(x: max(screenPadding, min(x + 8, viewport.width - screenPadding - width)),
+                           y: panelY, width: width, height: parameterHeight)
         }
         return ScreenshotPlacement(background:background,image:image,toolbar:primary,parameters:panel)
     }

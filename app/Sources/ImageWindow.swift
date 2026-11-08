@@ -153,7 +153,7 @@ import UniformTypeIdentifiers
         (copyButton as? ToolbarButton)?.minimumTitle = "复制文字"
         (viewerCopyButton as? ToolbarButton)?.minimumTitle = "复制文字"
         viewerRow.spacing = 8
-        for (view,symbol) in [(editButton,"pencil"),(viewerCopyButton!,"square.on.square"),(button("关闭",#selector(closeImage)),"xmark")] {view.image=NSImage(systemSymbolName:symbol,accessibilityDescription:view.title);(view as? ToolbarButton)?.refreshAppearance();viewerRow.addArrangedSubview(view)}
+        for (view,symbol) in [(editButton,"pencil"),(viewerCopyButton!,"square.on.square"),(button("关闭",#selector(closeImage)),"xmark")] {view.image=NSImage(systemSymbolName:symbol,accessibilityDescription:view.title);(view as? ToolbarButton)?.configureToolbarStyle();viewerRow.addArrangedSubview(view)}
         canvas.menu = makeContextMenu()
         status.textColor = .labelColor; status.font = .systemFont(ofSize:13)
         if screenshot != nil {configureScreenshot(root:root)} else if pinned {configurePin(root:root)} else {
@@ -192,15 +192,15 @@ import UniformTypeIdentifiers
     private func configureScreenshot(root:NSView) {
         guard let root=root as? ScreenshotView else {return}
         root.addSubview(canvas);root.imageView=canvas;root.installBorder()
-        func panel(_ rows:[NSView])->(CoreSurfaceView,FloatingControls) {
+        func panel(_ rows:[NSView], primary: Bool = false)->(CoreSurfaceView,FloatingControls) {
             let panel=CoreSurfaceView();panel.wantsLayer=true;panel.layer?.cornerRadius=10;panel.layer?.masksToBounds=true
             panel.layer?.borderWidth=1;panel.layer?.borderColor=NSColor.separatorColor.cgColor
-            let content = FloatingControls(rows: rows)
+            let content = FloatingControls(rows: rows, primaryToolbar: primary)
             panel.addSubview(content)
             root.addSubview(panel);return(panel,content)
         }
         configureFloatingTools()
-        (toolbarPanel,toolbarContent)=panel([toolRow])
+        (toolbarPanel,toolbarContent)=panel([toolRow], primary: true)
         (parametersPanel,parametersContent)=panel([styleRow,optionRow])
         viewerRow.isHidden=true
         root.addSubview(status);root.chrome=[toolbarPanel!,parametersPanel!,status]
@@ -226,8 +226,8 @@ import UniformTypeIdentifiers
         if pinned {donePinButton.image=NSImage(systemSymbolName:"checkmark",accessibilityDescription:"完成标注");toolRow.addArrangedSubview(donePinButton)}
         (copyButton as? ToolbarButton)?.primary=true
         toolRow.addArrangedSubview(iconButton("xmark","关闭（Esc）",#selector(closeImage)))
-        toolRow.spacing=6
-        for button in toolRow.arrangedSubviews.compactMap({$0 as? ToolbarButton}) {button.refreshAppearance()}
+        toolRow.spacing=4
+        for button in toolRow.arrangedSubviews.compactMap({$0 as? ToolbarButton}) {button.configureToolbarStyle()}
     }
     private func compactFloatingStyles() {
         paletteTray.setContentHuggingPriority(.required,for:.horizontal)
@@ -295,7 +295,14 @@ import UniformTypeIdentifiers
         root.canAdjust=root.presentation.allowsAdjustment && root.sourceGeometryAvailable && annotationDocument.state.objects.isEmpty && !canvas.hasDraft
         let message=status.stringValue
         status.isHidden=root.isAdjusting || message == imageDimensions || message.hasPrefix("拖选文字后") || message == "正在编辑…"
-        status.sizeToFit();status.frame.origin=CGPoint(x:placement.toolbar.minX+8,y:max(8,(placement.parameters?.minY ?? placement.toolbar.minY)-status.frame.height-8))
+        status.sizeToFit()
+        let chrome = placement.parameters.map { placement.toolbar.union($0) } ?? placement.toolbar
+        let aboveChrome = chrome.maxY + 8
+        let belowChrome = chrome.minY - status.frame.height - 8
+        let fitsAbove = aboveChrome + status.frame.height <= root.bounds.maxY - 8
+        let preferAbove = placement.toolbar.minY >= placement.image.maxY || belowChrome < 8
+        let statusY = preferAbove && fitsAbove ? aboveChrome : max(8, belowChrome)
+        status.frame.origin = CGPoint(x: placement.toolbar.minX + 8, y: statusY)
         root.refreshBorder()
     }
     func suspendScreenshotForSettings() {
@@ -313,7 +320,7 @@ import UniformTypeIdentifiers
     }
     private func iconButton(_ symbol: String, _ title: String, _ action: Selector) -> NSButton {
         let value = button("",action); value.image = NSImage(systemSymbolName:symbol,accessibilityDescription:title); value.imagePosition = .imageOnly
-        value.toolTip = title; value.setAccessibilityLabel(title); value.widthAnchor.constraint(equalToConstant: floatingEditor ? 34 : 28).isActive = true; return value
+        value.toolTip = title; value.setAccessibilityLabel(title); value.widthAnchor.constraint(equalToConstant: floatingEditor ? ToolbarButton.iconButtonWidth : 28).isActive = true; return value
     }
     private func stylePreview(_ kind: String, width: CGFloat = 2) -> NSImage {
         let image = NSImage(size: NSSize(width:44,height:24),flipped:false) { _ in
@@ -752,7 +759,7 @@ extension ImageWindow {
                 "output_keeps_source_pixels":stableImage()?.width==annotationDocument.baseImage.width && stableImage()?.height==annotationDocument.baseImage.height]
         if let panel = pinChrome.primary.contentView {
             let viewer = panel.convert(viewerRow.bounds, from: viewerRow)
-            checks["viewer_panel_has_side_padding"] = viewer.minX >= 16 && panel.bounds.maxX - viewer.maxX >= 16
+            checks["viewer_panel_has_side_padding"] = viewer.minX >= 14 && panel.bounds.maxX - viewer.maxX >= 14
         }
         checks["viewer_has_only_three_actions"] = viewerRow.arrangedSubviews.compactMap{$0 as? NSButton}.map(\.title)==["标注","复制","关闭"]
         checks["focus_shows_viewer_actions"] = pinChrome.primary.isVisible
@@ -836,8 +843,14 @@ extension ImageWindow {
         let primaryFrame=toolbarPanel.frame
         checks["toolbar_is_below_region"] = primaryFrame.maxY < original.minY
         let toolbarRow = toolbarPanel.convert(toolRow.bounds, from: toolRow)
-        checks["toolbar_has_side_padding"] = toolbarRow.minX >= 16 && toolbarPanel.bounds.maxX - toolbarRow.maxX >= 16
+        checks["toolbar_has_side_padding"] = toolbarRow.minX >= 14 && toolbarPanel.bounds.maxX - toolbarRow.maxX >= 14
         let buttons = toolRow.arrangedSubviews.compactMap { $0 as? ToolbarButton }
+        if let scroll = toolbarContent?.subviews.compactMap({ $0 as? NSScrollView }).first, let document = scroll.documentView {
+            let visible = scroll.documentVisibleRect.insetBy(dx: -0.5, dy: -0.5)
+            checks["toolbar_does_not_clip_button_backgrounds"] = buttons.allSatisfy {
+                visible.contains(document.convert($0.bounds, from: $0))
+            }
+        }
         checks["toolbar_button_contents_are_centered"] = buttons.allSatisfy { button in
             let frames = button.contentFrames(in: button.bounds)
             let content = frames.icon.isEmpty ? frames.title : frames.title.isEmpty ? frames.icon : frames.icon.union(frames.title)

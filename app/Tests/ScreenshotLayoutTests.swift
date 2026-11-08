@@ -8,16 +8,27 @@ import AppKit
         }
         precondition(value.background==CGRect(origin:.zero,size:source))
         precondition(value.image==region,"参数面板不能挤动或重排截图")
-        precondition(value.toolbar==CGRect(x:242,y:196,width:956,height:56),"工具条应在原选区下方居中")
-        precondition(value.parameters==CGRect(x:250,y:68,width:512,height:116),"参数紧靠工具条下方且按内容定宽")
+        precondition(value.toolbar==CGRect(x:242,y:210,width:956,height:56),"工具条应在原选区下方居中")
+        precondition(value.parameters==CGRect(x:250,y:86,width:512,height:116),"参数紧靠工具条下方且按内容定宽")
         let select=ScreenshotLayout.make(capture:source,region:region,viewport:source,toolbar:CGSize(width:956,height:56),parameters:.zero)!
         precondition(select.image==region && select.toolbar==value.toolbar && select.parameters==nil,"切换工具不能让截图或首排跳动")
         for box in [CGRect(x:0,y:0,width:100,height:100),CGRect(x:1300,y:790,width:140,height:110),CGRect(origin:.zero,size:source)] {
             let layout=ScreenshotLayout.make(capture:source,region:box,viewport:source,toolbar:CGSize(width:956,height:56),parameters:CGSize(width:512,height:116))!
             let safe=CGRect(x:12,y:12,width:1416,height:876)
             precondition(layout.image==box && safe.contains(layout.toolbar) && safe.contains(layout.parameters!),"四角与整屏不能把操作推出屏幕或缩小截图")
-            if box.height==100 {precondition(layout.parameters!.minY>=box.maxY,"下边缘选区时整组参数应避让到上方")}
+            if box.height == 100 {
+                let withoutParameters = ScreenshotLayout.make(capture: source, region: box, viewport: source,
+                                                             toolbar: CGSize(width: 956, height: 56), parameters: .zero)!
+                precondition(layout.toolbar.minY - box.maxY == 14, "上置工具栏应贴近选区")
+                precondition(layout.parameters!.minY - layout.toolbar.maxY == 8, "上置时样式应避开选区")
+                precondition(withoutParameters.toolbar == layout.toolbar, "上置工具栏在打开样式后应保持原位")
+            }
         }
+        let largeRegion = CGRect(x: 70, y: 65, width: 1300, height: 735)
+        let large = ScreenshotLayout.make(capture: source, region: largeRegion, viewport: source,
+                                         toolbar: CGSize(width: 956, height: 56), parameters: CGSize(width: 512, height: 116))!
+        precondition(large.toolbar.minY - largeRegion.maxY == 14 && !large.toolbar.intersects(large.parameters!),
+                     "大选区放不下两排时优先让首排贴在选区外")
         let narrowSize = CGSize(width: 720, height: 500)
         let narrowRegion = CGRect(x: 122, y: 232, width: 476, height: 180)
         let narrow = ScreenshotLayout.make(capture: narrowSize, region: narrowRegion, viewport: narrowSize,

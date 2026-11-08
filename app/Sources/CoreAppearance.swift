@@ -2,11 +2,11 @@ import AppKit
 
 enum CoreAppearance {
     static let accent = NSColor(name:"CcShotAccent") { _ in NSColor(srgbRed:0.11,green:0.39,blue:0.35,alpha:1) }
-    static let captureBorderWidth: CGFloat = 2.5
+    static let captureBorderWidth: CGFloat = 2
     static let captureBorder = NSColor(name: "CcShotCaptureBorder") { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            ? NSColor(srgbRed: 0.37, green: 0.73, blue: 0.62, alpha: 1)
-            : accent
+            ? NSColor(srgbRed: 0.40, green: 0.67, blue: 0.60, alpha: 1)
+            : NSColor(srgbRed: 0.29, green: 0.54, blue: 0.45, alpha: 1)
     }
     static let error = NSColor(name:"CcShotError") { appearance in appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:1,green:0.54,blue:0.5,alpha:1) : NSColor(srgbRed:0.7,green:0.15,blue:0.12,alpha:1) }
     static let surface = NSColor(name:"CcShotSurface") { appearance in
@@ -21,12 +21,14 @@ enum CoreAppearance {
 
 // 面板变窄时滚动内容，保留按钮的原始宽度和外侧留白。
 @MainActor final class FloatingControls: NSView {
-    static let horizontalPadding: CGFloat = 16
-    static let verticalPadding: CGFloat = 10
+    private let horizontalPadding: CGFloat
+    private let verticalPadding: CGFloat
     let stack: NSStackView
     private let scroll = NSScrollView()
 
-    init(rows: [NSView]) {
+    init(rows: [NSView], primaryToolbar: Bool = false) {
+        horizontalPadding = primaryToolbar ? 14 : 16
+        verticalPadding = primaryToolbar ? 6 : 10
         stack = NSStackView(views: rows)
         stack.orientation = .vertical
         stack.alignment = .leading
@@ -43,9 +45,9 @@ enum CoreAppearance {
 
     func panelSize(maxWidth: CGFloat) -> CGSize {
         let natural = stack.fittingSize
-        let width = natural.width + 2 * Self.horizontalPadding
+        let width = natural.width + 2 * horizontalPadding
         let scrollbar = width > maxWidth ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0
-        return CGSize(width: min(width, maxWidth), height: natural.height + 2 * Self.verticalPadding + scrollbar)
+        return CGSize(width: min(width, maxWidth), height: natural.height + 2 * verticalPadding + scrollbar)
     }
     func place(in bounds: CGRect) {
         frame = bounds
@@ -53,7 +55,7 @@ enum CoreAppearance {
     }
     func fitContent() {
         let natural = stack.fittingSize
-        scroll.frame = bounds.insetBy(dx: Self.horizontalPadding, dy: Self.verticalPadding)
+        scroll.frame = bounds.insetBy(dx: horizontalPadding, dy: verticalPadding)
         scroll.hasHorizontalScroller = natural.width > scroll.frame.width
         stack.setFrameSize(natural)
         stack.layoutSubtreeIfNeeded()

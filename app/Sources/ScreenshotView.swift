@@ -49,6 +49,7 @@ struct ScreenshotPresentation {
     override func layout() {super.layout();onLayout?();refreshBorder()}
     func refreshBorder() {
         border.frame=bounds;border.selection=placement?.image ?? .zero
+        border.toolbar = isAdjusting ? nil : placement?.toolbar
         border.handles=canAdjust && !isAdjusting
         border.pixels=isAdjusting ? CGSize(width:region.width / presentation.captureSize.width*CGFloat(presentation.background.width),height:region.height / presentation.captureSize.height*CGFloat(presentation.background.height)) : imagePixels
         border.needsDisplay=true;needsDisplay=true
@@ -115,6 +116,7 @@ struct ScreenshotPresentation {
 @MainActor private final class ScreenshotBorder:NSView {
     var selection:CGRect = .zero
     var handles=true
+    var toolbar: CGRect?
     var pixels:CGSize = .zero
     override func hitTest(_ point:NSPoint)->NSView? {nil}
     override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
@@ -128,7 +130,16 @@ struct ScreenshotPresentation {
         let text="\(Int(pixels.width.rounded())) × \(Int(pixels.height.rounded())) px" as NSString
         let attributes:[NSAttributedString.Key:Any]=[.font:NSFont.monospacedDigitSystemFont(ofSize:11,weight:.semibold),.foregroundColor:NSColor.white]
         let size=text.size(withAttributes:attributes)
-        let box=CGRect(x:max(8,min(selection.minX,bounds.maxX-size.width-20)),y:min(bounds.maxY-size.height-14,selection.maxY+10),width:size.width+12,height:size.height+8)
+        let width = size.width + 12, height = size.height + 8
+        let maxY = bounds.maxY - height - 8
+        var box = CGRect(x: max(8, min(selection.minX, bounds.maxX - width - 8)),
+                         y: min(maxY, selection.maxY + 10), width: width, height: height)
+        if let toolbar, box.intersects(toolbar) {
+            let left = selection.minX - width - 8
+            box.origin.x = left >= 8 ? left : box.minX + 8
+            box.origin.x = min(box.minX, bounds.maxX - width - 8)
+            box.origin.y = max(8, min(maxY, selection.maxY - height - 8))
+        }
         NSColor(calibratedWhite:0.12,alpha:0.88).setFill();NSBezierPath(roundedRect:box,xRadius:4,yRadius:4).fill()
         text.draw(at:CGPoint(x:box.minX+6,y:box.minY+4),withAttributes:attributes)
     }

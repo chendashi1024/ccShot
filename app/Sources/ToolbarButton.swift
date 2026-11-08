@@ -1,6 +1,7 @@
 import AppKit
 
 @MainActor final class ToolbarButton: NSButton {
+    static let iconButtonWidth: CGFloat = 36
     var primary = false
     var compact = false
     var minimumTitle = ""
@@ -11,8 +12,8 @@ import AppKit
     private var titleSize: CGSize { measuredTitle(title) }
     private var iconSize: CGSize {
         guard let image, image.size.width > 0, image.size.height > 0 else { return .zero }
-        let maxWidth: CGFloat = compact ? 44 : 17
-        let maxHeight: CGFloat = compact ? 24 : 17
+        let maxWidth: CGFloat = compact ? 44 : 19
+        let maxHeight: CGFloat = compact ? 24 : 19
         let scale = min(1, maxWidth / image.size.width, maxHeight / image.size.height)
         return CGSize(width: image.size.width * scale, height: image.size.height * scale)
     }
@@ -23,12 +24,15 @@ import AppKit
         return CGSize(width: ceil(size.width), height: ceil(size.height))
     }
 
+    // 自绘按钮的圆角占满实际边框，不能沿用原生描边按钮的对齐内缩。
+    override var alignmentRectInsets: NSEdgeInsets { compact ? super.alignmentRectInsets : NSEdgeInsets() }
+
     override var intrinsicContentSize: NSSize {
         let textWidth = max(titleSize.width, measuredTitle(minimumTitle).width)
         let iconWidth = iconSize.width
         let gap = textWidth > 0 && iconWidth > 0 ? iconGap : 0
-        let width = textWidth > 0 ? textWidth + iconWidth + gap + 2 * sidePadding : (compact ? 44 : 34)
-        return NSSize(width: ceil(width), height: compact ? 30 : 40)
+        let width = textWidth > 0 ? textWidth + iconWidth + gap + 2 * sidePadding : (compact ? 44 : Self.iconButtonWidth)
+        return NSSize(width: ceil(width), height: compact ? 30 : 44)
     }
 
     func contentFrames(in bounds: CGRect) -> (icon: CGRect, title: CGRect) {
@@ -71,6 +75,15 @@ import AppKit
     override var focusRingMaskBounds: NSRect { bounds }
     override func drawFocusRingMask() {
         NSBezierPath(roundedRect: bounds, xRadius: 7, yRadius: 7).fill()
+    }
+
+    func configureToolbarStyle() {
+        font = .systemFont(ofSize: 16, weight: .medium)
+        if let image {
+            let configuration = NSImage.SymbolConfiguration(pointSize: 18, weight: .medium)
+            self.image = image.withSymbolConfiguration(configuration) ?? image
+        }
+        refreshAppearance()
     }
 
     func refreshAppearance() {

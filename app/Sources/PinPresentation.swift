@@ -50,18 +50,18 @@ enum PinLayout {
 
     init(parent:NSWindow,root:PinSurface,owner:NSResponder,primaryRows:[NSView],secondaryRows:[NSView]) {
         self.parent=parent
-        func make(_ rows:[NSView])->(PinPanel,FloatingControls,PinSurface) {
+        func make(_ rows:[NSView], primary: Bool = false)->(PinPanel,FloatingControls,PinSurface) {
             let panel=PinPanel(contentRect:CGRect(x:0,y:0,width:200,height:56),styleMask:[.borderless,.nonactivatingPanel],backing:.buffered,defer:false)
             panel.isReleasedWhenClosed=false;panel.hidesOnDeactivate=false;panel.isOpaque=false;panel.backgroundColor = .clear
             panel.level = .floating;panel.hasShadow=true;panel.nextResponder=owner
             let surface=PinSurface();surface.paintsBackground=true;surface.wantsLayer=true;surface.layer?.cornerRadius=10;surface.layer?.masksToBounds=true
             surface.layer?.borderWidth=1;surface.layer?.borderColor=NSColor.separatorColor.cgColor
-            let content = FloatingControls(rows: rows)
+            let content = FloatingControls(rows: rows, primaryToolbar: primary)
             surface.addSubview(content);panel.contentView=surface
             parent.addChildWindow(panel,ordered:.above)
             return(panel,content,surface)
         }
-        let first=make(primaryRows),second=make(secondaryRows)
+        let first=make(primaryRows, primary: true),second=make(secondaryRows)
         primary=first.0;primaryContent=first.1;secondary=second.0;secondaryContent=second.1;secondary.acceptsKey=true
         for (index,surface) in [root,first.2,second.2].enumerated() {
             surface.onHover={ [weak self] inside in
