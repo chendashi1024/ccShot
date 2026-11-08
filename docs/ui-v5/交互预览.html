@@ -109,6 +109,18 @@
 #ccshort-design .toolbar{flex-wrap:wrap;justify-content:center}
 #ccshort-design .demo-toast{z-index:25;bottom:14px;white-space:normal;max-width:calc(100% - 40px)}
 @media(max-width:760px){#ccshort-design .toolbar .optional{display:inline-flex}#ccshort-design .landscape{display:none}#ccshort-design .composition{width:calc(100% - 40px)}#ccshort-design .text-entry{left:45%;width:45%}#ccshort-design .note{padding:24px}#ccshort-design .review-controls{padding-right:0}#ccshort-design .review-controls .design-label{margin-left:0}}
+
+#ccshort-design .desktop{min-height:660px}
+#ccshort-design .composition{margin-top:60px}
+#ccshort-design .annotation-options{position:relative;z-index:4;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 40px);padding:8px 12px;margin:12px auto 0;background:var(--surface);border-radius:17px;box-shadow:0 8px 24px #17312418;box-sizing:border-box}
+#ccshort-design .palette{display:flex;gap:6px;align-items:center}
+#ccshort-design .color-choice{width:30px;height:30px;display:grid;place-items:center;padding:5px;border:1.5px solid transparent;border-radius:50%;background:transparent}
+#ccshort-design .color-choice span{display:block;width:18px;height:18px;border-radius:50%;background:var(--mark-color)}
+#ccshort-design .color-choice[aria-pressed="true"]{border-color:var(--ink)}
+#ccshort-design .arrow-shapes{display:flex;gap:3px;border-left:1px solid var(--hair);padding-left:12px}
+#ccshort-design .arrow-shapes button{height:32px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--ink);font:13px -apple-system,"PingFang SC",sans-serif}
+#ccshort-design .arrow-shapes button[aria-pressed="true"]{background:light-dark(#e1eedf,#405b45);color:light-dark(#28563b,#e0eddf)}
+#ccshort-design .desktop:not([data-mode="edit"]) .annotation-options{display:none}
 </style>
 <div id="ccshort-design">
   <div class="review-controls" aria-label="设计稿状态">
@@ -153,6 +165,14 @@
       <button class="copy" data-finish data-tooltip="复制图片并结束 · 回车"><i data-lucide="check" aria-hidden="true"></i><span>完成</span></button>
       <button class="tool" data-action="close" aria-label="关闭" data-tooltip="关闭"><i data-lucide="x" aria-hidden="true"></i></button>
     </div>
+    <div class="annotation-options" hidden role="group" aria-label="标注样式">
+      <div class="palette" role="group" aria-label="标注颜色">
+        <button class="color-choice" data-mark-color="#D65F46" style="--mark-color:#D65F46" aria-label="珊瑚橙" data-tooltip="珊瑚橙" aria-pressed="true"><span></span></button>
+        <button class="color-choice" data-mark-color="#D39A25" style="--mark-color:#D39A25" aria-label="琥珀黄" data-tooltip="琥珀黄" aria-pressed="false"><span></span></button>
+        <button class="color-choice" data-mark-color="#477BC7" style="--mark-color:#477BC7" aria-label="晴空蓝" data-tooltip="晴空蓝" aria-pressed="false"><span></span></button>
+      </div>
+      <div class="arrow-shapes" role="group" aria-label="箭头形态"><button data-arrow-shape="straight" aria-pressed="false">直线</button><button data-arrow-shape="curved" aria-pressed="true">曲线</button></div>
+    </div>
     <div class="pinbar" hidden><button data-action="edit"><i data-lucide="pencil" aria-hidden="true"></i> 编辑</button><button data-action="save"><i data-lucide="download" aria-hidden="true"></i> 保存</button><button data-action="close" aria-label="关闭钉图"><i data-lucide="x" aria-hidden="true"></i></button></div>
     <div class="appmenu" hidden><button data-capture="区域截图">区域截图 <span>⌃⌥S</span></button><button data-capture="窗口截图">窗口截图</button><button data-capture="当前屏幕">当前屏幕</button><hr><button data-action="settings">设置…</button><hr><button data-action="quit">退出 ccShort</button></div>
     <div class="sheet-shade" hidden><section class="sheet" role="dialog" aria-modal="true" aria-label="保存图片"><form data-save-form hidden><h3>保存图片</h3><label>名称<input name="filename" value="截图 2026-11-08.png" required maxlength="80"></label><label>位置<select name="folder"><option>桌面</option><option>下载</option><option>文稿</option></select></label><div class="sheet-actions"><button type="button" data-cancel>取消</button><button class="primary" type="button" data-save-confirm>保存</button></div></form><div data-settings-panel hidden><h3>设置</h3><div class="setting-row"><span>截图快捷键</span><button data-shortcut>⌃⌥S</button></div><div class="setting-row"><label for="ccshort-folder">默认保存位置</label><select id="ccshort-folder"><option>桌面</option><option>下载</option><option>文稿</option></select></div><div class="sheet-actions"><button class="primary" data-cancel>完成</button></div></div></section></div>
@@ -166,12 +186,31 @@
 (()=>{
 const root=document.getElementById('ccshort-design'),stage=root.querySelector('.desktop'),svg=root.querySelector('.drawing'),note=root.querySelector('.note'),entry=root.querySelector('.text-entry'),context=root.querySelector('.context-actions'),appmenu=root.querySelector('.appmenu'),shade=root.querySelector('.sheet-shade'),finish=root.querySelector('[data-finish]'),jump=root.querySelector('[data-jump]');
 const ns='http://www.w3.org/2000/svg';
+const presets={arrow:{color:'#D65F46',shape:'curved'},rect:{color:'#D65F46'}};
+const options=root.querySelector('.annotation-options');
 const names={capture:'框选',arrow:'箭头',rect:'画框',label:'文字',pen:'画笔',mask:'遮挡',highlight:'高亮',number:'序号',select:'选字'};
-const hints={capture:'框选：拖动四边的控制点调整范围。',arrow:'箭头：固定绿色和圆润线条，选中即画，没有二级菜单。',rect:'画框：固定圆角和线宽，直接拖出框。',label:'文字：直接输入内容，回车确认；不显示字体、字号和颜色面板。',pen:'画笔：固定绿色圆头笔，按住鼠标连续画。',mask:'遮挡：拖出实色遮挡区域，无需选择强度。',highlight:'高亮：拖出浅绿区域，不改变下方内容。',number:'序号：单击放置，数字自动递增。',select:'选字：在图中文字上拖选；右键可复制、全选，⌘C 复制后继续编辑。'};
+const hints={capture:'框选：拖动四边的控制点调整范围。',arrow:'箭头：默认珊瑚橙曲线；下方只保留三个颜色和直线／曲线。',rect:'画框：默认珊瑚橙；下方可以换色，圆角和线宽保持统一。',label:'文字：直接输入内容，回车确认；不显示字体、字号和颜色面板。',pen:'画笔：固定绿色圆头笔，按住鼠标连续画。',mask:'遮挡：拖出实色遮挡区域，无需选择强度。',highlight:'高亮：拖出浅绿区域，不改变下方内容。',number:'序号：单击放置，数字自动递增。',select:'选字：在图中文字上拖选；右键可复制、全选，⌘C 复制后继续编辑。'};
 let tool='capture',marks=[],history=[],redo=[],sample=true,draft=null,drag=null,selected='',textPoint={x:420,y:218},timer,recording=false,lastFocus=null;
 function el(tag,attrs={}){const e=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,String(v)));return e;}
-function segment(m){const dx=m.b.x-m.a.x,dy=m.b.y-m.a.y,l=Math.hypot(dx,dy),u=l?dx/l:1,v=l?dy/l:0,h=Math.min(20,l*.36),w=h*.6;return `M${m.a.x} ${m.a.y} L${m.b.x-u*2} ${m.b.y-v*2} M${m.b.x-u*h-v*w} ${m.b.y-v*h+u*w} L${m.b.x} ${m.b.y} L${m.b.x-u*h+v*w} ${m.b.y-v*h-u*w}`;}
-function draw(m){const color='light-dark(#35765a,#a3cfac)',common={fill:'none',stroke:color,'stroke-width':4,'stroke-linecap':'round','stroke-linejoin':'round'};let e;
+function segment(m){
+ const dx=m.b.x-m.a.x,dy=m.b.y-m.a.y,l=Math.hypot(dx,dy);
+ if(l<.01)return `M${m.a.x} ${m.a.y}`;
+ const curved=m.shape==='curved',bend=Math.min(80,l*.26);
+ const c={x:(m.a.x+m.b.x)/2+dy/l*bend,y:(m.a.y+m.b.y)/2-dx/l*bend};
+ const tx=curved?m.b.x-c.x:dx,ty=curved?m.b.y-c.y:dy,tl=Math.hypot(tx,ty),u=tx/tl,v=ty/tl;
+ const h=Math.min(20,l*.36),w=h*.6,trim=Math.min(2.5,l*.08);
+ let shaft;
+ if(curved){const t=Math.max(0,1-trim/(2*tl)),q={x:m.a.x+(c.x-m.a.x)*t,y:m.a.y+(c.y-m.a.y)*t};const end={x:(1-t)**2*m.a.x+2*(1-t)*t*c.x+t*t*m.b.x,y:(1-t)**2*m.a.y+2*(1-t)*t*c.y+t*t*m.b.y};shaft=`M${m.a.x} ${m.a.y} Q${q.x} ${q.y} ${end.x} ${end.y}`;}
+ else shaft=`M${m.a.x} ${m.a.y} L${m.b.x-u*trim} ${m.b.y-v*trim}`;
+ return shaft+` M${m.b.x-u*h-v*w} ${m.b.y-v*h+u*w} L${m.b.x} ${m.b.y} L${m.b.x-u*h+v*w} ${m.b.y-v*h-u*w}`;
+}
+function withStyle(m){const preset=presets[m.kind];return preset?{...m,color:m.color||preset.color,...(m.kind==='arrow'?{shape:m.shape||preset.shape}:{})}:m;}
+function syncOptions(){const preset=presets[tool];options.hidden=!preset;root.querySelector('.arrow-shapes').hidden=tool!=='arrow';if(!preset)return;root.querySelectorAll('[data-mark-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.markColor===preset.color)));root.querySelectorAll('[data-arrow-shape]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.arrowShape===preset.shape)));}
+function updateStyle(key,value){if(!presets[tool])return;presets[tool][key]=value;const i=marks.findLastIndex(m=>m.kind===tool);if(i>=0){snapshot();marks[i]={...marks[i],[key]:value};}syncOptions();paint();}
+root.querySelectorAll('[data-mark-color]').forEach(b=>b.addEventListener('click',()=>updateStyle('color',b.dataset.markColor)));
+root.querySelectorAll('[data-arrow-shape]').forEach(b=>b.addEventListener('click',()=>updateStyle('shape',b.dataset.arrowShape)));
+
+function draw(m){const color=m.color||'light-dark(#35765a,#a3cfac)',common={fill:'none',stroke:color,'stroke-width':4,'stroke-linecap':'round','stroke-linejoin':'round'};let e;
  if(m.kind==='arrow')e=el('path',{...common,d:segment(m),'stroke-width':5});
  if(['rect','mask','highlight'].includes(m.kind)){const x=Math.min(m.a.x,m.b.x),y=Math.min(m.a.y,m.b.y),w=Math.abs(m.a.x-m.b.x),h=Math.abs(m.a.y-m.b.y);e=el('rect',{x,y,width:w,height:h,rx:Math.min(13,w/2,h/2),...(m.kind==='rect'?common:{fill:m.kind==='mask'?'#303d34':'#9bc689',opacity:m.kind==='highlight'?.38:1})});}
  if(m.kind==='pen')e=el('path',{...common,d:m.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ')});
@@ -180,8 +219,9 @@ function draw(m){const color='light-dark(#35765a,#a3cfac)',common={fill:'none',s
  return e;
 }
 function paint(){svg.replaceChildren();[...marks,...(draft?[draft]:[])].forEach(m=>{const e=draw(m);if(e)svg.append(e);});root.querySelector('[data-action="undo"]').disabled=!marks.length&&!history.length;}
+function restoreCurrentStyle(){const m=marks.findLast(m=>m.kind===tool);if(m&&presets[tool]){presets[tool].color=m.color;if(tool==='arrow')presets.arrow.shape=m.shape;}syncOptions();}
 function snapshot(){history.push(structuredClone(marks));redo=[];}
-function append(m){if(sample){marks=[];sample=false;}snapshot();marks.push(m);paint();}
+function append(m){if(sample){marks=[];sample=false;}snapshot();marks.push(withStyle(m));paint();}
 function toast(s){clearTimeout(timer);root.querySelector('.demo-toast').textContent=s;timer=setTimeout(()=>root.querySelector('.demo-toast').textContent='',2600);}
 function setHint(s){root.querySelector('.review-note').textContent=s;}
 function commitText(){if(entry.hidden)return;const value=entry.value.trim();entry.hidden=true;if(value)append({kind:'label',a:{...textPoint},text:value});}
@@ -191,7 +231,7 @@ function clearSelection(){selected='';getSelection()?.removeAllRanges();stage.da
 function selectAll(){const range=document.createRange();range.selectNodeContents(note);const sel=getSelection();sel.removeAllRanges();sel.addRange(range);selected=note.innerText.trim();syncFinish();context.hidden=true;}
 function demo(kind){const a={x:440,y:219},b={x:391,y:290};if(kind==='arrow')return[{kind,a:{x:546,y:230},b}];if(kind==='rect'||kind==='mask'||kind==='highlight')return[{kind,a:{x:53,y:274},b:{x:382,y:305}}];if(kind==='pen')return[{kind,points:[{x:62,y:302},{x:90,y:308},{x:120,y:301},{x:151,y:307},{x:185,y:302},{x:218,y:307},{x:253,y:300},{x:285,y:305},{x:327,y:300}]}];if(kind==='number')return[{kind,a:{x:19,y:257},number:1},{kind,a:{x:19,y:289},number:2},{kind,a:{x:19,y:322},number:3}];return[];}
 function normal(){clearTimeout(timer);root.querySelector('.demo-toast').textContent='';stage.dataset.mode='edit';root.querySelector('.pinbar').hidden=true;root.querySelector('.result').hidden=true;shade.hidden=true;appmenu.hidden=true;context.hidden=true;}
-function choose(name){commitText();normal();tool=name;stage.dataset.tool=tool;clearSelection();jump.value=tool;root.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool===tool;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});if(sample){marks=demo(tool);history=[];redo=[];}paint();setHint(hints[tool]);if(tool==='label')openText({x:407,y:218});if(tool==='select'){const range=document.createRange();range.selectNodeContents(root.querySelector('.intro'));const sel=getSelection();sel.removeAllRanges();sel.addRange(range);selected=root.querySelector('.intro').innerText.trim();syncFinish();}}
+function choose(name){commitText();normal();tool=name;stage.dataset.tool=tool;clearSelection();jump.value=tool;root.querySelectorAll('[data-tool]').forEach(b=>{const on=b.dataset.tool===tool;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});if(sample){marks=demo(tool).map(withStyle);history=[];redo=[];}syncOptions();paint();setHint(hints[tool]);if(tool==='label')openText({x:407,y:218});if(tool==='select'){const range=document.createRange();range.selectNodeContents(root.querySelector('.intro'));const sel=getSelection();sel.removeAllRanges();sel.addRange(range);selected=root.querySelector('.intro').innerText.trim();syncFinish();}}
 function showSheet(which){clearTimeout(timer);root.querySelector('.demo-toast').textContent='';commitText();context.hidden=true;appmenu.hidden=true;lastFocus=document.activeElement;shade.hidden=false;root.querySelector('[data-save-form]').hidden=which!=='save';root.querySelector('[data-settings-panel]').hidden=which!=='settings';root.querySelector('.sheet').setAttribute('aria-label',which==='save'?'保存图片':'设置');jump.value=which;setHint(which==='save'?'保存：默认 PNG，只保留名称和位置。此处演示保存窗口，不写入文件。':'设置：仅保留截图快捷键和默认保存位置。此处修改只作用于预览。');requestAnimationFrame(()=>shade.querySelector(which==='save'?'input':'button').focus());}
 function closeSheet(){shade.hidden=true;recording=false;root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut||'⌃⌥S';lastFocus?.focus();}
 function pin(){commitText();normal();clearSelection();stage.dataset.mode='pin';root.querySelector('.pinbar').hidden=false;jump.value='pin';setHint('钉图：图片独立悬浮，只保留编辑、保存和关闭。');}
@@ -199,7 +239,7 @@ function complete(cancel=false){commitText();context.hidden=true;appmenu.hidden=
 function copy(){toast('演示：已复制'+(selected?'所选文字':'图片')+'，继续编辑');context.hidden=true;}
 function reset(){root.querySelector('.composition').style.width='';note.style.minHeight='';root.querySelector('.dimensions span').textContent='1340 × 716';entry.hidden=true;marks=[];history=[];redo=[];sample=true;normal();choose('capture');}
 root.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.tool)));
-root.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>{const a=b.dataset.action;if(a==='undo'){commitText();if(history.length){redo.push(marks);marks=history.pop();}else{redo.push(marks);marks=[];sample=false;}paint();}if(a==='pin')pin();if(a==='save'||a==='settings')showSheet(a);if(a==='edit')choose('capture');if(a==='close'||a==='quit')complete(true);}));
+root.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>{const a=b.dataset.action;if(a==='undo'){commitText();if(history.length){redo.push(marks);marks=history.pop();}else{redo.push(marks);marks=[];sample=false;}restoreCurrentStyle();paint();}if(a==='pin')pin();if(a==='save'||a==='settings')showSheet(a);if(a==='edit')choose('capture');if(a==='close'||a==='quit')complete(true);}));
 finish.addEventListener('click',()=>complete());root.querySelector('[data-new]').addEventListener('click',reset);root.querySelector('[data-reset]').addEventListener('click',reset);
 root.querySelector('[data-dark]').addEventListener('change',e=>stage.style.colorScheme=e.target.checked?'dark':'light');
 root.querySelector('[data-appmenu]').addEventListener('click',()=>{appmenu.hidden=!appmenu.hidden;context.hidden=true;jump.value='appmenu';setHint('菜单栏：三个截图入口、设置和退出；不增加账户、AI 或高级配置。');});
@@ -213,7 +253,7 @@ root.querySelector('[data-save-form]').addEventListener('keydown',e=>{if(e.key==
 root.querySelector('#ccshort-folder').addEventListener('change',e=>root.querySelector('[name="folder"]').value=e.target.value);
 root.querySelector('[data-shortcut]').addEventListener('click',e=>{recording=true;e.target.textContent='请按快捷键';});
 function point(e){const r=svg.getBoundingClientRect();return{x:Math.max(0,Math.min(670,(e.clientX-r.left)/r.width*670)),y:Math.max(0,Math.min(360,(e.clientY-r.top)/r.height*360))};}
-svg.addEventListener('pointerdown',e=>{if(stage.dataset.mode==='pin'||!shade.hidden)return;if(!names[tool]||['select','capture'].includes(tool))return;e.preventDefault();context.hidden=true;const p=point(e);if(tool==='label'){openText(p);return;}if(tool==='number'){append({kind:'number',a:p,number:sample?1:marks.filter(m=>m.kind==='number').length+1});return;}svg.setPointerCapture(e.pointerId);drag=p;draft=tool==='pen'?{kind:tool,points:[p]}:{kind:tool,a:p,b:p};if(sample){marks=[];sample=false;}paint();});
+svg.addEventListener('pointerdown',e=>{if(stage.dataset.mode==='pin'||!shade.hidden)return;if(!names[tool]||['select','capture'].includes(tool))return;e.preventDefault();context.hidden=true;const p=point(e);if(tool==='label'){openText(p);return;}if(tool==='number'){append({kind:'number',a:p,number:sample?1:marks.filter(m=>m.kind==='number').length+1});return;}svg.setPointerCapture(e.pointerId);drag=p;draft=withStyle(tool==='pen'?{kind:tool,points:[p]}:{kind:tool,a:p,b:p});if(sample){marks=[];sample=false;}paint();});
 svg.addEventListener('pointermove',e=>{if(!drag||!draft)return;const p=point(e);if(tool==='pen')draft.points.push(p);else draft.b=p;paint();});
 svg.addEventListener('pointerup',()=>{if(!drag||!draft)return;const m=draft;draft=null;drag=null;if(m.kind==='pen'?m.points.length>1:Math.hypot(m.b.x-m.a.x,m.b.y-m.a.y)>4)append(m);else paint();});
 svg.addEventListener('pointercancel',()=>{draft=null;drag=null;paint();});
@@ -225,7 +265,7 @@ document.addEventListener('selectionchange',selectionChanged);
 root.querySelector('[data-copy]').addEventListener('click',copy);root.querySelector('[data-select-all]').addEventListener('click',selectAll);
 note.addEventListener('contextmenu',e=>{if(tool!=='select')return;e.preventDefault();const r=stage.getBoundingClientRect();context.hidden=false;context.style.left=Math.max(8,Math.min(e.clientX-r.left,r.width-context.offsetWidth-8))+'px';context.style.top=Math.max(8,Math.min(e.clientY-r.top,r.height-context.offsetHeight-8))+'px';context.querySelector('button').focus();setHint('右键菜单只保留复制和全选，不常驻遮挡文字。');});
 root.addEventListener('click',e=>{if(!context.contains(e.target))context.hidden=true;if(!appmenu.contains(e.target)&&!e.target.closest('[data-appmenu]'))appmenu.hidden=true;});
-root.addEventListener('keydown',e=>{if(recording){e.preventDefault();if(e.key==='Escape'){recording=false;root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut||'⌃⌥S';return;}if(['Meta','Control','Alt','Shift'].includes(e.key))return;if(!(e.metaKey||e.ctrlKey||e.altKey)){toast('请组合 Command、Control 或 Option 键');return;}root.dataset.shortcut=(e.ctrlKey?'⌃':'')+(e.altKey?'⌥':'')+(e.metaKey?'⌘':'')+(e.shiftKey?'⇧':'')+e.key.toUpperCase();root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut;recording=false;return;}if(e.target.matches('input,select,textarea'))return;if(e.key==='Escape'){if(!shade.hidden)closeSheet();else if(!context.hidden)context.hidden=true;else if(!appmenu.hidden)appmenu.hidden=true;else if(tool!=='capture')choose('capture');else complete(true);return;}if(!shade.hidden||stage.dataset.mode==='done')return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='c'){e.preventDefault();copy();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'&&tool==='select'){e.preventDefault();selectAll();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey&&redo.length){history.push(marks);marks=redo.pop();paint();}else root.querySelector('[data-action="undo"]').click();}if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){e.preventDefault();complete();}});
+root.addEventListener('keydown',e=>{if(recording){e.preventDefault();if(e.key==='Escape'){recording=false;root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut||'⌃⌥S';return;}if(['Meta','Control','Alt','Shift'].includes(e.key))return;if(!(e.metaKey||e.ctrlKey||e.altKey)){toast('请组合 Command、Control 或 Option 键');return;}root.dataset.shortcut=(e.ctrlKey?'⌃':'')+(e.altKey?'⌥':'')+(e.metaKey?'⌘':'')+(e.shiftKey?'⇧':'')+e.key.toUpperCase();root.querySelector('[data-shortcut]').textContent=root.dataset.shortcut;recording=false;return;}if(e.target.matches('input,select,textarea'))return;if(e.key==='Escape'){if(!shade.hidden)closeSheet();else if(!context.hidden)context.hidden=true;else if(!appmenu.hidden)appmenu.hidden=true;else if(tool!=='capture')choose('capture');else complete(true);return;}if(!shade.hidden||stage.dataset.mode==='done')return;if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='c'){e.preventDefault();copy();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'&&tool==='select'){e.preventDefault();selectAll();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey&&redo.length){history.push(marks);marks=redo.pop();restoreCurrentStyle();paint();}else root.querySelector('[data-action="undo"]').click();}if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){e.preventDefault();complete();}});
 reset();
 })();
 </script>
