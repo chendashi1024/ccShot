@@ -14,7 +14,7 @@ import sys
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / 'app'
-BINARY = APP / 'build/CcShot.app/Contents/MacOS/CcShot'
+BINARY = APP / 'build/ccShort.app/Contents/MacOS/CcShot'
 FIXTURES = ROOT / 'prototype/local-ocr/results/2026-11-03-native-01/fixtures'
 
 

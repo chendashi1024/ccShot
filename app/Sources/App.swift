@@ -21,13 +21,13 @@ import QuartzCore
         NSApp.setActivationPolicy(.accessory)
         if let appearance = argument("--appearance") { NSApp.appearance = NSAppearance(named:appearance == "light" ? .aqua : .darkAqua) }
         let menu = NSMenu()
-        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("设置…", #selector(openSettings), ","), ("退出 CcShot", #selector(quit), "q")] {
+        for (title, action, key) in [("区域截图", #selector(capture), ""), ("钉住剪贴板", #selector(pinClipboard), ""), ("设置…", #selector(openSettings), ","), ("退出 ccShort", #selector(quit), "q")] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
             item.target = self
             menu.addItem(item)
         }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.title = "CcShot"
+        statusItem.button?.title = "ccShort"
         statusItem.menu = menu
         let main = NSMenu()
         let appMenu = NSMenuItem(); appMenu.submenu = menu.copy() as? NSMenu; main.addItem(appMenu)
@@ -184,7 +184,7 @@ import QuartzCore
         let sourceFrame=screen.frame
         let sourceDisplayID=(screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? 0
         let window = SelectionWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false)
-        window.title = "CcShot · 框选"
+        window.title = "ccShort · 框选"
         window.level = .screenSaver
         window.isOpaque = true
         window.acceptsMouseMovedEvents = true
@@ -301,7 +301,7 @@ import QuartzCore
     }
     private func showPermissionGuide() {
         let alert = NSAlert(); alert.messageText = "需要屏幕录制权限"
-        alert.informativeText = "在系统设置 → 隐私与安全性 → 屏幕录制中添加或允许 CcShot，然后重新打开应用。"
+        alert.informativeText = "在系统设置 → 隐私与安全性 → 屏幕录制中添加或允许 ccShort，然后重新打开应用。"
         alert.addButton(withTitle:"打开系统设置"); alert.addButton(withTitle:"暂不")
         NSApp.activate(ignoringOtherApps:true)
         guard alert.runModal() == .alertFirstButtonReturn else { return }

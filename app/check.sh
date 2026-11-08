@@ -22,31 +22,31 @@ xcrun swiftc Sources/SafeTextImage.swift Tests/SafeTextGeometryTests.swift -o bu
 build/privacy-geometry-tests
 xcrun swiftc Sources/ImageEncoding.swift Tests/ImageEncodingTests.swift -o build/image-encoding-tests
 build/image-encoding-tests > build/image-encoding.json
-build/CcShot.app/Contents/MacOS/CcShot \
+build/ccShort.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --smoke-test "$PWD/build/smoke.json"
 cat build/smoke.json
-build/CcShot.app/Contents/MacOS/CcShot \
+build/ccShort.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --privacy-smoke-test "$PWD/build/privacy-smoke.json"
 cat build/privacy-smoke.json
-build/CcShot.app/Contents/MacOS/CcShot \
+build/ccShort.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --text-smoke-test "$PWD/build/text-smoke.json"
 cat build/text-smoke.json
 
-build/CcShot.app/Contents/MacOS/CcShot \
+build/ccShort.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --inline-smoke-test "$PWD/build/inline-smoke.json"
 cat build/inline-smoke.json
 
-build/CcShot.app/Contents/MacOS/CcShot \
+build/ccShort.app/Contents/MacOS/CcShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --window-inline-smoke-test "$PWD/build/window-inline-smoke.json"
 cat build/window-inline-smoke.json
 
 # 钉图使用自制便笺，检查图片与浮动操作层，不写剪贴板。
-build/CcShot.app/Contents/MacOS/CcShot \
+build/ccShort.app/Contents/MacOS/CcShot \
   --fixture "$PWD/Tests/Fixtures/pin-note.png" \
   --pin-smoke-test "$PWD/build/pin-smoke.json"
 cat build/pin-smoke.json

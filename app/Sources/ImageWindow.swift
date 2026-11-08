@@ -97,7 +97,7 @@ import UniformTypeIdentifiers
         let pinRect=PinLayout.frame(pixels:CGSize(width:annotationDocument.baseImage.width,height:annotationDocument.baseImage.height),scale:pinScreen?.backingScaleFactor ?? 2,visible:pinScreen?.visibleFrame ?? CGRect(x:0,y:0,width:1200,height:800),preferred:pinFrame)
         let rect=pinned ? pinRect : screenshot?.screenFrame ?? NSRect(x:0,y:0,width:width,height:height)
         let window = AnnotationWindow(contentRect:rect,styleMask:pinned ? [.borderless,.resizable] : screenshot == nil ? [.titled,.closable,.resizable,.miniaturizable] : [.borderless],backing:.buffered,defer:false)
-        window.title = pinned ? "CcShot · 钉图" : "CcShot"
+        window.title = pinned ? "ccShort · 钉图" : "ccShort"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: pinned ? 420 : 880, height: pinned ? 260 : 300)
         window.backgroundColor = CoreAppearance.surface
@@ -687,7 +687,7 @@ import UniformTypeIdentifiers
         guard prepareOutput() else {return}
         guard stableImage() != nil, let window, window.attachedSheet == nil else { return }
         let panel = NSSavePanel(); panel.prompt = "保存"; panel.nameFieldLabel = "文件名："; panel.directoryURL = preferences.usableSaveDirectory
-        panel.nameFieldStringValue = "CcShot-\(Int(Date().timeIntervalSince1970)).png"
+        panel.nameFieldStringValue = "ccShort-\(Int(Date().timeIntervalSince1970)).png"
         let format = SaveFormatAccessory(panel:panel); panel.accessoryView = format
         panel.isExtensionHidden = false; panel.allowsOtherFileTypes = false
         panel.beginSheetModal(for: window) { [weak self] response in
