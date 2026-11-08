@@ -66,7 +66,7 @@ import QuartzCore
             }
             else if let path=argument("--pin-smoke-test") {Task { @MainActor in let keep=CommandLine.arguments.contains("--keep-pin-preview");let passed=await PinVerification.run(image:image,reportPath:path,keepPreview:keep);if !keep {exit(passed ? 0 : 1)} }}
             else if let path=argument("--window-inline-smoke-test") {Task { @MainActor in let passed=await InlineVerification.runWindow(reportPath:path,preview:CommandLine.arguments.contains("--keep-window-preview"));if !CommandLine.arguments.contains("--keep-window-preview") {exit(passed ? 0 : 1)} }}
-            else if let path=argument("--inline-smoke-test") {Task { @MainActor in exit(await InlineVerification.run(reportPath:path) ? 0 : 1) }}
+            else if let path=argument("--inline-smoke-test") {Task { @MainActor in exit(await InlineVerification.run(reportPath:path, previewPath:argument("--inline-preview")) ? 0 : 1) }}
             else if let path = argument("--text-smoke-test") { Task { @MainActor in exit(await TextVerification.run(reportPath:path, previewPath:argument("--text-preview")) ? 0 : 1) } }
             else if let path = argument("--privacy-smoke-test") { Task { @MainActor in exit(await PrivacyVerification.run(reportPath:path, previewPath:argument("--privacy-preview"),checkClipboard:!CommandLine.arguments.contains("--no-clipboard")) ? 0 : 1) } }
             else if let report = argument("--window-smoke-test") { runWindowCaptureTest(image, report: report) }

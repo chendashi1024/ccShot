@@ -65,6 +65,7 @@ final class AppPreferences {
         store.set(try? JSONEncoder().encode(capture), forKey: Self.captureKey)
         store.set(try? JSONEncoder().encode(pin), forKey: Self.pinKey)
     }
+    static var defaultSaveDirectory: URL { FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop", isDirectory: true) }
     var saveDirectory: URL? {
         guard let path = store.string(forKey: Self.directoryKey), !path.isEmpty else { return nil }
         return URL(fileURLWithPath: path, isDirectory: true)

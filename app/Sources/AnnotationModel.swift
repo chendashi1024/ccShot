@@ -25,6 +25,12 @@ struct AnnotationColor: Codable, Equatable {
     var blue: CGFloat
     var alpha: CGFloat = 1
     static let palette = [AnnotationColor(red: 0.95, green: 0.25, blue: 0.25), AnnotationColor(red: 1, green: 0.55, blue: 0.1), AnnotationColor(red: 1, green: 0.84, blue: 0.1), AnnotationColor(red: 0.2, green: 0.75, blue: 0.4), AnnotationColor(red: 0.1, green: 0.5, blue: 1), AnnotationColor(red: 0.6, green: 0.35, blue: 0.95), AnnotationColor(red: 0.15, green: 0.15, blue: 0.17), AnnotationColor(red: 1, green: 1, blue: 1)]
+    static let markupPalette = [
+        AnnotationColor(red: 214/255, green: 95/255, blue: 70/255),
+        AnnotationColor(red: 211/255, green: 154/255, blue: 37/255),
+        AnnotationColor(red: 71/255, green: 123/255, blue: 199/255)
+    ]
+    static let leaf = AnnotationColor(red: 53/255, green: 118/255, blue: 90/255)
     var nsColor: NSColor { NSColor(srgbRed: red, green: green, blue: blue, alpha: alpha) }
     var valid: Bool { [red, green, blue, alpha].allSatisfy { $0.isFinite && (0...1).contains($0) } }
     init(red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat = 1) { self.red = red; self.green = green; self.blue = blue; self.alpha = alpha }
@@ -44,6 +50,7 @@ struct AnnotationStyle: Codable, Equatable {
     var cornerRadius: CGFloat = 0
     var dashed = false
     var arrowHead = ArrowHead.filled
+    var curvedArrow: Bool?
     var maskEffect = MaskEffect.solid
     var maskBrush = false
     var maskStrength: CGFloat = 16
@@ -95,6 +102,19 @@ struct AnnotationObject: Equatable {
     var textLayoutWidth: CGFloat = 360
     init(id: UUID = UUID(), tool: AnnotationTool, style: AnnotationStyle, start: CGPoint, end: CGPoint, points: [CGPoint] = [], number: Int = 1, text: String = "", textLayoutWidth: CGFloat = 360) {
         self.id = id; self.tool = tool; self.style = style; self.start = start; self.end = end; self.points = points; self.number = number; self.text = text; self.textLayoutWidth = textLayoutWidth
+    }
+    mutating func applyPresetCurve(in imageSize: CGSize? = nil) {
+        let dx = end.x - start.x, dy = end.y - start.y
+        let length = hypot(dx, dy)
+        guard style.curvedArrow == true, length > 0 else { curveControl = nil; return }
+        let bend = min(80 * style.width / 5, length * 0.26)
+        var control = CGPoint(x: (start.x + end.x)/2 - dy/length*bend,
+                              y: (start.y + end.y)/2 + dx/length*bend)
+        if let imageSize {
+            control.x = min(imageSize.width, max(0, control.x))
+            control.y = min(imageSize.height, max(0, control.y))
+        }
+        curveControl = control
     }
     // 中间拖点始终落在曲线上；二次贝塞尔控制点由它反推。
     var arrowMidpoint: CGPoint { arrowPoint(at: 0.5) }

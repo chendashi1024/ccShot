@@ -58,7 +58,7 @@ struct ScreenshotPresentation {
         guard let c=NSGraphicsContext.current?.cgContext,let placement else {return}
         NSColor.black.setFill();bounds.fill()
         c.draw(presentation.background,in:placement.background)
-        c.saveGState();let p=CGMutablePath();p.addRect(bounds);p.addRect(placement.image);c.addPath(p)
+        c.saveGState();let p=CGMutablePath();p.addRect(bounds);p.addPath(CoreAppearance.captureOutline(placement.image));c.addPath(p)
         c.setFillColor(NSColor.black.withAlphaComponent(0.24).cgColor);c.drawPath(using:.eoFill);c.restoreGState()
     }
     private func capturePoint(_ point:CGPoint)->CGPoint? {
@@ -123,11 +123,6 @@ struct ScreenshotPresentation {
     override func draw(_ dirtyRect:NSRect) {
         guard !selection.isEmpty, let context = NSGraphicsContext.current?.cgContext else {return}
         let outline = CoreAppearance.captureOutline(selection)
-        // 圆角只影响画面上的边线和遮罩，导出仍使用原始矩形像素。
-        context.addRect(selection)
-        context.addPath(outline)
-        context.setFillColor(NSColor.black.withAlphaComponent(0.24).cgColor)
-        context.drawPath(using: .eoFill)
         context.setStrokeColor(CoreAppearance.captureBorder.cgColor)
         context.setLineWidth(CoreAppearance.captureBorderWidth)
         context.addPath(outline)

@@ -80,7 +80,7 @@ import Carbon
         stack.addArrangedSubview(row("截图快捷键", [captureRecorder, button("恢复默认", #selector(resetShortcuts)), fallbackHint]))
         stack.addArrangedSubview(functionHint)
         directory.lineBreakMode = .byTruncatingMiddle; directory.widthAnchor.constraint(equalToConstant: 270).isActive = true
-        stack.addArrangedSubview(row("保存位置", [directory, button("更改…", #selector(chooseDirectory)), button("使用默认位置", #selector(clearDirectory))]))
+        stack.addArrangedSubview(row("默认保存位置", [directory, button("更改…", #selector(chooseDirectory)), button("使用默认位置", #selector(clearDirectory))]))
         login.target = self; login.action = #selector(changeLogin)
         loginSettings.target = self; loginSettings.action = #selector(openLoginSettings)
         error.isHidden = true; error.textColor = CoreAppearance.error; error.font = .systemFont(ofSize: 13)
@@ -123,7 +123,7 @@ import Carbon
     private func refresh() {
         captureRecorder.shortcut = preferences.captureShortcut; pinRecorder.shortcut = preferences.pinShortcut
         if let url = preferences.saveDirectory { directory.stringValue = url.path; directory.toolTip = url.path }
-        else { directory.stringValue = "每次保存时选择"; directory.toolTip = nil }
+        else { directory.stringValue = "桌面"; directory.toolTip = AppPreferences.defaultSaveDirectory.path }
         permission.stringValue = CGPreflightScreenCaptureAccess() ? "已授权" : "未授权，允许后重新打开应用"
         refreshHints()
         if preferences.hasInvalidShortcuts { showError("快捷键设置损坏，当前使用默认值") }
@@ -165,7 +165,7 @@ import Carbon
     @objc private func chooseDirectory() {
         guard let window else { return }
         let panel = NSOpenPanel(); panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false; panel.directoryURL = preferences.usableSaveDirectory
+        panel.allowsMultipleSelection = false; panel.directoryURL = preferences.usableSaveDirectory ?? AppPreferences.defaultSaveDirectory
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK, let url = panel.url else { return }
             preferences.setSaveDirectory(url); showError(""); refresh()

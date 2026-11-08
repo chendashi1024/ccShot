@@ -29,7 +29,7 @@ enum ScreenshotLayout {
         let availableHeight = max(0, safeHeight - toolbarHeight - parameterGap)
         let parameterHeight = parameters.width > 0 ? min(parameters.height, availableHeight) : 0
         // 首排靠近选区，样式面板放在首排远离选区的一侧。
-        let reservedSpace = parameterGap + min(max(116, parameterHeight), availableHeight)
+        let reservedSpace = parameterGap + min(max(64, parameterHeight), availableHeight)
         let neededSpace = parameterHeight > 0 ? parameterGap + parameterHeight : 0
         let belowY = image.minY - toolbarGap - toolbarHeight
         let aboveY = image.maxY + toolbarGap

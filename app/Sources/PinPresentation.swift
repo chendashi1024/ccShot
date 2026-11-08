@@ -54,7 +54,7 @@ enum PinLayout {
             let panel=PinPanel(contentRect:CGRect(x:0,y:0,width:200,height:56),styleMask:[.borderless,.nonactivatingPanel],backing:.buffered,defer:false)
             panel.isReleasedWhenClosed=false;panel.hidesOnDeactivate=false;panel.isOpaque=false;panel.backgroundColor = .clear
             panel.level = .floating;panel.hasShadow=true;panel.nextResponder=owner
-            let surface=PinSurface();surface.paintsBackground=true;surface.wantsLayer=true;surface.layer?.cornerRadius=10;surface.layer?.masksToBounds=true
+            let surface=PinSurface();surface.paintsBackground=true;surface.wantsLayer=true;surface.layer?.cornerRadius=20;surface.layer?.masksToBounds=true
             surface.layer?.borderWidth=1;surface.layer?.borderColor=NSColor.separatorColor.cgColor
             let content = FloatingControls(rows: rows, primaryToolbar: primary)
             surface.addSubview(content);panel.contentView=surface

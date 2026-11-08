@@ -4,6 +4,7 @@ import AppKit
     static let iconButtonWidth: CGFloat = 36
     var primary = false
     var compact = false
+    var sample = false
     var minimumTitle = ""
     private let sidePadding: CGFloat = 11
     private let iconGap: CGFloat = 7
@@ -12,8 +13,8 @@ import AppKit
     private var titleSize: CGSize { measuredTitle(title) }
     private var iconSize: CGSize {
         guard let image, image.size.width > 0, image.size.height > 0 else { return .zero }
-        let maxWidth: CGFloat = compact ? 44 : 19
-        let maxHeight: CGFloat = compact ? 24 : 19
+        let maxWidth: CGFloat = compact || sample ? 32 : 19
+        let maxHeight: CGFloat = compact || sample ? 22 : 19
         let scale = min(1, maxWidth / image.size.width, maxHeight / image.size.height)
         return CGSize(width: image.size.width * scale, height: image.size.height * scale)
     }
@@ -53,18 +54,20 @@ import AppKit
         let opacity: CGFloat = isEnabled ? 1 : 0.42
         if isEnabled && isHighlighted {
             ink.withAlphaComponent(0.12).setFill()
-            NSBezierPath(roundedRect: bounds, xRadius: 7, yRadius: 7).fill()
+            NSBezierPath(roundedRect: bounds, xRadius: 12, yRadius: 12).fill()
         }
         if let image, !frames.icon.isEmpty, let context = NSGraphicsContext.current?.cgContext {
             // 模板图标单独着色，避免修改按钮底色和透明区域。
             context.saveGState()
             context.clip(to: frames.icon)
             context.setAlpha(opacity)
-            context.beginTransparencyLayer(auxiliaryInfo: nil)
+            if image.isTemplate { context.beginTransparencyLayer(auxiliaryInfo: nil) }
             image.draw(in: frames.icon, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
-            ink.setFill()
-            frames.icon.fill(using: .sourceAtop)
-            context.endTransparencyLayer()
+            if image.isTemplate {
+                ink.setFill()
+                frames.icon.fill(using: .sourceAtop)
+                context.endTransparencyLayer()
+            }
             context.restoreGState()
         }
         if !frames.title.isEmpty {
@@ -74,7 +77,7 @@ import AppKit
 
     override var focusRingMaskBounds: NSRect { bounds }
     override func drawFocusRingMask() {
-        NSBezierPath(roundedRect: bounds, xRadius: 7, yRadius: 7).fill()
+        NSBezierPath(roundedRect: bounds, xRadius: 12, yRadius: 12).fill()
     }
 
     func configureToolbarStyle() {
@@ -89,7 +92,7 @@ import AppKit
     func refreshAppearance() {
         isBordered = false
         wantsLayer = true
-        layer?.cornerRadius = 7
+        layer?.cornerRadius = 12
         let selected = state == .on
         let dark = effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         let selectionInk = dark ? NSColor(srgbRed: 0.68, green: 0.86, blue: 0.78, alpha: 1) : CoreAppearance.accent

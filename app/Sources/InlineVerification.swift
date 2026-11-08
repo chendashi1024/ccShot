@@ -26,7 +26,7 @@ import AppKit
         if preview {previewWindow=editor;editor.onClose={store.removePersistentDomain(forName:suite);previewWindow=nil}} else {editor.close();store.removePersistentDomain(forName:suite)}
         return passed && (payload["hidden_left_red_pixels_preserved"] as? Bool == true)
     }
-    static func run(reportPath:String) async -> Bool {
+    static func run(reportPath:String, previewPath: String? = nil) async -> Bool {
         let suite="com.ccshot.inline-check.\(UUID().uuidString)"
         let store=UserDefaults(suiteName:suite)!
         defer {store.removePersistentDomain(forName:suite)}
@@ -34,13 +34,24 @@ import AppKit
         c.setFillColor(NSColor.gray.cgColor);c.fill(CGRect(x:0,y:0,width:1440,height:900))
         c.setFillColor(NSColor.white.cgColor);c.fill(CGRect(x:362,y:280,width:716,height:450))
         c.setFillColor(NSColor.red.cgColor);c.fill(CGRect(x:380,y:300,width:25,height:30))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: c, flipped: false)
+        ("Screenshot workspace" as NSString).draw(at: CGPoint(x: 410, y: 646),
+            withAttributes: [.font: NSFont.systemFont(ofSize: 32, weight: .semibold), .foregroundColor: NSColor.black])
+        ("Select this text or mark the image." as NSString).draw(at: CGPoint(x: 410, y: 596),
+            withAttributes: [.font: NSFont.systemFont(ofSize: 22), .foregroundColor: NSColor.darkGray])
+        NSGraphicsContext.restoreGraphicsState()
         guard let background=c.makeImage(),let crop=background.cropping(to:CGRect(x:362,y:170,width:716,height:450)) else {return false}
         let presentation=ScreenshotPresentation(background:background,screenFrame:CGRect(x:0,y:0,width:1440,height:900),region:CGRect(x:362,y:280,width:716,height:450),displayID:0,allowsAdjustment:true)
-        let editor=ImageWindow(annotationDocument:AnnotationDocument(image:crop),pinned:false,preferences:AppPreferences(store:store),screenshot:presentation)
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        let editor=ImageWindow(annotationDocument:AnnotationDocument(image:crop),pinned:false,
+                               preferences:AppPreferences(store:store),screenshot:presentation,pasteboard:pasteboard)
         defer {editor.close()}
         await editor.recognitionForVerification?.value
-        let checks=editor.inlineLayoutChecks()
-        let payload:[String:Any]=["schema":"ccshot.inline-editor.v1","checks":checks,"passed":!checks.isEmpty && checks.values.allSatisfy{$0},"clipboard_written":false,"system_input_method_verified":false]
+        var checks=editor.inlineLayoutChecks(previewPath: previewPath)
+        checks.merge(await editor.screenshotOutputChecks()) { _, new in new }
+        let payload:[String:Any]=["schema":"ccshot.inline-editor.v1","checks":checks,"passed":!checks.isEmpty && checks.values.allSatisfy{$0},"general_clipboard_written":false,"system_input_method_verified":false]
         guard let data=try? JSONSerialization.data(withJSONObject:payload,options:[.prettyPrinted,.sortedKeys]),(try? data.write(to:URL(fileURLWithPath:reportPath),options:.atomic)) != nil else {return false}
         return !checks.isEmpty && checks.values.allSatisfy{$0}
     }

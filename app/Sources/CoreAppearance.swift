@@ -1,10 +1,11 @@
 import AppKit
 
 enum CoreAppearance {
-    static let accent = NSColor(name:"CcShotAccent") { _ in NSColor(srgbRed:0.11,green:0.39,blue:0.35,alpha:1) }
+    static let accent = NSColor(name:"CcShotAccent") { _ in NSColor(srgbRed:0.17,green:0.40,blue:0.31,alpha:1) }
     static let captureBorderWidth: CGFloat = 2
+    static func captureRadius(_ rect: CGRect) -> CGFloat { min(30, rect.width * 0.2, rect.height * 0.2) }
     static func captureOutline(_ rect: CGRect) -> CGPath {
-        let radius = min(6, rect.width / 2, rect.height / 2)
+        let radius = captureRadius(rect)
         return CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
     }
     static let captureBorder = NSColor(name: "CcShotCaptureBorder") { appearance in
@@ -14,7 +15,7 @@ enum CoreAppearance {
     }
     static let error = NSColor(name:"CcShotError") { appearance in appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:1,green:0.54,blue:0.5,alpha:1) : NSColor(srgbRed:0.7,green:0.15,blue:0.12,alpha:1) }
     static let surface = NSColor(name:"CcShotSurface") { appearance in
-        appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:0.13,green:0.145,blue:0.14,alpha:1) : NSColor(srgbRed:0.98,green:0.97,blue:0.95,alpha:1)
+        appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:0.13,green:0.145,blue:0.14,alpha:1) : NSColor(srgbRed:0.97,green:0.98,blue:0.96,alpha:1)
     }
 }
 @MainActor final class CoreSurfaceView: NSView {

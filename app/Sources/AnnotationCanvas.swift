@@ -7,6 +7,9 @@ import AppKit
     private(set) var selectedID: UUID?
     private(set) var previewImage: CGImage?
     var editingEnabled = true
+    let compactStyles: Bool
+    private var markupColors: [AnnotationTool: AnnotationColor] = [:]
+    private var curvedArrow = true
     var onBackgroundDrag:((NSEvent)->Void)?
     var canStartTextSelection:((CGPoint)->Bool)?
     var onDocumentChanged: (() -> Void)?
@@ -35,15 +38,32 @@ import AppKit
     var imageSize: CGSize { CGSize(width: document.baseImage.width, height: document.baseImage.height) }
     var defaultStyleScale: CGFloat { AnnotationStyle.defaultScale(imageSize: imageSize, displayedWidth: contentRect.width) }
     private func newStyle(for tool: AnnotationTool) -> AnnotationStyle {
-        preferences.annotationStyle(for: tool, scale: defaultStyleScale)
+        guard compactStyles else { return preferences.annotationStyle(for: tool, scale: defaultStyleScale) }
+        var style = AnnotationStyle.initial(tool, scale: defaultStyleScale)
+        style.color = .leaf
+        switch tool {
+        case .arrow, .rectangle:
+            style.color = markupColors[tool] ?? AnnotationColor.markupPalette[0]
+            if tool == .arrow {
+                style.width = max(1, (5 * defaultStyleScale).rounded())
+                style.curvedArrow = curvedArrow
+            } else {
+                style.cornerRadius = (13 * defaultStyleScale).rounded()
+            }
+        case .mask: style.color = AnnotationColor(red: 48/255, green: 61/255, blue: 52/255)
+        case .highlight: style.color = AnnotationColor(red: 155/255, green: 198/255, blue: 137/255)
+        case .number: style.width = max(1, (3.5 * defaultStyleScale).rounded())
+        default: break
+        }
+        return style
     }
     var contentRect: CGRect {
         let scale = min(bounds.width / imageSize.width, bounds.height / imageSize.height)
         let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
         return CGRect(x: bounds.midX-size.width/2, y: bounds.midY-size.height/2, width: size.width, height: size.height)
     }
-    init(document: AnnotationDocument, preferences: AppPreferences) {
-        self.document = document; self.preferences = preferences
+    init(document: AnnotationDocument, preferences: AppPreferences, compactStyles: Bool = false) {
+        self.document = document; self.preferences = preferences; self.compactStyles = compactStyles
         super.init(frame: .zero)
         imageScaling = .scaleProportionallyUpOrDown; imageAlignment = .alignCenter
         document.onChange = { [weak self] in
@@ -107,7 +127,9 @@ import AppKit
             context.restoreGState()
         }
         guard editingEnabled, textEditor == nil, let object = draft ?? selected else { return }
-        NSColor.systemBlue.setStroke()
+        if compactStyles && object.tool == .arrow && (tool != .select || hasDraft && selectedID == nil) { return }
+        let handleColor = compactStyles ? CoreAppearance.captureBorder : .systemBlue
+        handleColor.setStroke()
         let topLeft = viewPoint(CGPoint(x: object.bounds.minX, y: object.bounds.minY))
         let bottomRight = viewPoint(CGPoint(x: object.bounds.maxX, y: object.bounds.maxY))
         let box = CGRect(x: topLeft.x, y: topLeft.y, width: bottomRight.x-topLeft.x, height: bottomRight.y-topLeft.y)
@@ -121,11 +143,11 @@ import AppKit
         if object.tool == .arrow {
             let center = viewPoint(object.arrowMidpoint)
             let handle = NSBezierPath(ovalIn:CGRect(x:center.x-4,y:center.y-4,width:8,height:8))
-            NSColor.white.setFill(); handle.fill(); NSColor.systemBlue.setStroke(); handle.stroke()
+            NSColor.white.setFill(); handle.fill(); handleColor.setStroke(); handle.stroke()
         }
         for point in points {
             let path = NSBezierPath(roundedRect: CGRect(x: point.x-3, y: point.y-3, width: 6, height: 6), xRadius: 1.5, yRadius: 1.5)
-            NSColor.white.setFill(); path.fill(); NSColor.systemBlue.setStroke(); path.stroke()
+            NSColor.white.setFill(); path.fill(); handleColor.setStroke(); path.stroke()
         }
     }
     override func mouseDown(with event: NSEvent) {
@@ -136,9 +158,9 @@ import AppKit
         // 已显示的控制点在当前工具下也应可拖动；空白区域继续绘制。
         if let object = selected {
             if object.tool == .line || object.tool == .arrow {
-                if hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
-                if hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
-                if object.tool == .arrow, hypot(point.x-object.arrowMidpoint.x,point.y-object.arrowMidpoint.y) <= tolerance {
+                if (!compactStyles || tool == .select), hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
+                if (!compactStyles || tool == .select), hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
+                if object.tool == .arrow, (!compactStyles || tool == .select), hypot(point.x-object.arrowMidpoint.x,point.y-object.arrowMidpoint.y) <= tolerance {
                     begin(.bend(object),at:point,object:object); return
                 }
             } else if let handle = SelectionHandle.allCases.first(where: { hypot(point.x-$0.point(in: object.bounds).x, point.y-$0.point(in: object.bounds).y) <= tolerance }) {
@@ -188,6 +210,7 @@ import AppKit
         case .draw:
             guard var object = draft else { return }
             object.end = object.tool == .line || object.tool == .arrow ? snapped(point, from: anchor, event: event) : point
+            if object.tool == .arrow && compactStyles { object.applyPresetCurve(in: imageSize) }
             if object.tool == .pen || object.tool == .highlight || object.tool == .mask && object.style.maskBrush {
                 if let last = object.points.last, hypot(last.x-point.x,last.y-point.y) >= 0.5 { object.points.append(point) }
             }
@@ -264,6 +287,24 @@ import AppKit
         guard hasDraft else { return }
         draft = nil; drag = nil; anchor = nil; following = []; refreshPreview(); onDocumentChanged?()
     }
+    func chooseMarkup(color: AnnotationColor? = nil, curved: Bool? = nil) {
+        let target = currentTool
+        guard !hasDraft, target == .arrow || target == .rectangle else { return }
+        if let color { markupColors[target] = color }
+        if let curved { curvedArrow = curved }
+        // 未显式选中对象时，更新当前工具最近画的一条。
+        let index = selectedID.flatMap { id in document.state.objects.firstIndex { $0.id == id } }
+            ?? document.state.objects.lastIndex { $0.tool == target }
+        guard let index else { onSelectionChanged?(); return }
+        var state = document.state
+        if let color { state.objects[index].style.color = color }
+        if let curved {
+            state.objects[index].style.curvedArrow = curved
+            state.objects[index].applyPresetCurve(in: imageSize)
+        }
+        document.commit(state)
+        onSelectionChanged?()
+    }
     func changeStyle(_ style: AnnotationStyle) {
         guard style.valid else { return }
         if let editor = textEditor {
@@ -301,7 +342,7 @@ import AppKit
         if event.keyCode == 49 { onSpace?(); return true }
         if event.isScreenshotReturn { onConfirm?(); return true }
         if !editingEnabled { return false }
-        if let key = event.charactersIgnoringModifiers?.lowercased(), let next = AnnotationTool.allCases.first(where: { $0.key == key }) { chooseTool(next); return true }
+        if let key = event.charactersIgnoringModifiers?.lowercased(), let next = AnnotationTool.allCases.first(where: { $0.key == key }), !compactStyles || ![.ellipse, .line].contains(next) { chooseTool(next); return true }
         if event.keyCode == 51 || event.keyCode == 117, let id = selectedID {
             var state = document.state; state.objects.removeAll { $0.id == id }; selectedID = nil; document.commit(state); onSelectionChanged?(); return true
         }
