@@ -75,6 +75,16 @@ import AppKit
         precondition(automatic.count==2 && automatic[1].0.width==120 && automatic[1].0.height==96 && automatic[1].1 == .edit,"框选松手直接交付当前裁剪")
         direct.selectRegion(.zero);direct.mouseUp(with:release)
         precondition(automatic.count==2,"空选区松手不能交付旧图")
+        for code: UInt16 in [36, 76] {
+            direct.selectRegion(CGRect(x: 100, y: 120, width: 300, height: 240))
+            let enter = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
+                                         windowNumber: 0, context: nil, characters: "\r", charactersIgnoringModifiers: "\r",
+                                         isARepeat: false, keyCode: code)!
+            let count = automatic.count
+            direct.keyDown(with: enter)
+            precondition(automatic.count == count + 1 && automatic.last?.1 == .copy,
+                         "回车应直接复制当前选区")
+        }
         print("通过：框选直接选择八个常用工具、复制/保存/钉住、当前裁剪像素与空选区拒绝")
     }
 }

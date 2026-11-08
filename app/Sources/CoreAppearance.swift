@@ -2,6 +2,12 @@ import AppKit
 
 enum CoreAppearance {
     static let accent = NSColor(name:"CcShotAccent") { _ in NSColor(srgbRed:0.11,green:0.39,blue:0.35,alpha:1) }
+    static let captureBorderWidth: CGFloat = 2.5
+    static let captureBorder = NSColor(name: "CcShotCaptureBorder") { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 0.37, green: 0.73, blue: 0.62, alpha: 1)
+            : accent
+    }
     static let error = NSColor(name:"CcShotError") { appearance in appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:1,green:0.54,blue:0.5,alpha:1) : NSColor(srgbRed:0.7,green:0.15,blue:0.12,alpha:1) }
     static let surface = NSColor(name:"CcShotSurface") { appearance in
         appearance.bestMatch(from:[.darkAqua,.aqua]) == .darkAqua ? NSColor(srgbRed:0.13,green:0.145,blue:0.14,alpha:1) : NSColor(srgbRed:0.98,green:0.97,blue:0.95,alpha:1)

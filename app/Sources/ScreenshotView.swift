@@ -117,10 +117,14 @@ struct ScreenshotPresentation {
     var handles=true
     var pixels:CGSize = .zero
     override func hitTest(_ point:NSPoint)->NSView? {nil}
+    override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
     override func draw(_ dirtyRect:NSRect) {
         guard !selection.isEmpty else {return}
-        CoreAppearance.accent.setStroke();let line=NSBezierPath(rect:selection.insetBy(dx:-0.5,dy:-0.5));line.lineWidth=1;line.stroke()
-        if handles {for handle in SelectionHandle.allCases {let p=handle.point(in:selection);let box=NSBezierPath(rect:CGRect(x:p.x-2.5,y:p.y-2.5,width:5,height:5));CoreAppearance.surface.setFill();box.fill();CoreAppearance.accent.setStroke();box.stroke()}}
+        CoreAppearance.captureBorder.setStroke()
+        let line = NSBezierPath(rect: selection)
+        line.lineWidth = CoreAppearance.captureBorderWidth
+        line.stroke()
+        if handles {for handle in SelectionHandle.allCases {let p=handle.point(in:selection);let box=NSBezierPath(rect:CGRect(x:p.x-2.5,y:p.y-2.5,width:5,height:5));CoreAppearance.surface.setFill();box.fill();CoreAppearance.captureBorder.setStroke();box.stroke()}}
         let text="\(Int(pixels.width.rounded())) × \(Int(pixels.height.rounded())) px" as NSString
         let attributes:[NSAttributedString.Key:Any]=[.font:NSFont.monospacedDigitSystemFont(ofSize:11,weight:.semibold),.foregroundColor:NSColor.white]
         let size=text.size(withAttributes:attributes)

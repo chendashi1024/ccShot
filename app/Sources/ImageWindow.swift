@@ -6,7 +6,19 @@ import UniformTypeIdentifiers
 @MainActor final class AnnotationWindow: NSWindow {
     override var canBecomeKey: Bool {true}
     var handleCanvasKey: ((NSEvent) -> Bool)?
+    var copiesScreenshotOnReturn = false
+    private var acceptsScreenshotReturn: Bool { attachedSheet == nil && !(firstResponder is NSTextView) }
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if copiesScreenshotOnReturn, event.isScreenshotReturn, acceptsScreenshotReturn, handleCanvasKey?(event) == true {
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
     override func keyDown(with event: NSEvent) {
+        if event.isScreenshotReturn && !acceptsScreenshotReturn {
+            super.keyDown(with: event)
+            return
+        }
         if handleCanvasKey?(event) != true { super.keyDown(with: event) }
     }
 }
@@ -98,6 +110,7 @@ import UniformTypeIdentifiers
         let pinRect=PinLayout.frame(pixels:CGSize(width:annotationDocument.baseImage.width,height:annotationDocument.baseImage.height),scale:pinScreen?.backingScaleFactor ?? 2,visible:pinScreen?.visibleFrame ?? CGRect(x:0,y:0,width:1200,height:800),preferred:pinFrame)
         let rect=pinned ? pinRect : screenshot?.screenFrame ?? NSRect(x:0,y:0,width:width,height:height)
         let window = AnnotationWindow(contentRect:rect,styleMask:pinned ? [.borderless,.resizable] : screenshot == nil ? [.titled,.closable,.resizable,.miniaturizable] : [.borderless],backing:.buffered,defer:false)
+        window.copiesScreenshotOnReturn = screenshot != nil
         window.title = pinned ? "ccShort · 钉图" : "ccShort"
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: pinned ? 420 : 880, height: pinned ? 260 : 300)
@@ -137,6 +150,8 @@ import UniformTypeIdentifiers
         toolRow.addArrangedSubview(spacer)
         editButton.target = self; editButton.action = #selector(toggleEditing); editButton.bezelStyle = .rounded; editButton.font = .systemFont(ofSize:14)
         viewerCopyButton = button("复制",#selector(copy(_:)))
+        (copyButton as? ToolbarButton)?.minimumTitle = "复制文字"
+        (viewerCopyButton as? ToolbarButton)?.minimumTitle = "复制文字"
         viewerRow.spacing = 8
         for (view,symbol) in [(editButton,"pencil"),(viewerCopyButton!,"square.on.square"),(button("关闭",#selector(closeImage)),"xmark")] {view.image=NSImage(systemSymbolName:symbol,accessibilityDescription:view.title);(view as? ToolbarButton)?.refreshAppearance();viewerRow.addArrangedSubview(view)}
         canvas.menu = makeContextMenu()
@@ -266,7 +281,7 @@ import UniformTypeIdentifiers
         let maxWidth = max(0, root.bounds.width - 24)
         let primary = toolbarContent.panelSize(maxWidth: maxWidth)
         let parameterSize = styleRow.isHidden ? .zero : parametersContent.panelSize(maxWidth: maxWidth)
-        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:primary,parameters:parameterSize,toolbarAnchorWidth:primary.width-(copyButton.title == "复制文字" ? 28 : 0),allowsOutsideRegion:!root.presentation.allowsAdjustment) else {
+        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:primary,parameters:parameterSize,allowsOutsideRegion:!root.presentation.allowsAdjustment) else {
             canvas.isHidden=true;toolbarPanel.isHidden=true;parametersPanel.isHidden=true;root.placement=nil;return
         }
         root.placement=placement;canvas.frame=placement.image;overlay.frame=canvas.bounds;overlay.setContentsRectNeedsUpdate()
@@ -822,6 +837,20 @@ extension ImageWindow {
         checks["toolbar_is_below_region"] = primaryFrame.maxY < original.minY
         let toolbarRow = toolbarPanel.convert(toolRow.bounds, from: toolRow)
         checks["toolbar_has_side_padding"] = toolbarRow.minX >= 16 && toolbarPanel.bounds.maxX - toolbarRow.maxX >= 16
+        let buttons = toolRow.arrangedSubviews.compactMap { $0 as? ToolbarButton }
+        checks["toolbar_button_contents_are_centered"] = buttons.allSatisfy { button in
+            let frames = button.contentFrames(in: button.bounds)
+            let content = frames.icon.isEmpty ? frames.title : frames.title.isEmpty ? frames.icon : frames.icon.union(frames.title)
+            let sideSpace = button.bounds.maxX - content.maxX
+            return abs(content.minX - button.bounds.minX - sideSpace) < 0.5 && sideSpace >= 8
+        }
+        if let copy = copyButton as? ToolbarButton {
+            let imageCopyWidth = copy.intrinsicContentSize.width
+            let title = copy.title
+            copy.title = "复制文字"
+            checks["copy_title_keeps_button_width"] = copy.intrinsicContentSize.width == imageCopyWidth
+            copy.title = title
+        }
         checks["all_tools_and_outputs_fit_toolbar"] = toolRow.arrangedSubviews.filter{!$0.isHidden}.allSatisfy {toolbarPanel.bounds.contains(toolbarPanel.convert($0.bounds,from:$0))}
         for tool in [AnnotationTool.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
             canvas.chooseTool(tool);root.layoutSubtreeIfNeeded();layoutScreenshot()

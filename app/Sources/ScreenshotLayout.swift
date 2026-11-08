@@ -8,7 +8,7 @@ struct ScreenshotPlacement {
 }
 
 enum ScreenshotLayout {
-    static func make(capture: CGSize, region: CGRect, viewport: CGSize, toolbar: CGSize, parameters: CGSize, toolbarAnchorWidth:CGFloat?=nil,allowsOutsideRegion:Bool=false) -> ScreenshotPlacement? {
+    static func make(capture: CGSize, region: CGRect, viewport: CGSize, toolbar: CGSize, parameters: CGSize,allowsOutsideRegion:Bool=false) -> ScreenshotPlacement? {
         let values=[capture.width,capture.height,region.minX,region.minY,region.width,region.height,viewport.width,viewport.height,toolbar.width,toolbar.height,parameters.width,parameters.height]
         guard values.allSatisfy({$0.isFinite}),capture.width>0,capture.height>0,viewport.width>24,viewport.height>24,
               region.width>0,region.height>0,toolbar.width>0,toolbar.height>0,
@@ -34,9 +34,7 @@ enum ScreenshotLayout {
         else if image.minY-28-th-actualBelow>=12 {y=image.minY-28-th}
         else if image.maxY+28+th+actualBelow<=viewport.height-12 {y=image.maxY+28+actualBelow}
         else {y=max(12,min(image.minY+12,viewport.height-12-groupHeight))+reserve+12}
-        let anchor=min(toolbarAnchorWidth ?? tw,safeWidth)
-        let reservedWidth=min(safeWidth,max(tw,anchor+28))
-        let x=max(12,min(image.midX-anchor/2,viewport.width-12-reservedWidth))
+        let x=max(12,min(image.midX-tw/2,viewport.width-12-tw))
         let primary=CGRect(x:x,y:y,width:tw,height:th)
         var panel:CGRect?
         if hasParameters {

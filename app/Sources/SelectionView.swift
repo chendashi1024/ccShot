@@ -1,5 +1,11 @@
 import AppKit
 
+extension NSEvent {
+    var isScreenshotReturn: Bool {
+        (keyCode == 36 || keyCode == 76) && modifierFlags.intersection([.command, .control, .option, .shift]).isEmpty
+    }
+}
+
 enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(AnnotationTool) }
 
 @MainActor final class SelectionWindow: NSWindow {
@@ -95,14 +101,14 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
         context.drawPath(using: .eoFill)
         context.restoreGState()
         if !highlighted.isEmpty {
-            NSColor.systemBlue.setStroke()
+            CoreAppearance.captureBorder.setStroke()
             let border = NSBezierPath(rect: highlighted)
-            border.lineWidth = 1.5
+            border.lineWidth = CoreAppearance.captureBorderWidth
             border.stroke()
             for handle in selection.isEmpty ? [] : SelectionHandle.allCases {
                 let point = handle.point(in: selection)
                 let box = NSBezierPath(rect: NSRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6))
-                NSColor.white.setFill(); box.fill(); NSColor.systemBlue.setStroke(); box.stroke()
+                NSColor.white.setFill(); box.fill(); CoreAppearance.captureBorder.setStroke(); box.stroke()
             }
         }
         if let pixels = selectionPixels {
@@ -211,7 +217,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
     }
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 { handleEscape(); return }
-        if event.keyCode == 36 { confirm(); return }
+        if event.isScreenshotReturn { finish(.copy); return }
         if event.charactersIgnoringModifiers?.lowercased() == "c", event.modifierFlags.intersection([.command, .control, .option]).isEmpty {
             guard let color = pointerColor else { NSSound.beep(); return }
             let value = event.modifierFlags.contains(.shift) ? color.rgb : color.hex

@@ -290,7 +290,7 @@ import AppKit
             return true
         }
         if event.keyCode == 49 { onSpace?(); return true }
-        if event.keyCode == 36 { onConfirm?(); return true }
+        if event.isScreenshotReturn { onConfirm?(); return true }
         if !editingEnabled { return false }
         if let key = event.charactersIgnoringModifiers?.lowercased(), let next = AnnotationTool.allCases.first(where: { $0.key == key }) { chooseTool(next); return true }
         if event.keyCode == 51 || event.keyCode == 117, let id = selectedID {
