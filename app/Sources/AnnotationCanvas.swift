@@ -111,15 +111,20 @@ import AppKit
         let topLeft = viewPoint(CGPoint(x: object.bounds.minX, y: object.bounds.minY))
         let bottomRight = viewPoint(CGPoint(x: object.bounds.maxX, y: object.bounds.maxY))
         let box = CGRect(x: topLeft.x, y: topLeft.y, width: bottomRight.x-topLeft.x, height: bottomRight.y-topLeft.y)
-        let border = NSBezierPath(rect: box); border.setLineDash([4, 3], count: 2, phase: 0); border.stroke()
-        let points = object.tool == .line || object.tool == .arrow ? [viewPoint(object.start), viewPoint(object.end)] : SelectionHandle.allCases.map { viewPoint($0.point(in: object.bounds)) }
+        let isLine = object.tool == .line || object.tool == .arrow
+        if !isLine {
+            let radius = min(4, box.width / 2, box.height / 2)
+            let border = NSBezierPath(roundedRect: box, xRadius: radius, yRadius: radius)
+            border.setLineDash([4, 3], count: 2, phase: 0); border.stroke()
+        }
+        let points = isLine ? [viewPoint(object.start), viewPoint(object.end)] : SelectionHandle.allCases.map { viewPoint($0.point(in: object.bounds)) }
         if object.tool == .arrow {
             let center = viewPoint(object.arrowMidpoint)
             let handle = NSBezierPath(ovalIn:CGRect(x:center.x-4,y:center.y-4,width:8,height:8))
             NSColor.white.setFill(); handle.fill(); NSColor.systemBlue.setStroke(); handle.stroke()
         }
         for point in points {
-            let path = NSBezierPath(rect: CGRect(x: point.x-3, y: point.y-3, width: 6, height: 6))
+            let path = NSBezierPath(roundedRect: CGRect(x: point.x-3, y: point.y-3, width: 6, height: 6), xRadius: 1.5, yRadius: 1.5)
             NSColor.white.setFill(); path.fill(); NSColor.systemBlue.setStroke(); path.stroke()
         }
     }

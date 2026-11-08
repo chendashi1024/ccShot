@@ -95,19 +95,19 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
         context.saveGState()
         let outside = CGMutablePath()
         outside.addRect(bounds)
-        if !highlighted.isEmpty { outside.addRect(highlighted) }
+        if !highlighted.isEmpty { outside.addPath(CoreAppearance.captureOutline(highlighted)) }
         context.addPath(outside)
         context.setFillColor(NSColor.black.withAlphaComponent(0.48).cgColor)
         context.drawPath(using: .eoFill)
         context.restoreGState()
         if !highlighted.isEmpty {
-            CoreAppearance.captureBorder.setStroke()
-            let border = NSBezierPath(rect: highlighted)
-            border.lineWidth = CoreAppearance.captureBorderWidth
-            border.stroke()
+            context.setStrokeColor(CoreAppearance.captureBorder.cgColor)
+            context.setLineWidth(CoreAppearance.captureBorderWidth)
+            context.addPath(CoreAppearance.captureOutline(highlighted))
+            context.strokePath()
             for handle in selection.isEmpty ? [] : SelectionHandle.allCases {
                 let point = handle.point(in: selection)
-                let box = NSBezierPath(rect: NSRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6))
+                let box = NSBezierPath(roundedRect: NSRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6), xRadius: 1.5, yRadius: 1.5)
                 NSColor.white.setFill(); box.fill(); CoreAppearance.captureBorder.setStroke(); box.stroke()
             }
         }

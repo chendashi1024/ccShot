@@ -3,6 +3,10 @@ import AppKit
 enum CoreAppearance {
     static let accent = NSColor(name:"CcShotAccent") { _ in NSColor(srgbRed:0.11,green:0.39,blue:0.35,alpha:1) }
     static let captureBorderWidth: CGFloat = 2
+    static func captureOutline(_ rect: CGRect) -> CGPath {
+        let radius = min(6, rect.width / 2, rect.height / 2)
+        return CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+    }
     static let captureBorder = NSColor(name: "CcShotCaptureBorder") { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             ? NSColor(srgbRed: 0.40, green: 0.67, blue: 0.60, alpha: 1)

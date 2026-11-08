@@ -9,6 +9,13 @@ import AppKit
         let defaultArrow = AnnotationObject(tool: .arrow, style: .initial(.arrow), start: CGPoint(x: 20, y: 50), end: CGPoint(x: 180, y: 50))
         let arrowImage = AnnotationRenderer.render(base: base, objects: [defaultArrow])!
         precondition(PixelSampler.color(in: arrowImage, x: 90, y: 47)!.green < 100, "默认箭杆至少覆盖 6 个像素")
+        precondition(defaultArrow.style.arrowHead == .open, "默认箭头应使用开口夹角")
+        precondition(PixelSampler.color(in: arrowImage, x: 166, y: 45)!.hex == "#FFFFFF"
+                     && PixelSampler.color(in: arrowImage, x: 166, y: 40)!.green < 100, "箭头两翼清晰可见，夹角中间保持空白")
+        var filledArrow = defaultArrow
+        filledArrow.style.arrowHead = .filled
+        let filledArrowImage = AnnotationRenderer.render(base: base, objects: [filledArrow])!
+        precondition(PixelSampler.color(in: filledArrowImage, x: 182, y: 49)!.hex == "#FFFFFF", "箭杆的圆端不能伸到箭尖前方")
         let retina = AnnotationStyle.defaultScale(imageSize: CGSize(width: 2400, height: 1600), displayedWidth: 1200)
         let fitted = AnnotationStyle.defaultScale(imageSize: CGSize(width: 3840, height: 2160), displayedWidth: 960)
         let small = AnnotationStyle.defaultScale(imageSize: CGSize(width: 180, height: 80), displayedWidth: 90)

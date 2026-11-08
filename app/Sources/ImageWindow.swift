@@ -923,6 +923,7 @@ extension ImageWindow {
         var result = ["core_tools_share_first_row":toolButtons.count == 8 && toolButtons.values.allSatisfy { $0.superview === toolRow && !$0.isHidden },"minimum_window_keeps_primary_controls":contained,"minimum_window_keeps_canvas":canvas.bounds.height >= 160]
         canvas.chooseTool(.arrow); root.layoutSubtreeIfNeeded()
         result["arrow_selection_reveals_style_without_extra_click"] = !styleRow.isHidden && !optionRow.isHidden && !arrowPicker.isHidden && !arrowTitle.isHidden
+        result["arrow_defaults_to_open_head"] = canvas.currentStyle.arrowHead == .open && arrowPicker.selectedSegment == 1
         status.stringValue = "拖选文字后 ⌘C 复制"; updateControls()
         result["drawing_does_not_offer_text_selection"] = !status.stringValue.contains("拖选文字")
         let initialArrowStyle = canvas.currentStyle
@@ -934,9 +935,9 @@ extension ImageWindow {
         result["corrected_stroke_width_clears_own_error"] = !status.stringValue.contains("线宽须为")
         status.stringValue = "保存失败，请重试"; changeStrokeWidth()
         result["stroke_input_keeps_unrelated_error"] = status.stringValue == "保存失败，请重试"
-        arrowPicker.selectedSegment = 1; arrowPicker.sendAction(arrowPicker.action,to:arrowPicker.target)
+        arrowPicker.selectedSegment = 0; arrowPicker.sendAction(arrowPicker.action,to:arrowPicker.target)
         dashButton.selectedSegment = 1; dashButton.sendAction(dashButton.action,to:dashButton.target)
-        result["style_preview_controls_change_arrow_and_line"] = canvas.currentStyle.arrowHead == .open && canvas.currentStyle.dashed && arrowPicker.image(forSegment:1) != nil && dashButton.image(forSegment:1) != nil
+        result["style_preview_controls_change_arrow_and_line"] = canvas.currentStyle.arrowHead == .filled && canvas.currentStyle.dashed && arrowPicker.image(forSegment:0) != nil && dashButton.image(forSegment:1) != nil
         canvas.changeStyle(initialArrowStyle)
         result["style_panel_stays_in_window"] = !styleRow.isHidden && root.bounds.contains(root.convert(styleRow.bounds,from:styleRow)) && root.bounds.contains(root.convert(optionRow.bounds,from:optionRow))
         canvas.chooseTool(.rectangle); root.layoutSubtreeIfNeeded()

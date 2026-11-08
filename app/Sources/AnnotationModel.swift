@@ -64,8 +64,10 @@ struct AnnotationStyle: Codable, Equatable {
         var style = Self()
         style.width = pixels(4)
         switch tool {
-        case .arrow: style.width = pixels(6)
-        case .rectangle: style.cornerRadius = pixels(3)
+        case .arrow:
+            style.width = pixels(6)
+            style.arrowHead = .open
+        case .rectangle: style.cornerRadius = pixels(6)
         case .text: style.fontSize = pixels(20, lower: 8, upper: 200)
         case .mask:
             style.width = pixels(24)

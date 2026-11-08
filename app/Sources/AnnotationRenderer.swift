@@ -26,14 +26,10 @@ import CoreImage
             let rect = object.bounds
             let path = object.tool == .ellipse ? CGPath(ellipseIn: rect, transform: nil) : CGPath(roundedRect: rect, cornerWidth: min(style.cornerRadius, rect.width/2), cornerHeight: min(style.cornerRadius, rect.height/2), transform: nil)
             context.addPath(path); context.drawPath(using: style.filled ? .fill : .stroke)
-        case .line, .arrow:
+        case .line:
             context.addPath(object.strokePath); context.strokePath()
-            if object.tool == .arrow {
-                context.setLineDash(phase: 0, lengths: [])
-                let headLength = object.arrowHeadLength
-                arrow(at: object.end, from: object.curveControl == object.end ? object.start : (object.curveControl ?? object.start), length: headLength, head: style.arrowHead, context: context)
-                if style.arrowHead == .double { arrow(at: object.start, from: object.curveControl == object.start ? object.end : (object.curveControl ?? object.end), length: headLength, head: .double, context: context) }
-            }
+        case .arrow:
+            drawArrow(object, in: context)
         case .pen, .highlight:
             guard let first = object.points.first else { return true }
             context.move(to: first)
@@ -90,13 +86,48 @@ import CoreImage
         guard let output = CIFilter(name: name, parameters: [kCIInputImageKey: input.clampedToExtent(), parameter: strength])?.outputImage?.cropped(to: input.extent) else { return nil }
         return filterContext.createCGImage(output, from: input.extent)
     }
-    private static func arrow(at tip: CGPoint, from start: CGPoint, length: CGFloat, head: ArrowHead, context: CGContext) {
+    private static func drawArrow(_ object: AnnotationObject, in context: CGContext) {
+        let headLength = object.arrowHeadLength
+        guard headLength > 0 else { return }
+        let head = object.style.arrowHead
+        let width = min(object.style.width, headLength * 0.55)
+        let start = object.start, end = object.end, control = object.curveControl
+        let chord = hypot(end.x - start.x, end.y - start.y)
+        let inset = width * 0.7
+        // 收短箭杆再画两翼，使圆端藏在箭尖内。弧线按原贝塞尔曲线截取。
+        func trim(at endpoint: CGPoint) -> CGFloat {
+            guard let control else { return min(0.45, inset / chord) }
+            let tangent = hypot(control.x - endpoint.x, control.y - endpoint.y)
+            return min(0.45, tangent > 0 ? inset / (2 * tangent) : sqrt(inset / chord))
+        }
+        let t0 = head == .double ? trim(at: start) : 0
+        let t1 = 1 - trim(at: end)
+        let shaftStart = object.arrowPoint(at: t0)
+        let shaftEnd = object.arrowPoint(at: t1)
+        context.setLineWidth(width)
+        context.move(to: shaftStart)
+        if let control {
+            let dx = (1 - t0) * (control.x - start.x) + t0 * (end.x - control.x)
+            let dy = (1 - t0) * (control.y - start.y) + t0 * (end.y - control.y)
+            context.addQuadCurve(to: shaftEnd, control: CGPoint(x: shaftStart.x + dx * (t1 - t0), y: shaftStart.y + dy * (t1 - t0)))
+        } else {
+            context.addLine(to: shaftEnd)
+        }
+        context.strokePath()
+        context.setLineDash(phase: 0, lengths: [])
+        arrowHead(at: end, from: control == end ? start : (control ?? start), length: headLength, open: head == .open, context: context)
+        if head == .double {
+            arrowHead(at: start, from: control == start ? end : (control ?? end), length: headLength, open: false, context: context)
+        }
+    }
+    private static func arrowHead(at tip: CGPoint, from start: CGPoint, length: CGFloat, open: Bool, context: CGContext) {
         guard hypot(tip.x-start.x, tip.y-start.y) > 0 else { return }
         let angle = atan2(tip.y-start.y, tip.x-start.x)
-        let left = CGPoint(x: tip.x - length*cos(angle-0.45), y: tip.y - length*sin(angle-0.45))
-        let right = CGPoint(x: tip.x - length*cos(angle+0.45), y: tip.y - length*sin(angle+0.45))
+        let spread: CGFloat = open ? 0.58 : 0.45
+        let left = CGPoint(x: tip.x - length * cos(angle-spread), y: tip.y - length * sin(angle-spread))
+        let right = CGPoint(x: tip.x - length * cos(angle+spread), y: tip.y - length * sin(angle+spread))
         context.move(to: left); context.addLine(to: tip); context.addLine(to: right)
-        if head == .open { context.strokePath() }
+        if open { context.strokePath() }
         else { context.closePath(); context.fillPath() }
     }
 }
