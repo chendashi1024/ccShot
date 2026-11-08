@@ -2,7 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 source_revision=$(git rev-parse HEAD)
-mkdir -p build/ModuleCache build/ccShort.app/Contents/MacOS
+mkdir -p build/ModuleCache build/ccShort.app/Contents/{MacOS,Resources}
+cp Resources/AppIcon.icns Resources/StatusIcon.pdf build/ccShort.app/Contents/Resources/
 xcrun swiftc -swift-version 5 -parse-as-library -O -target arm64-apple-macos14.0 \
   -module-cache-path "$PWD/build/ModuleCache" Sources/*.swift \
   -o build/ccShort.app/Contents/MacOS/CcShot
@@ -13,6 +14,7 @@ cat > build/ccShort.app/Contents/Info.plist <<'PLIST'
 <key>CFBundleIdentifier</key><string>com.ccshot.dev</string>
 <key>CFBundleName</key><string>ccShort</string>
 <key>CFBundleDisplayName</key><string>ccShort</string>
+<key>CFBundleIconFile</key><string>AppIcon.icns</string>
 <key>CFBundleDevelopmentRegion</key><string>zh_CN</string>
 <key>CFBundleLocalizations</key><array><string>zh-Hans</string></array>
 <key>CFBundleExecutable</key><string>CcShot</string>

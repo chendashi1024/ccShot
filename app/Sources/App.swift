@@ -27,7 +27,18 @@ import QuartzCore
             menu.addItem(item)
         }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.title = "ccShort"
+        if let button = statusItem.button {
+            button.setAccessibilityLabel("ccShort")
+            button.toolTip = "ccShort"
+            if let iconURL = Bundle.main.url(forResource: "StatusIcon", withExtension: "pdf"),
+               let icon = NSImage(contentsOf: iconURL) {
+                icon.isTemplate = true
+                button.image = icon
+                button.imagePosition = .imageOnly
+            } else {
+                button.title = "ccShort"
+            }
+        }
         statusItem.menu = menu
         let main = NSMenu()
         let appMenu = NSMenuItem(); appMenu.submenu = menu.copy() as? NSMenu; main.addItem(appMenu)
