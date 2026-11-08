@@ -18,6 +18,12 @@ import AppKit
             precondition(layout.image==box && safe.contains(layout.toolbar) && safe.contains(layout.parameters!),"四角与整屏不能把操作推出屏幕或缩小截图")
             if box.height==100 {precondition(layout.parameters!.minY>=box.maxY,"下边缘选区时整组参数应避让到上方")}
         }
+        let narrowSize = CGSize(width: 720, height: 500)
+        let narrowRegion = CGRect(x: 122, y: 232, width: 476, height: 180)
+        let narrow = ScreenshotLayout.make(capture: narrowSize, region: narrowRegion, viewport: narrowSize,
+                                          toolbar: CGSize(width: 696, height: 75), parameters: CGSize(width: 528, height: 86))!
+        precondition(narrow.toolbar.maxY < narrowRegion.minY && narrow.parameters!.minY >= 12,
+                     "窄视口的实际空间足够时，工具栏和参数应避开选区")
         let scaled=ScreenshotLayout.make(capture:source,region:region,viewport:CGSize(width:720,height:500),toolbar:CGSize(width:956,height:56),parameters:CGSize(width:512,height:116))!
         precondition(scaled.background==CGRect(x:0,y:25,width:720,height:450))
         precondition(scaled.image==CGRect(x:181,y:165,width:358,height:225),"屏幕改变后按同一比例映射，不拉伸图片")

@@ -27,6 +27,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
     private var pointerColor: SampledColor?
     private var mouseTracking: NSTrackingArea?
     private let actions = NSStackView()
+    private lazy var actionPanel = FloatingControls(rows: [actions])
 
     init(image: CGImage, frame: NSRect) {
         self.image = image
@@ -44,11 +45,11 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
             actions.addArrangedSubview(button)
         }
         actions.spacing = 8
-        actions.edgeInsets = NSEdgeInsets(top:6,left:8,bottom:6,right:8)
-        actions.wantsLayer = true; actions.layer?.cornerRadius = 8
+        actions.edgeInsets = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
+        actionPanel.wantsLayer = true; actionPanel.layer?.cornerRadius = 8
         updateActionsAppearance()
-        actions.isHidden = true
-        addSubview(actions)
+        actionPanel.isHidden = true
+        addSubview(actionPanel)
     }
     required init?(coder: NSCoder) { nil }
     override func viewDidChangeEffectiveAppearance() {
@@ -57,7 +58,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
     private func updateActionsAppearance() {
         // 原生按钮带半透明底色，需使用稳定底板，避免截图亮度降低文字对比。
         effectiveAppearance.performAsCurrentDrawingAppearance {
-            actions.layer?.backgroundColor = CoreAppearance.surface.cgColor
+            actionPanel.layer?.backgroundColor = CoreAppearance.surface.cgColor
         }
     }
     override var acceptsFirstResponder: Bool { true }
@@ -167,7 +168,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
         moving = resizing == nil && !selection.isEmpty && selection.contains(anchor!)
         if event.clickCount == 2, moving { finish(.copy); return }
         updatePointer(anchor!)
-        actions.isHidden = true
+        actionPanel.isHidden = true
     }
     override func mouseDragged(with event: NSEvent) {
         guard let anchor else { return }
@@ -202,9 +203,11 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
         if automaticallyEdit,!selection.isEmpty {finish(.edit)} else {showActions()}
     }
     private func showActions() {
-        actions.isHidden = selection.isEmpty
-        actions.frame.size = actions.fittingSize
-        actions.frame.origin = NSPoint(x: min(max(8, selection.maxX - actions.frame.width), bounds.width - actions.frame.width - 8), y: max(8, selection.minY - actions.frame.height - 10))
+        actionPanel.isHidden = selection.isEmpty
+        let size = actionPanel.panelSize(maxWidth: max(0, bounds.width - 24))
+        actionPanel.frame = CGRect(x: max(12, min(selection.maxX - size.width, bounds.width - size.width - 12)),
+                                   y: max(12, selection.minY - size.height - 12), width: size.width, height: size.height)
+        actionPanel.fitContent()
     }
     override func keyDown(with event: NSEvent) {
         if event.keyCode == 53 { handleEscape(); return }
@@ -247,7 +250,7 @@ enum SelectionAction: Equatable { case edit, copy, save, pin, annotate(Annotatio
               let cropped = image.cropping(to: pixels) else { return }
         onConfirm?(cropped, window?.convertToScreen(selection) ?? selection, action)
     }
-    @objc private func reset() { selection = .zero; selectionPixels = nil; actions.isHidden = true; needsDisplay = true }
+    @objc private func reset() { selection = .zero; selectionPixels = nil; actionPanel.isHidden = true; needsDisplay = true }
     override func cancelOperation(_ sender: Any?) { handleEscape() }
     private func handleEscape() {
         pendingWindow = nil

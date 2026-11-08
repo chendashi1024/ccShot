@@ -1,4 +1,5 @@
 import AppKit
+import CoreImage
 import VisionKit
 import UniformTypeIdentifiers
 
@@ -28,8 +29,8 @@ import UniformTypeIdentifiers
     private var screenshotView:ScreenshotView?
     private var toolbarPanel:CoreSurfaceView?
     private var parametersPanel:CoreSurfaceView?
-    private var toolbarContent:NSStackView?
-    private var parametersContent:NSStackView?
+    private var toolbarContent:FloatingControls?
+    private var parametersContent:FloatingControls?
     var onReselect:((CGRect)->Bool)?
     var isScreenshot:Bool {screenshot != nil}
     private let toolRow = NSStackView()
@@ -114,6 +115,10 @@ import UniformTypeIdentifiers
         canvas.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         overlay.delegate = self; overlay.trackingImageView = canvas
         overlay.preferredInteractionTypes = .textSelection
+        // 只增强系统选字层的可见度，保留原生选区和截图像素。
+        if let contrast = CIFilter(name: "CIColorMatrix", parameters: ["inputAVector": CIVector(x: 0, y: 0, z: 0, w: 2.6)]) {
+            overlay.contentFilters = [contrast]
+        }
         overlay.autoresizingMask = [.width, .height]; canvas.addSubview(overlay)
         buildStyles()
         undoButton = iconButton("arrow.uturn.backward", "撤销（⌘Z）", #selector(undo(_:)))
@@ -141,7 +146,7 @@ import UniformTypeIdentifiers
         stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 10
         stack.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 16), stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -16),
+            stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 20), stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -20),
             stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 12), stack.bottomAnchor.constraint(equalTo: root.bottomAnchor, constant: -12),
             toolRow.widthAnchor.constraint(equalTo:stack.widthAnchor), canvas.widthAnchor.constraint(equalTo: stack.widthAnchor), canvas.heightAnchor.constraint(greaterThanOrEqualToConstant: 160)
         ])
@@ -172,12 +177,11 @@ import UniformTypeIdentifiers
     private func configureScreenshot(root:NSView) {
         guard let root=root as? ScreenshotView else {return}
         root.addSubview(canvas);root.imageView=canvas;root.installBorder()
-        func panel(_ rows:[NSView])->(CoreSurfaceView,NSStackView) {
+        func panel(_ rows:[NSView])->(CoreSurfaceView,FloatingControls) {
             let panel=CoreSurfaceView();panel.wantsLayer=true;panel.layer?.cornerRadius=10;panel.layer?.masksToBounds=true
             panel.layer?.borderWidth=1;panel.layer?.borderColor=NSColor.separatorColor.cgColor
-            let content=NSStackView(views:rows);content.orientation = .vertical;content.alignment = .leading;content.spacing=10
-            content.translatesAutoresizingMaskIntoConstraints=false;panel.addSubview(content)
-            NSLayoutConstraint.activate([content.leadingAnchor.constraint(equalTo:panel.leadingAnchor,constant:8),content.trailingAnchor.constraint(equalTo:panel.trailingAnchor,constant:-8),content.topAnchor.constraint(equalTo:panel.topAnchor,constant:8),content.bottomAnchor.constraint(equalTo:panel.bottomAnchor,constant:-8)])
+            let content = FloatingControls(rows: rows)
+            panel.addSubview(content)
             root.addSubview(panel);return(panel,content)
         }
         configureFloatingTools()
@@ -207,7 +211,7 @@ import UniformTypeIdentifiers
         if pinned {donePinButton.image=NSImage(systemSymbolName:"checkmark",accessibilityDescription:"完成标注");toolRow.addArrangedSubview(donePinButton)}
         (copyButton as? ToolbarButton)?.primary=true
         toolRow.addArrangedSubview(iconButton("xmark","关闭（Esc）",#selector(closeImage)))
-        toolRow.spacing=4
+        toolRow.spacing=6
         for button in toolRow.arrangedSubviews.compactMap({$0 as? ToolbarButton}) {button.refreshAppearance()}
     }
     private func compactFloatingStyles() {
@@ -259,16 +263,20 @@ import UniformTypeIdentifiers
     func windowDidResignKey(_ notification:Notification) {pinChrome?.refreshVisibility()}
     private func layoutScreenshot() {
         guard let root=screenshotView,let toolbarPanel,let parametersPanel,let toolbarContent,let parametersContent else {return}
-        let primary=toolbarContent.fittingSize
-        let options=parametersContent.fittingSize
-        let parameterSize=styleRow.isHidden ? CGSize.zero : CGSize(width:options.width+16,height:options.height+16)
-        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:CGSize(width:primary.width+16,height:56),parameters:parameterSize,toolbarAnchorWidth:primary.width+16-(copyButton.title == "复制文字" ? 28 : 0),allowsOutsideRegion:!root.presentation.allowsAdjustment) else {
+        let maxWidth = max(0, root.bounds.width - 24)
+        let primary = toolbarContent.panelSize(maxWidth: maxWidth)
+        let parameterSize = styleRow.isHidden ? .zero : parametersContent.panelSize(maxWidth: maxWidth)
+        guard let placement=ScreenshotLayout.make(capture:root.presentation.captureSize,region:root.region,viewport:root.bounds.size,toolbar:primary,parameters:parameterSize,toolbarAnchorWidth:primary.width-(copyButton.title == "复制文字" ? 28 : 0),allowsOutsideRegion:!root.presentation.allowsAdjustment) else {
             canvas.isHidden=true;toolbarPanel.isHidden=true;parametersPanel.isHidden=true;root.placement=nil;return
         }
         root.placement=placement;canvas.frame=placement.image;overlay.frame=canvas.bounds;overlay.setContentsRectNeedsUpdate()
         canvas.isHidden=root.isAdjusting;toolbarPanel.isHidden=root.isAdjusting;parametersPanel.isHidden=root.isAdjusting || placement.parameters == nil
         toolbarPanel.frame=placement.toolbar
-        if let frame=placement.parameters {parametersPanel.frame=frame}
+        toolbarContent.place(in: toolbarPanel.bounds)
+        if let frame = placement.parameters {
+            parametersPanel.frame = frame
+            parametersContent.place(in: parametersPanel.bounds)
+        }
         root.canAdjust=root.presentation.allowsAdjustment && root.sourceGeometryAvailable && annotationDocument.state.objects.isEmpty && !canvas.hasDraft
         let message=status.stringValue
         status.isHidden=root.isAdjusting || message == imageDimensions || message.hasPrefix("拖选文字后") || message == "正在编辑…"
@@ -290,7 +298,7 @@ import UniformTypeIdentifiers
     }
     private func iconButton(_ symbol: String, _ title: String, _ action: Selector) -> NSButton {
         let value = button("",action); value.image = NSImage(systemSymbolName:symbol,accessibilityDescription:title); value.imagePosition = .imageOnly
-        value.toolTip = title; value.setAccessibilityLabel(title); value.widthAnchor.constraint(equalToConstant:28).isActive = true; return value
+        value.toolTip = title; value.setAccessibilityLabel(title); value.widthAnchor.constraint(equalToConstant: floatingEditor ? 34 : 28).isActive = true; return value
     }
     private func stylePreview(_ kind: String, width: CGFloat = 2) -> NSImage {
         let image = NSImage(size: NSSize(width:44,height:24),flipped:false) { _ in
@@ -727,6 +735,10 @@ extension ImageWindow {
                 "viewer_actions_outside_image_window":viewerRow.window !== window && viewerRow.window != nil,
                 "pin_stays_floating":window.level == .floating,
                 "output_keeps_source_pixels":stableImage()?.width==annotationDocument.baseImage.width && stableImage()?.height==annotationDocument.baseImage.height]
+        if let panel = pinChrome.primary.contentView {
+            let viewer = panel.convert(viewerRow.bounds, from: viewerRow)
+            checks["viewer_panel_has_side_padding"] = viewer.minX >= 16 && panel.bounds.maxX - viewer.maxX >= 16
+        }
         checks["viewer_has_only_three_actions"] = viewerRow.arrangedSubviews.compactMap{$0 as? NSButton}.map(\.title)==["标注","复制","关闭"]
         checks["focus_shows_viewer_actions"] = pinChrome.primary.isVisible
         toggleEditing()
@@ -808,6 +820,8 @@ extension ImageWindow {
         checks["output_png_excludes_chrome_and_background"] = image.flatMap {Self.encoded($0,type:.png)}.flatMap {CGImageSourceCreateWithData($0 as CFData,nil)}.flatMap {CGImageSourceCreateImageAtIndex($0,0,nil)}.map {$0.width==716 && $0.height==450} == true
         let primaryFrame=toolbarPanel.frame
         checks["toolbar_is_below_region"] = primaryFrame.maxY < original.minY
+        let toolbarRow = toolbarPanel.convert(toolRow.bounds, from: toolRow)
+        checks["toolbar_has_side_padding"] = toolbarRow.minX >= 16 && toolbarPanel.bounds.maxX - toolbarRow.maxX >= 16
         checks["all_tools_and_outputs_fit_toolbar"] = toolRow.arrangedSubviews.filter{!$0.isHidden}.allSatisfy {toolbarPanel.bounds.contains(toolbarPanel.convert($0.bounds,from:$0))}
         for tool in [AnnotationTool.arrow,.rectangle,.text,.pen,.mask,.highlight,.number] {
             canvas.chooseTool(tool);root.layoutSubtreeIfNeeded();layoutScreenshot()

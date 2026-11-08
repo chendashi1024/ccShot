@@ -52,7 +52,17 @@ import AppKit
         }
         view.selectRegion(CGRect(x:900,y:550,width:100,height:50))
         let row=actions[0].superview!
-        precondition(view.bounds.insetBy(dx:7,dy:7).contains(row.frame),"屏边选区不能把输出按钮推到屏幕外")
+        precondition(view.bounds.insetBy(dx:7,dy:7).contains(view.convert(row.bounds, from: row)),"屏边选区不能把输出按钮推到屏幕外")
+        let narrow = SelectionView(image: source, frame: CGRect(x: 0, y: 0, width: 360, height: 300))
+        narrow.selectRegion(CGRect(x: 210, y: 140, width: 140, height: 90))
+        let panel = narrow.subviews.compactMap { $0 as? FloatingControls }.first!
+        let scroll = panel.subviews.compactMap { $0 as? NSScrollView }.first!
+        let last = buttons(panel).last!
+        precondition(narrow.bounds.insetBy(dx: 12, dy: 0).contains(panel.frame))
+        precondition(scroll.hasHorizontalScroller && scroll.frame.minX == 16 && panel.bounds.maxX - scroll.frame.maxX == 16)
+        precondition(last.frame.width >= last.intrinsicContentSize.width, "窄屏不能压缩或截断边缘按钮")
+        last.scrollToVisible(last.bounds)
+        precondition(scroll.documentVisibleRect.contains(panel.stack.convert(last.bounds, from: last)), "最后一个按钮可完整滚动到可见范围")
         let direct=SelectionView(image:source,frame:CGRect(x:0,y:0,width:1000,height:600))
         direct.automaticallyEdit=true
         var automatic:[(CGImage,SelectionAction)]=[]

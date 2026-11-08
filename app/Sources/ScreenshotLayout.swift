@@ -26,9 +26,13 @@ enum ScreenshotLayout {
         // 为通常的两行参数预留位置，切换工具时首排不因面板出现而跳动。
         let reserve=min(max(116,ph),max(0,safeHeight-th-12))
         let groupHeight=th+12+reserve
+        let actualBelow = hasParameters ? 12 + ph : 0
         let y:CGFloat
         if image.minY-28-groupHeight>=12 {y=image.minY-28-th}
         else if image.maxY+28+groupHeight<=viewport.height-12 {y=image.maxY+28+reserve+12}
+        // 常用预留空间放不下时，按当前面板高度重新判断，能避开图片就不遮住图片。
+        else if image.minY-28-th-actualBelow>=12 {y=image.minY-28-th}
+        else if image.maxY+28+th+actualBelow<=viewport.height-12 {y=image.maxY+28+actualBelow}
         else {y=max(12,min(image.minY+12,viewport.height-12-groupHeight))+reserve+12}
         let anchor=min(toolbarAnchorWidth ?? tw,safeWidth)
         let reservedWidth=min(safeWidth,max(tw,anchor+28))

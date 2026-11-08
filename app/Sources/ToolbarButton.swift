@@ -6,7 +6,7 @@ import AppKit
     override var intrinsicContentSize:NSSize {
         let font=self.font ?? .systemFont(ofSize:14)
         let text=(title as NSString).size(withAttributes:[.font:font]).width
-        let width=title.isEmpty ? (compact ? 44 : 28) : ceil(text)+(image==nil ? 0 : 20)+16
+        let width=title.isEmpty ? (compact ? 44 : 34) : ceil(text)+(image==nil ? 0 : 20)+20
         return NSSize(width:width,height:compact ? 30 : 40)
     }
     func refreshAppearance() {

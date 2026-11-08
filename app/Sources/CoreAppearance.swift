@@ -12,3 +12,45 @@ enum CoreAppearance {
     override func draw(_ dirtyRect: NSRect) { CoreAppearance.surface.setFill(); dirtyRect.fill() }
     override func viewDidChangeEffectiveAppearance() { super.viewDidChangeEffectiveAppearance(); needsDisplay = true }
 }
+
+// 面板变窄时滚动内容，保留按钮的原始宽度和外侧留白。
+@MainActor final class FloatingControls: NSView {
+    static let horizontalPadding: CGFloat = 16
+    static let verticalPadding: CGFloat = 10
+    let stack: NSStackView
+    private let scroll = NSScrollView()
+
+    init(rows: [NSView]) {
+        stack = NSStackView(views: rows)
+        stack.orientation = .vertical
+        stack.alignment = .leading
+        stack.spacing = 10
+        super.init(frame: .zero)
+        scroll.drawsBackground = false
+        scroll.borderType = .noBorder
+        scroll.scrollerStyle = .legacy
+        scroll.horizontalScrollElasticity = .none
+        scroll.documentView = stack
+        addSubview(scroll)
+    }
+    required init?(coder: NSCoder) { nil }
+
+    func panelSize(maxWidth: CGFloat) -> CGSize {
+        let natural = stack.fittingSize
+        let width = natural.width + 2 * Self.horizontalPadding
+        let scrollbar = width > maxWidth ? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy) : 0
+        return CGSize(width: min(width, maxWidth), height: natural.height + 2 * Self.verticalPadding + scrollbar)
+    }
+    func place(in bounds: CGRect) {
+        frame = bounds
+        fitContent()
+    }
+    func fitContent() {
+        let natural = stack.fittingSize
+        scroll.frame = bounds.insetBy(dx: Self.horizontalPadding, dy: Self.verticalPadding)
+        scroll.hasHorizontalScroller = natural.width > scroll.frame.width
+        stack.setFrameSize(natural)
+        stack.layoutSubtreeIfNeeded()
+        scroll.reflectScrolledClipView(scroll.contentView)
+    }
+}

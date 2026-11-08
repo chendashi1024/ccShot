@@ -68,7 +68,7 @@ import Carbon
         self.recordingChanged = recordingChanged
         captureRecorder = ShortcutRecorder(preferences.captureShortcut)
         pinRecorder = ShortcutRecorder(preferences.pinShortcut)
-        let panel = SettingsPanel(contentRect: NSRect(x: 0, y: 0, width: 670, height: 240), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        let panel = SettingsPanel(contentRect: NSRect(x: 0, y: 0, width: 720, height: 240), styleMask: [.titled, .closable], backing: .buffered, defer: false)
         panel.title = "ccShort · 设置"; panel.isReleasedWhenClosed = false
         super.init(window: panel)
         panel.delegate = self
@@ -76,7 +76,7 @@ import Carbon
         panel.backgroundColor = CoreAppearance.surface
         let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 18
         stack.translatesAutoresizingMaskIntoConstraints = false; root.addSubview(stack)
-        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 24), stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -24), stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 24)])
+        NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 28), stack.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -28), stack.topAnchor.constraint(equalTo: root.topAnchor, constant: 24)])
         stack.addArrangedSubview(row("截图快捷键", [captureRecorder, button("恢复默认", #selector(resetShortcuts)), fallbackHint]))
         stack.addArrangedSubview(functionHint)
         directory.lineBreakMode = .byTruncatingMiddle; directory.widthAnchor.constraint(equalToConstant: 270).isActive = true
@@ -84,8 +84,8 @@ import Carbon
         login.target = self; login.action = #selector(changeLogin)
         loginSettings.target = self; loginSettings.action = #selector(openLoginSettings)
         error.isHidden = true; error.textColor = CoreAppearance.error; error.font = .systemFont(ofSize: 13)
-        error.widthAnchor.constraint(equalToConstant: 620).isActive = true
         stack.addArrangedSubview(error)
+        error.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
         captureRecorder.onChange = { [weak self] choice in self?.changeShortcuts(capture: choice, pin: self?.preferences.pinShortcut ?? .pin) }
         pinRecorder.onChange = { [weak self] choice in self?.changeShortcuts(capture: self?.preferences.captureShortcut ?? .capture, pin: choice) }
         for recorder in [captureRecorder, pinRecorder] {
@@ -108,7 +108,7 @@ import Carbon
     }
     private func row(_ title: String, _ controls: [NSView]) -> NSStackView {
         let heading = label(title); heading.widthAnchor.constraint(equalToConstant: 92).isActive = true
-        let row = NSStackView(views: [heading] + controls); row.spacing = 10; row.alignment = .centerY; return row
+        let row = NSStackView(views: [heading] + controls); row.spacing = 14; row.alignment = .centerY; return row
     }
     func present() { refresh(); showWindow(nil); window?.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
     private func changeShortcuts(capture: AppShortcut, pin: AppShortcut) -> String? {
