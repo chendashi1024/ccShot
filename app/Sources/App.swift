@@ -312,10 +312,22 @@ import QuartzCore
     }
     private func showPermissionGuide() {
         let alert = NSAlert(); alert.messageText = "需要屏幕录制权限"
-        alert.informativeText = "在系统设置 → 隐私与安全性 → 屏幕录制中添加或允许 ccShort，然后重新打开应用。"
-        alert.addButton(withTitle:"打开系统设置"); alert.addButton(withTitle:"暂不")
+        alert.informativeText = "请允许当前的 ccShort 录制屏幕。授权后重新打开 ccShort，再开始截图。"
+        alert.addButton(withTitle: "请求授权")
+        alert.addButton(withTitle: "打开系统设置")
+        alert.addButton(withTitle: "暂不")
         NSApp.activate(ignoringOtherApps:true)
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        switch alert.runModal() {
+        case .alertFirstButtonReturn:
+            if CGRequestScreenCaptureAccess(), CGPreflightScreenCaptureAccess() { capture() }
+            return
+        case .alertSecondButtonReturn:
+            break
+        default:
+            return
+        }
+        if let pane = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"),
+           NSWorkspace.shared.open(pane) { return }
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier:"com.apple.systempreferences") else {
             showError("无法打开系统设置",detail:"请从苹果菜单打开系统设置，进入隐私与安全性。")
             return

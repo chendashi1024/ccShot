@@ -27,4 +27,4 @@ cat > build/ccShort.app/Contents/Info.plist <<'PLIST'
 </dict></plist>
 PLIST
 /usr/libexec/PlistBuddy -c "Add :CcShotSourceRevision string $source_revision" build/ccShort.app/Contents/Info.plist
-codesign --force --sign - build/ccShort.app
+codesign --force --sign "${CCSHORT_SIGNING_IDENTITY:--}" build/ccShort.app

@@ -7,7 +7,7 @@ if [ -n "$(git status --porcelain -- Sources Resources Tests build.sh check.sh c
   exit 1
 fi
 revision=$(git rev-parse HEAD)
-bash build.sh
+CCSHORT_SIGNING_IDENTITY=- bash build.sh
 package_dir="build/packages/$revision"
 mkdir -p "$package_dir"
 archive="$package_dir/ccShort-0.1.0-dev-arm64.zip"
