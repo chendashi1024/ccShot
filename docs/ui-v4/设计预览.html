@@ -2,7 +2,7 @@
 #ccshort-design {font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;}
 #ccshort-design .review-controls {display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding-right:100px}
 #ccshort-design .review-controls .design-label {margin-left:auto;font-size:12px;color:light-dark(#647168,#b0bcb4)}
-#ccshort-design .desktop {--leaf:#35765A;--soft:#E1EEDF;--ink:light-dark(#29382f,#e7ede7);--sub:light-dark(#718076,#a0b0a4);--surface:light-dark(#fafcf8,#25352d);--hair:light-dark(#e2e8de,#425247);position:relative;overflow:hidden;isolation:isolate;min-height:690px;border-radius:20px;background:light-dark(#dbe5d4,#172a22);color:var(--ink);font-size:14px;line-height:1.5}
+#ccshort-design .desktop {--leaf:#35765A;--soft:#E1EEDF;--ink:light-dark(#29382f,#e7ede7);--sub:light-dark(#718076,#a0b0a4);--surface:light-dark(#fafcf8,#25352d);--hair:light-dark(#e2e8de,#425247);position:relative;overflow:hidden;isolation:isolate;min-height:600px;border-radius:20px;background:light-dark(#dbe5d4,#172a22);color:var(--ink);font-size:14px;line-height:1.5}
 #ccshort-design .wallpaper {position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 8% 92%,light-dark(#aec4a7,#254b38),transparent 58%),radial-gradient(ellipse at 88% 18%,light-dark(#f0f2dc,#345541),transparent 60%)}
 #ccshort-design .wallpaper:after {content:"";position:absolute;width:850px;height:400px;top:310px;left:22%;border-radius:50%;background:light-dark(#c1d2b5,#284e38);transform:rotate(-24deg);opacity:.42}
 #ccshort-design .menubar {height:34px;padding:0 22px;display:flex;align-items:center;gap:22px;background:light-dark(#edf2e7b8,#1b2d24ba);font-size:12px}
@@ -18,7 +18,7 @@
 #ccshort-design .veil {position:absolute;inset:34px 0 0;background:light-dark(#203c2c22,#08180d49);pointer-events:none}
 #ccshort-design .composition {position:relative;width:min(670px,calc(100% - 120px));margin:79px auto 0}
 #ccshort-design .dimensions {position:absolute;left:16px;top:-36px;display:flex;align-items:center;gap:8px;padding:5px 12px;border-radius:12px;background:light-dark(#fbfdf7,#2a3b30);box-shadow:0 3px 12px #162c1810;font-size:11px;font-variant-numeric:tabular-nums;color:var(--sub)}
-#ccshort-design .note {position:relative;border-radius:var(--radius,30px);background:light-dark(#fffef9,#202e27);min-height:358px;padding:28px 34px;box-shadow:0 0 0 2px light-dark(#80a88c,#9cc3a3),0 14px 36px #143c271a;box-sizing:border-box}
+#ccshort-design .note {position:relative;border-radius:30px;background:light-dark(#fffef9,#202e27);min-height:358px;padding:28px 34px;box-shadow:0 0 0 2px light-dark(#80a88c,#9cc3a3),0 14px 36px #143c271a;box-sizing:border-box}
 #ccshort-design .note .eyebrow {font-size:12px;color:var(--sub);margin:0 0 12px}
 #ccshort-design .note h2 {font-size:29px;line-height:1.35;letter-spacing:-.8px;font-weight:600;margin:0 0 13px;color:var(--ink)}
 #ccshort-design .intro {font-size:16px;line-height:1.85;margin:0;color:var(--sub);position:relative;z-index:2}
@@ -51,26 +51,20 @@
 #ccshort-design .tool.active {background:light-dark(#dfedd9,#426047);color:light-dark(#397549,#dbecd5)}
 #ccshort-design .tool svg {width:20px;height:20px;stroke-width:1.8}
 #ccshort-design .divider {height:22px;width:1px;background:var(--hair);margin:0 5px;flex:none}
-#ccshort-design .copy {border:none;background:var(--leaf);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;height:40px;padding:0 14px;font:500 13px inherit;min-width:108px;white-space:nowrap}
+#ccshort-design .copy {border:none;background:var(--leaf);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;height:40px;padding:0 14px;font:500 13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;min-width:80px;white-space:nowrap}
 #ccshort-design .copy svg {width:16px;height:16px}
-#ccshort-design .selection-actions {display:none;align-items:center;gap:2px;padding:5px;position:absolute;top:177px;left:35px;border-radius:15px;background:var(--surface);box-shadow:0 6px 25px #17312428;z-index:4}
-#ccshort-design .selection-actions button {border:0;background:transparent;border-radius:10px;padding:6px 10px;font-family:inherit;font-size:12px;color:var(--ink)}
-#ccshort-design .selection-actions button:hover {background:var(--soft);color:#294e35}
-#ccshort-design [data-state="text"] .selection-actions {display:flex}
-#ccshort-design .stylebar {display:none;align-items:center;gap:12px;margin:13px auto 0;padding:8px 14px;border-radius:18px;background:var(--surface);width:max-content;max-width:90%;box-shadow:0 6px 20px #183c2414;font-size:12px;color:var(--sub)}
-#ccshort-design [data-state="annotation"] .stylebar {display:flex}
-#ccshort-design .swatch {width:18px;height:18px;border:0;border-radius:50%;padding:0}
-#ccshort-design .swatch.selected {outline:1.5px solid var(--leaf);outline-offset:3px}
-#ccshort-design .line-weight {width:28px;height:4px;border-radius:3px;background:var(--ink)}
-#ccshort-design .state-caption {position:absolute;bottom:22px;left:20px;right:20px;text-align:center;color:light-dark(#4c6551,#b4c7b7);font-size:12px}
-#ccshort-design .state-caption kbd {font:inherit;background:light-dark(#e5eddf,#304637);padding:3px 6px;border-radius:5px;margin-right:3px}
 #ccshort-design [data-state="annotation"] .crop-cursor,#ccshort-design [data-state="text"] .crop-cursor {display:none}
 #ccshort-design [data-state="text"] .handle {opacity:.55}
 #ccshort-design .demo-toast {position:absolute;bottom:50px;left:50%;transform:translateX(-50%);padding:8px 15px;border-radius:12px;background:var(--surface);font-size:12px;box-shadow:0 5px 20px #17312422;white-space:nowrap}
 #ccshort-design .demo-toast:empty {display:none}
 @media(max-width:760px) {#ccshort-design .composition {width:calc(100% - 60px)}#ccshort-design .toolbar{gap:1px;padding:8px}#ccshort-design .tool{width:32px}#ccshort-design .toolbar .optional {display:none}#ccshort-design .landscape{width:118px;right:25px}#ccshort-design .note h2{font-size:25px}#ccshort-design .art-caption{right:25px}#ccshort-design .annotation-label{right:28px}#ccshort-design .note{padding:28px}}
-@media(max-width:530px) {#ccshort-design .desktop{min-height:675px}#ccshort-design .menubar{gap:12px;padding:0 14px}#ccshort-design .menubar .menu-extra{display:none}#ccshort-design .composition{width:calc(100% - 34px);margin-top:65px}#ccshort-design .note{padding:25px 22px;min-height:376px}#ccshort-design .note h2{font-size:23px;letter-spacing:-1px}#ccshort-design .intro{font-size:14px}#ccshort-design .landscape,#ccshort-design .art-caption{display:none}#ccshort-design .tasks{font-size:12px;gap:15px}#ccshort-design .toolbar{max-width:calc(100% - 22px);flex-wrap:wrap;justify-content:center;margin-top:21px}#ccshort-design .toolbar .secondary,#ccshort-design .toolbar .divider.secondary{display:none}#ccshort-design .copy{min-width:90px;padding:0 9px}#ccshort-design .tool{width:31px;height:35px}#ccshort-design .annotation-label{top:183px;right:22px;font-size:13px}#ccshort-design .selection-actions{left:22px;top:162px}#ccshort-design .review-controls{padding-right:0}#ccshort-design .review-controls .design-label{display:none}#ccshort-design .stylebar{gap:10px}#ccshort-design .state-caption{font-size:11px}}
 @media(prefers-reduced-motion:reduce){#ccshort-design *{transition:none!important}}
+#ccshort-design .context-actions {position:absolute;z-index:10;width:166px;padding:5px;background:var(--surface);border-radius:13px;box-shadow:0 8px 28px #13291f28}
+#ccshort-design .context-actions[hidden] {display:none}
+#ccshort-design .context-actions button {display:flex;justify-content:space-between;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:var(--ink);font:13px -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif}
+#ccshort-design .context-actions button:hover {background:light-dark(#e1eedf,#405b45)}
+#ccshort-design .context-actions button span {color:var(--sub)}
+#ccshort-design [data-all="true"] .note h2,#ccshort-design [data-all="true"] .task-heading,#ccshort-design [data-all="true"] .task>span:last-child,#ccshort-design [data-all="true"] .eyebrow {background:light-dark(#cee4c8,#42694b);color:var(--ink);width:fit-content;border-radius:3px}
 </style>
 <div id="ccshort-design">
   <div class="review-controls" aria-label="设计稿状态">
@@ -98,7 +92,6 @@
         <span class="annotation-label">这里补一张图</span>
         <span class="handle n"></span><span class="handle s"></span><span class="handle w"></span><span class="handle e"></span>
         <span class="crop-cursor"><i data-lucide="move-diagonal-2" aria-hidden="true"></i></span>
-        <div class="selection-actions"><button data-demo="已演示复制选中文字">复制</button><button data-demo="已演示选取全部文字">全选</button></div>
       </article>
     </div>
     <div class="toolbar" role="toolbar" aria-label="截图工具设计">
@@ -116,26 +109,49 @@
       <span class="divider"></span>
       <button class="tool optional" data-demo="钉图操作示意" aria-label="钉住" data-tooltip="钉住"><i data-lucide="pin" aria-hidden="true"></i></button>
       <button class="tool optional" data-demo="保存操作示意，不生成文件" aria-label="保存" data-tooltip="保存"><i data-lucide="download" aria-hidden="true"></i></button>
-      <button class="copy" data-demo="复制操作示意，不改动剪贴板"><i data-lucide="copy" aria-hidden="true"></i><span>复制图片</span></button>
+      <button class="copy" data-finish data-tooltip="复制图片并结束 · 回车"><i data-lucide="check" aria-hidden="true"></i><span>完成</span></button>
       <button class="tool" data-demo="结束截图操作示意" aria-label="关闭" data-tooltip="关闭"><i data-lucide="x" aria-hidden="true"></i></button>
     </div>
-    <div class="stylebar" aria-label="箭头样式"><button class="swatch selected" style="background:#35765a" data-color="#35765a" aria-label="叶绿色"></button><button class="swatch" style="background:#ca715c" data-color="#ca715c" aria-label="陶红色"></button><button class="swatch" style="background:#6683ae" data-color="#6683ae" aria-label="雾蓝色"></button><button class="swatch" style="background:#343c35" data-color="#343c35" aria-label="炭灰色"></button><span class="divider"></span><span class="line-weight"></span><span>6</span><span class="divider"></span><span>空心箭头</span></div>
+    <div class="context-actions" hidden aria-label="文字操作"><button data-copy>复制 <span>⌘C</span></button><button data-select-all>全选 <span>⌘A</span></button></div>
     <div class="demo-toast" role="status"></div>
-    <div class="state-caption" aria-live="polite"><kbd>↵</kbd> 复制图片 <span style="margin:0 10px;opacity:.4">·</span> 拖选图中文字即可复制</div>
   </div>
 </div>
 <script>
 (()=>{
 const root=document.getElementById('ccshort-design');
 const stage=root.querySelector('.desktop');
-const state={radius:30,accent:'#35765a',appearance:'light dark'};
+const menu=root.querySelector('.context-actions');
+const finish=root.querySelector('[data-finish]');
 let toastTimer;
-function render(){stage.style.colorScheme=state.appearance;stage.style.setProperty('--radius',state.radius+'px');stage.style.setProperty('--leaf',state.accent);}
-function scene(name){stage.dataset.state=name;root.querySelectorAll('[data-scene]').forEach(b=>{let active=b.dataset.scene===name;b.classList.toggle('btn-primary',active);b.setAttribute('aria-pressed',String(active));});root.querySelectorAll('[data-tool]').forEach(b=>{let active=b.dataset.tool===name;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});root.querySelector('.copy span').textContent=name==='text'?'复制文字':'复制图片';root.querySelector('.state-caption').innerHTML=name==='text'?'<kbd>⌘ C</kbd> 复制选中文字':name==='annotation'?'<kbd>Esc</kbd> 返回选择 <span style="margin:0 10px;opacity:.4">·</span> <kbd>↵</kbd> 复制图片':'<kbd>↵</kbd> 复制图片 <span style="margin:0 10px;opacity:.4">·</span> 拖选图中文字即可复制';root.querySelector('.demo-toast').textContent='';}
+function feedback(message){clearTimeout(toastTimer);menu.hidden=true;root.querySelector('.demo-toast').textContent=message;toastTimer=setTimeout(()=>root.querySelector('.demo-toast').textContent='',2400);}
+function scene(name){
+  stage.dataset.state=name;stage.dataset.all='false';menu.hidden=true;
+  root.querySelectorAll('[data-scene]').forEach(b=>{const active=b.dataset.scene===name;b.classList.toggle('btn-primary',active);b.setAttribute('aria-pressed',String(active));});
+  root.querySelectorAll('[data-tool]').forEach(b=>{const active=b.dataset.tool===name;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+  const detail=name==='text'?'复制所选文字并结束':'复制图片并结束';
+  finish.dataset.tooltip=detail+' · 回车';finish.setAttribute('aria-label','完成：'+detail);
+  root.querySelector('.demo-toast').textContent='';
+}
+function copyPreview(close){const target=stage.dataset.state==='text'?'所选文字':'图片';feedback('演示：复制'+target+(close?'并结束截图':'，继续编辑'));}
 root.querySelectorAll('[data-scene],[data-tool]').forEach(b=>b.addEventListener('click',()=>scene(b.dataset.scene||b.dataset.tool)));
-root.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>{clearTimeout(toastTimer);root.querySelector('.demo-toast').textContent=b.dataset.demo;toastTimer=setTimeout(()=>root.querySelector('.demo-toast').textContent='',2200);}));
-root.querySelectorAll('[data-color]').forEach(b=>b.addEventListener('click',()=>{state.accent=b.dataset.color;render();root.querySelectorAll('[data-color]').forEach(c=>c.classList.toggle('selected',c===b));}));
-render();scene('capture');
-if(globalThis.Tweak){const t=new Tweak({container:stage,onChange:render});t.addSelect(state,'appearance',{label:'外观',options:[{label:'跟随系统',value:'light dark'},{label:'浅色',value:'light'},{label:'深色',value:'dark'}]});t.addSlider(state,'radius',{label:'圆润程度',min:18,max:40,unit:'px'});t.addColorPicker(state,'accent',{label:'标注与按钮绿色',reference:'--leaf'});}
+root.querySelectorAll('[data-demo]').forEach(b=>b.addEventListener('click',()=>feedback(b.dataset.demo)));
+finish.addEventListener('click',()=>copyPreview(true));
+root.querySelector('[data-copy]').addEventListener('click',()=>copyPreview(false));
+root.querySelector('[data-select-all]').addEventListener('click',()=>{stage.dataset.all='true';menu.hidden=true;});
+root.querySelector('.note').addEventListener('contextmenu',e=>{
+  if(stage.dataset.state!=='text')return;
+  e.preventDefault();const rect=stage.getBoundingClientRect();menu.hidden=false;
+  menu.style.left=Math.max(8,Math.min(e.clientX-rect.left,rect.width-menu.offsetWidth-8))+'px';
+  menu.style.top=Math.max(8,Math.min(e.clientY-rect.top,rect.height-menu.offsetHeight-8))+'px';
+  menu.querySelector('button').focus();
+});
+root.addEventListener('click',e=>{if(!menu.contains(e.target))menu.hidden=true;});
+stage.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){menu.hidden=true;return;}
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='c'){e.preventDefault();copyPreview(false);}
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='a'&&stage.dataset.state==='text'){e.preventDefault();stage.dataset.all='true';}
+  if(e.key==='Enter'&&e.target.tagName!=='BUTTON'){e.preventDefault();copyPreview(true);}
+});
+scene('capture');
 })();
 </script>
