@@ -348,3 +348,9 @@ DeepSeek 旧模型名 `deepseek-chat` 和 `deepseek-reasoner` 已在 2026-07-24 
 - DeepSeek 图片输入文档：https://api-docs.deepseek.com/guides/vision/
 - Homebrew 5.0 公告（未签名 cask 政策）：https://brew.sh/2025/11/12/homebrew-5.0.0/
 - macshot issue #430（内存占用）：https://github.com/sw33tLie/macshot/issues/430
+
+## 17. 后续 Windows 路线（2026-11-03新增决定）
+
+后续Windows版优先使用本地PaddleOCR模型 + ONNX Runtime，RapidOCR可用于验证。用户接受安装包适度增大以优先识别效果；基础识字不强依赖GPU、云或API Key，需要可用CPU路径。该决定不替换当前Mac的Apple OCR路线，不改变当前核心版本范围，也不向原44项需求台账添加Windows。
+
+具体模型/权重及运行库版本、模型与完整包体、准确率、速度、逐字坐标和选择效果均待同图实测；本次仅记录方案，Windows尚未开发。验收至少覆盖中文、中英混排、小字、逐字选取、常见CPU性能、多屏DPI及代码/模型/依赖许可，详见[Windows验收清单](功能清单与验收标准.md#windows-validation)与[目标文件](../GOALS.md#windows-roadmap)。Mac原性能目标不自动成为Windows预算，具体阈值在有证据后确定。

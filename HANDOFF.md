@@ -1,4 +1,4 @@
-# CcShot · Agent 开发交接
+# ccShort · Agent 开发交接
 
 版本：v0.1｜交接日期：2026-11-03｜原交接为文档；当前已接续 S0 原型排障。
 
@@ -12,7 +12,7 @@
 
 ## 1. 项目入口与文档职责
 
-工作目录：`/Users/chenchen/Documents/cge-opc/CcShot`。
+工作目录：`/Users/chenchen/Documents/ccShort`。
 
 | 顺序 | 文件 | 接手时要获取的内容 |
 |---|---|---|
@@ -87,7 +87,9 @@
 <a id="agent-start"></a>
 ## 4. 可直接复制给下一个 Agent 的启动指令
 
-> 在 `/Users/chenchen/Documents/cge-opc/CcShot` 工作，先读适用 `AGENTS.md`、`GOALS.md`、`HANDOFF.md`、`docs/PRD.md`、`docs/决策记录.md`、`docs/功能清单与验收标准.md`、`docs/开发阶段与任务拆解.md`，再检查真实工程和他人未提交改动。不要从旧README“无代码”或聊天摘要猜当前状态；不要猜构建命令。
+> 平台边界补充（2026-11-03）：后续Windows路线已定为优先本地PaddleOCR模型 + ONNX Runtime，RapidOCR可用于验证；允许包体适度增大以优先识别效果，不强依赖GPU、云或API Key。具体版本、体积、质量、速度及逐字坐标待同图实测，Windows尚未开发。读取GOALS第8节和WIN-01–WIN-07；这不更改当前Mac的Apple OCR路线、核心版本范围、原44项需求台账或现有开发进展。
+>
+> 在 `/Users/chenchen/Documents/ccShort` 工作，先读适用 `AGENTS.md`、`GOALS.md`、`HANDOFF.md`、`docs/PRD.md`、`docs/决策记录.md`、`docs/功能清单与验收标准.md`、`docs/开发阶段与任务拆解.md`，再检查真实工程和他人未提交改动。不要从旧README“无代码”或聊天摘要猜当前状态；不要猜构建命令。
 >
 > CcShot是开源免费的Mac原生截图工具，目标是实际可用、好安装、能展示作者能力并争取GitHub stars。用户要求完整基础截图、标注、钉图；先做本地Apple OCR，让图中文字能直接拖选。界面参考CleanShot X和Shottr的现代感，同时保留Snipaste的快捷操作；只借鉴方向，不复制资产。整体风格已认可，具体还原要求见 GOALS 第 1.1 节；当前原生布局仍有差距。
 >
@@ -268,6 +270,15 @@ app 已补上八控制点、指针放大镜和 sRGB 逐像素取色，以及分�
 ### 2026-11-03 可编辑图形标注
 
 app接入七类图形工具、对象命中/移动/缩放/删除、按工具样式条与记忆、无固定步数上限的撤销重做、滑块事务及钉图保留对象和历史。统一原始像素合成供预览/复制/保存，绘制和事务未结束拒绝输出，合成失败不回退原图；修改清空旧OCR并按版本对当前图重识别。120步混合历史、实际NSView绘制/移动/缩放、样式默认不串值、编号恢复、钉图独立编辑与复制合成PNG检查通过；既有截图/设置回归通过。CUA真实画矩形、改样式、框内选字、复制后窗口保留及钉图，发现并修复首次空格焦点问题后复测通过。样本窗口真实截图已查看；证据 app/verification-2026-11-03-annotations.json。文字、马赛克/模糊、安全OCR和完整九工具验收继续实现，S3及44项MVP仍未完成。
+
+
+### 2026-11-03 后续Windows本地OCR路线决定
+
+用户要求把后续Windows方案记入项目。已记录为优先本地PaddleOCR模型 + ONNX Runtime，RapidOCR可用于验证；接受安装包适度增大以优先识别效果，基础识字不强依赖GPU、云或API Key，须有可用CPU路径。具体模型/权重/运行库版本、体积、准确率、速度及逐字坐标仍待同图实测；仅记录路线，Windows尚未开发或验收。
+
+决定见[GOALS第8节](GOALS.md#windows-roadmap)、[决策记录第14项](docs/决策记录.md)和PRD第17节；[WIN-01–WIN-07](docs/功能清单与验收标准.md#windows-validation)覆盖中文、中英混排、小字、逐字选取、常见CPU、多屏DPI、包体离线和许可；开发阶段文件已注明Windows另行验证，工时不混入当前Mac。Mac继续Apple OCR，既有核心版本范围、原44项台账和已有开发/UI记录均保留。
+
+此次仅修改GOALS、PRD、决策记录、功能验收、阶段任务、HANDOFF六份文档。检测到并行文档更新后采用局部补充，保留新加入的Mac核心范围/UI决定，并将本次Windows决定顺延为第14项以避免重号；未运行或修改App/原型、安装模型、提交或推送。本次写后回读及覆盖/链接检查结果由本轮交付回报记录，不复用前面历史文档检查次数。
 
 
 ### 2026-11-03 核心功能与极简 UI 第三版
