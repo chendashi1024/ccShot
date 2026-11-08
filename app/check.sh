@@ -1,6 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")"
+if [ "$#" -gt 1 ] || { [ "$#" -eq 1 ] && [ "$1" != "--core-only" ]; }; then
+  echo "用法：bash app/check.sh [--core-only]" >&2
+  exit 1
+fi
 bash build.sh
 xcrun swiftc Sources/CaptureGeometry.swift Sources/SelectionHandle.swift Sources/PixelSampler.swift Sources/WindowTarget.swift Tests/GeometryTests.swift -o build/geometry-tests
 build/geometry-tests
@@ -22,6 +26,9 @@ xcrun swiftc Sources/SafeTextImage.swift Tests/SafeTextGeometryTests.swift -o bu
 build/privacy-geometry-tests
 xcrun swiftc Sources/ImageEncoding.swift Tests/ImageEncodingTests.swift -o build/image-encoding-tests
 build/image-encoding-tests > build/image-encoding.json
+if [ "${1:-}" = "--core-only" ]; then
+  exit 0
+fi
 build/ccShot.app/Contents/MacOS/ccShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --smoke-test "$PWD/build/smoke.json"

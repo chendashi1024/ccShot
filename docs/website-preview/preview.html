@@ -2,7 +2,7 @@
   <div class="site">
     <header class="header wrap">
       <a class="brand" href="#cc-home" aria-label="ccShot 首页"><img src="assets/icon.png" width="36" height="36" alt="">ccShot</a>
-      <nav aria-label="主导航"><a href="#cc-features">功能</a><a href="#cc-styles">样式</a><button class="nav-link" data-info="github">GitHub ↗</button><button class="button compact" data-info="download">免费下载</button></nav>
+      <nav aria-label="主导航"><a href="#cc-features">功能</a><a href="#cc-styles">样式</a><a class="nav-link" href="https://github.com/chendashi1024/ccShot">GitHub ↗</a><a class="button compact" href="#cc-download">免费下载</a></nav>
     </header>
 
     <main id="cc-home">
@@ -10,8 +10,9 @@
         <p class="badge"><span></span>完全免费 · Mac 原生</p>
         <h1>截完图，<span>直接选字。</span></h1>
         <p class="hero-intro">截图、标注、提取文字。常用的功能，刚刚好。</p>
-        <div class="hero-actions"><button class="button" data-info="download">免费下载 macOS 版 <span aria-hidden="true">↓</span></button><a class="text-link" href="#cc-features">看看怎么用 <span aria-hidden="true">↘</span></a></div>
-        <button class="image-button hero-image" data-zoom="arrow" aria-label="放大查看截图标注界面"><img src="assets/arrow.jpg" alt="绿色圆润的 ccShot 截图界面，珊瑚橙曲线箭头指向笔记重点，下方为精简工具栏" width="1088" height="660"></button>
+        <div class="hero-actions"><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a></div>
+        <p class="platform">v0.1.0 预览版 · Apple Silicon · macOS 14+</p>
+        <button class="image-button hero-image" data-zoom="arrow" aria-label="放大查看截图标注界面"><img src="assets/arrow.jpg" alt="绿色圆润的 ccShot 截图界面示意，珊瑚橙曲线箭头指向笔记重点，下方为精简工具栏" width="1088" height="660"></button>
       </section>
 
       <section id="cc-features" class="feature wrap">
@@ -20,7 +21,7 @@
           <p>截图后自动识别文字，拖选需要的部分就能复制。省去打开微信、再提取文字的步骤。</p>
           <div class="key-line"><kbd>⌘</kbd><kbd>C</kbd><span>选好，复制。</span></div>
         </div>
-        <button class="image-button ocr-image" data-zoom="select" aria-label="放大查看直接选字界面"><img src="assets/select.jpg" alt="截图中的两行文字被直接选中，选字与其他截图工具在同一个界面" width="1088" height="600"></button>
+        <button class="image-button ocr-image" data-zoom="select" aria-label="放大查看直接选字界面"><img src="assets/select.jpg" alt="截图中的两行文字被直接选中，选字与其他截图工具在同一个界面" width="1088" height="660"></button>
       </section>
 
       <section id="cc-styles" class="styles">
@@ -41,7 +42,7 @@
       </section>
 
       <section class="feature pin-feature wrap">
-        <button class="image-button pin-image" data-zoom="pin" aria-label="放大查看桌面钉图"><img src="assets/pin.jpg" alt="截图作为圆润浮窗留在桌面，只保留编辑、保存和关闭操作" width="1088" height="630"></button>
+        <button class="image-button pin-image" data-zoom="pin" aria-label="放大查看桌面钉图"><img src="assets/pin.jpg" alt="截图作为圆润浮窗留在桌面，只保留编辑、保存和关闭操作" width="1088" height="660"></button>
         <div class="feature-copy"><h2>要参考的，<br>就留在眼前。</h2><p>把截图钉在桌面，一边对照，一边继续手头的事。需要修改时，随手接着标。</p><p class="quiet-note">查资料、改设计、照着步骤做，都用得上。</p></div>
       </section>
 
@@ -57,14 +58,14 @@
         <div class="wrap download-inner">
           <img class="closing-icon" src="assets/icon.png" width="64" height="64" alt="">
           <h2>好用的截图工具。<br><span>完全免费。</span></h2>
-          <button class="button" data-info="download">免费下载 macOS 版 <span aria-hidden="true">↓</span></button>
+          <a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a>
+          <p class="platform">v0.1.0 预览版 · Apple Silicon · macOS 14+</p>
+          <a class="text-link" href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">安装说明与校验值 ↗</a>
         </div>
       </section>
     </main>
-    <footer class="footer wrap"><a class="brand" href="#cc-home"><img src="assets/icon.png" width="28" height="28" alt="">ccShot</a><button class="nav-link" data-info="github">GitHub ↗</button></footer>
+    <footer class="footer wrap"><a class="brand" href="#cc-home"><img src="assets/icon.png" width="28" height="28" alt="">ccShot</a><a class="nav-link" href="https://github.com/chendashi1024/ccShot">GitHub ↗</a></footer>
   </div>
-  <p class="review-context">官网设计预览 · 配图沿用现有 UI 设计稿；下载与 GitHub 地址待接入。</p>
-  <dialog class="info-dialog" aria-labelledby="cc-dialog-title"><button class="close-dialog" aria-label="关闭">×</button><h2 id="cc-dialog-title">下载入口预览</h2><p data-dialog-text></p><button class="button close-info">知道了</button></dialog>
   <dialog class="zoom-dialog" aria-label="查看界面大图"><button class="close-dialog" aria-label="关闭大图">×</button><img data-zoom-image alt="界面样式大图"><p>ccShot · 界面样式预览</p></dialog>
 </div>
 <style>
@@ -130,13 +131,10 @@
 #ccShot-website-v2 .download-inner h2 span{color:var(--green)}
 #ccShot-website-v2 .download-inner .button{margin-top:26px}
 #ccShot-website-v2 .footer{display:flex;align-items:center;justify-content:space-between;padding:30px 0;font-size:13px;color:var(--muted)}
+#ccShot-website-v2 p.platform{margin:12px 0;color:var(--muted);font-size:14px}
 #ccShot-website-v2 .footer .brand{font-size:17px;color:var(--ink)}
-#ccShot-website-v2 .review-context{padding:12px 18px;font-size:12px;line-height:1.7;text-align:center;color:#576356;background:#f0f3ec}
 #ccShot-website-v2 dialog{border:0;border-radius:25px;background:#fafbf7;color:var(--ink);padding:34px;box-shadow:0 25px 80px #16281f30}
 #ccShot-website-v2 dialog::backdrop{background:#18281f99}
-#ccShot-website-v2 .info-dialog{max-width:440px;width:calc(100% - 40px)}
-#ccShot-website-v2 .info-dialog h2{font-size:25px}
-#ccShot-website-v2 .info-dialog p{margin:20px 0 26px;color:var(--muted)}
 #ccShot-website-v2 .close-dialog{position:absolute;right:12px;top:9px;width:34px;height:34px;border:0;border-radius:50%;background:#f1f3ed;font-size:24px;line-height:1}
 #ccShot-website-v2 .zoom-dialog{max-width:1100px;width:calc(100% - 48px);padding:40px 18px 14px}
 #ccShot-website-v2 .zoom-dialog img{display:block;width:100%;max-height:75vh;object-fit:contain;border-radius:16px}
@@ -202,18 +200,12 @@
    tabs[index].focus();showStyle(tabs[index].dataset.style);
   });
  });
- const info=root.querySelector('.info-dialog'),zoom=root.querySelector('.zoom-dialog');
- root.querySelectorAll('[data-info]').forEach(button=>button.addEventListener('click',()=>{
-  const download=button.dataset.info==='download';
-  root.querySelector('#cc-dialog-title').textContent=download?'下载入口预览':'GitHub 入口预览';
-  root.querySelector('[data-dialog-text]').textContent=download?'ccShot 完全免费。目前展示官网设计，正式安装包尚未接入此页面。':'官网正式版将在这里链接项目仓库。当前设计预览尚未配置公开地址。';
-  info.showModal();
- }));
+ const zoom=root.querySelector('.zoom-dialog');
  root.querySelectorAll('[data-zoom]').forEach(button=>button.addEventListener('click',()=>{
   const img=root.querySelector('[data-zoom-image]');img.src=assets[button.dataset.zoom];img.alt=button.querySelector('img').alt;zoom.showModal();
  }));
  root.querySelectorAll('dialog').forEach(dialog=>{
-  dialog.querySelectorAll('.close-dialog,.close-info').forEach(button=>button.addEventListener('click',()=>dialog.close()));
+  dialog.querySelectorAll('.close-dialog').forEach(button=>button.addEventListener('click',()=>dialog.close()));
   dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}});
  });
  root.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',event=>{

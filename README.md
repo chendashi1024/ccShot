@@ -1,55 +1,64 @@
-# ccShot
+<p align="center">
+  <img src="docs/website-preview/assets/icon.png" width="96" height="96" alt="ccShot 图标">
+</p>
 
-免费的 Mac 原生截图标注项目。截图后直接拖选文字，常用标注、复制、保存和钉图就在手边；本地功能不需要账号、网络或 API Key。
+<h1 align="center">ccShot</h1>
 
-![真实整屏截图后直接选字，画面为自制样本](app/previews/real-display-selected-2026-11-03.png)
+<p align="center">截完图，直接选字。免费的 macOS 原生截图、标注与钉图工具。</p>
 
-## 当前状态
+<p align="center">
+  <a href="https://ccshot.app/">官网</a> ·
+  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">下载 Mac 预览版</a> ·
+  <a href="CHANGELOG.md">更新日志</a> ·
+  <a href="https://github.com/chendashi1024/ccShot/issues">问题反馈</a>
+</p>
 
-已进入可运行的本地开发版：区域/窗口/当前屏截图、选区调整与取色、本地选字、可编辑标注、PNG/JPG输出及钉图已接入。首排提供箭头、画框、文字、画笔、遮挡、高亮和序号，样式按需展开；设置只保留截图快捷键和保存位置。
+![ccShot 的圆润标注界面示意，显示曲线箭头和常用工具栏](docs/website-preview/assets/arrow.jpg)
 
-AI、美化与高级设置按最新要求延期，完整44项需求继续保留台账。当前不是正式发布版；实际双2x屏及PNG/JPG保存已实测；已修复整屏捕获只取逻辑尺寸的问题；系统中文候选、实体全局快捷键、混合缩放与安装验证仍在进行，不把已实现等同全部验收通过。
+## 截图之后，少走几步
 
-## 本机运行
+- **直接选字**。截图后在图上拖选需要的文字，按 ⌘C 复制。识别在本机完成，离线可用。
+- **截图和标注**。支持区域、窗口和当前屏截图。可添加、调整箭头、画框、文字、画笔、遮挡、高亮和序号。
+- **桌面钉图**。把截图留在桌面上对照，需要时继续编辑，也能将剪贴板图片钉在桌面。
+- **保存**。用系统窗口选择文件夹，支持 PNG、JPG，也可设定默认位置。
 
-使用本机已有 Xcode。当前构建目标为 macOS 14、Apple Silicon，仅在本机 macOS 15.4.1 验证。
+基础截图、标注与识字无需账号或 API Key。AI 和截图美化尚未随首版发行。
+
+## 下载与安装
+
+| 版本 | 芯片 | 系统要求 |
+| --- | --- | --- |
+| [v0.1.0 公开预览版](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0) | Apple Silicon（M 系列） | 构建目标为 macOS 14 或更新版本 |
+
+1. 从发布页下载 DMG，打开后将 **ccShot.app** 拖入「应用程序」。
+2. 首版采用临时签名，未经 Apple 公证。若系统阻止首次打开，在确认来源和发布页提供的 SHA-256 校验值后，前往「系统设置 → 隐私与安全性」选择「仍要打开」。参见 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)。
+3. 打开 ccShot，点击菜单栏的四角 C 图标，选择「区域截图」。按提示允许屏幕录制，再重新打开 App。
+
+目前在 Apple Silicon、macOS 15.4.1 上验证。Intel Mac 无安装包。完整标注烟测仍有已知失败，详见[更新日志](CHANGELOG.md)。
+
+## 常用操作
+
+| 操作 | 默认方式 |
+| --- | --- |
+| 开始截图 | F1，或从菜单栏进入。功能键模式下可试 Fn+F1，默认备用键为 ⌃⌥S |
+| 复制 | ⌘C 复制当前选中文字或图片，保留编辑窗 |
+| 完成 | Return 或点「完成」，复制后关闭编辑窗 |
+| 钉图 | F3，或从菜单栏选择「钉住剪贴板」 |
+
+更新时退出 App，从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases) 下载新版，替换「应用程序」里的旧版。升级后若无法截图，在系统设置中重新授权。
+
+## 从源码构建
+
+需要 Apple Silicon Mac 和 Xcode 命令行工具。原生 App 使用 Swift、AppKit、ScreenCaptureKit 和 VisionKit。
 
 ```bash
-cd app
-bash build.sh
-open build/ccShot.app
+bash app/build.sh
+open app/build/ccShot.app
+bash app/check.sh --core-only
 ```
 
-点菜单栏的四角 C 图标，选择 **区域截图**。默认 F1（部分系统设置下需 Fn+F1）或 Control+Option+S；F3 钉住当前截图或剪贴板。区域确定后进入原生编辑窗，直接拖选文字，或使用首排工具；回车或点「完成」复制所选文字，没有选字时复制图片，然后关闭编辑窗。⌘C 使用相同规则，保留编辑窗。钉图可编辑、保存或关闭。
-
-保存使用 macOS 系统窗口，可浏览任意可写文件夹。初始位置来自设置中的默认保存位置，临时改选只作用于本次。
-
-首次截图时可在引导中点「请求授权」。在系统提示或「隐私与安全性 → 屏幕与系统音频录制」里允许 ccShot，然后重新打开。
-
-日常使用请固定从「应用程序」打开 ccShot，升级时替换同一份应用。若新版仍被拒绝，先退出 ccShot，再用 `tccutil reset ScreenCapture com.ccshot.dev` 清除该应用的屏幕录制记录，打开新版重新授权。
-
-默认的本地试用包使用 ad-hoc 签名，重新构建可能需要重新授权。已有 Apple Development 签名证书时，可在本机开发构建中设置 `CCSHOT_SIGNING_IDENTITY` 为证书在钥匙串里的完整名称，再运行 `app/build.sh`。后续本机更新请沿用同一签名身份。
-
-## 验证与文档
-
-```bash
-cd app
-bash check.sh
-```
-
-检查包括选区坐标、对象历史、真实视图事件、图片/剪贴板、原生文字输入与遮挡后的安全识字；硬件与实际操作的未测边界单列。
-
-| 文档 | 内容 |
-|---|---|
-| [GOALS.md](GOALS.md) | 当前范围、后续计划和完成定义 |
-| [HANDOFF.md](HANDOFF.md) | 真实进度、证据和限制 |
-| [app/README.md](app/README.md) | 构建、操作、原生截图与聚焦验证 |
-| [功能清单与验收标准](docs/功能清单与验收标准.md) | 原44项编号和验证台账 |
-| [开发阶段与任务拆解](docs/开发阶段与任务拆解.md) | 核心优先的执行顺序 |
-| [UI参考与设计](docs/UI参考与设计.md) | 自制设计候选与原生接入状态 |
-| [原PRD](docs/PRD.md)、[决策记录](docs/决策记录.md) | 历史需求及最新补充 |
-| [AGENTS.md](AGENTS.md) | 项目执行规则 |
+详见[开发说明](app/README.md)、[贡献指南](CONTRIBUTING.md)和[发布流程](docs/发布流程.md)。
 
 ## 许可证
 
-暂定 MIT，待作者最终确认；尚未公开发布。
+[MIT](LICENSE)

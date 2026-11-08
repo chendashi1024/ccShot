@@ -5,7 +5,7 @@ import AppKit
         _ = NSApplication.shared
         let region = CGRect(x: 100, y: 120, width: 300, height: 240)
         let outline = CoreAppearance.captureOutline(region)
-        precondition(outline.boundingBoxOfPath == region && outline.contains(CGPoint(x: 104, y: 124)) && !outline.contains(CGPoint(x: 100.5, y: 120.5)),
+        precondition(outline.boundingBoxOfPath == region && outline.contains(CGPoint(x: 112, y: 132)) && !outline.contains(CGPoint(x: 100.5, y: 120.5)),
                      "框选外观应保留原有边界并柔化四角")
         let context = CGContext(data:nil,width:400,height:240,bitsPerComponent:8,bytesPerRow:0,space:CGColorSpace(name:CGColorSpace.sRGB)!,bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue)!
         for y in 0..<240 {

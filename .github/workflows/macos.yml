@@ -1,0 +1,19 @@
+name: macOS 构建与核心检查
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: 构建并运行核心检查
+        run: bash app/check.sh --core-only
