@@ -172,6 +172,16 @@ struct AnnotationObject: Equatable {
         func map(_ p: CGPoint) -> CGPoint { CGPoint(x: rect.minX + (p.x - previous.minX) / previous.width * rect.width, y: rect.minY + (p.y - previous.minY) / previous.height * rect.height) }
         var copy = self; copy.start = map(start); copy.end = map(end); copy.points = points.map(map); copy.curveControl = curveControl.map(map); return copy
     }
+    func containsInterior(_ point: CGPoint) -> Bool {
+        switch tool {
+        case .rectangle: return bounds.contains(point)
+        case .ellipse:
+            let b = bounds
+            let x = (point.x-b.midX)/(b.width/2), y = (point.y-b.midY)/(b.height/2)
+            return x*x+y*y <= 1
+        default: return false
+        }
+    }
     func hit(_ point: CGPoint, tolerance: CGFloat) -> Bool {
         func distance(_ p: CGPoint, _ a: CGPoint, _ b: CGPoint) -> CGFloat {
             let dx = b.x - a.x, dy = b.y - a.y

@@ -6,10 +6,12 @@ import UniformTypeIdentifiers
 @MainActor final class AnnotationWindow: NSWindow {
     override var canBecomeKey: Bool {true}
     var handleCanvasKey: ((NSEvent) -> Bool)?
+    var handleHistoryKey: ((NSEvent) -> Bool)?
     var copiesScreenshotOnReturn = false
     var copyScreenshotSelection: (() -> Void)?
     private var acceptsScreenshotReturn: Bool { attachedSheet == nil && !(firstResponder is NSTextView) }
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if attachedSheet == nil, handleHistoryKey?(event) == true { return true }
         if acceptsScreenshotReturn,
            event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock) == .command,
            event.charactersIgnoringModifiers?.lowercased() == "c", let copyScreenshotSelection {
@@ -20,6 +22,11 @@ import UniformTypeIdentifiers
             return true
         }
         return super.performKeyEquivalent(with: event)
+    }
+    override func sendEvent(_ event: NSEvent) {
+        // Control 组合键可能被文本视图消费，在窗口入口统一路由到当前编辑上下文。
+        if event.type == .keyDown, attachedSheet == nil, handleHistoryKey?(event) == true { return }
+        super.sendEvent(event)
     }
     override func keyDown(with event: NSEvent) {
         if event.isScreenshotReturn && !acceptsScreenshotReturn {
@@ -203,6 +210,7 @@ import UniformTypeIdentifiers
         showWindow(nil); window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         window.handleCanvasKey = { [weak self] event in guard self?.screenshotView?.isAdjusting != true else {return false}; return self?.canvas.handleKey(event) ?? false }
+        window.handleHistoryKey = { [weak self] event in self?.handleHistoryKey(event) ?? false }
         window.makeFirstResponder(canvas)
         root.layoutSubtreeIfNeeded(); overlay.frame = canvas.bounds; overlay.setContentsRectNeedsUpdate()
         recognize()
@@ -802,15 +810,46 @@ import UniformTypeIdentifiers
         guard !overlay.isHidden else { return }
         let text = overlay.text; guard !text.isEmpty else { return }; overlay.selectedRanges = [text.startIndex..<text.endIndex]; updateCopyTitle()
     }
-    @objc func undo(_ sender: Any?) { if let input = canvas.textEditor { guard !input.hasMarkedText() else { return }; input.breakUndoCoalescing(); input.undoManager?.undo(); updateControls() } else { guard !canvas.hasDraft else { return }; annotationDocument.undo() } }
-    @objc func redo(_ sender: Any?) { if let input = canvas.textEditor { guard !input.hasMarkedText() else { return }; input.undoManager?.redo(); updateControls() } else { guard !canvas.hasDraft else { return }; annotationDocument.redo() } }
+    private func handleHistoryKey(_ event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock)
+        let key = event.charactersIgnoringModifiers?.lowercased()
+        let undoKey = key == "z" && (flags == .command || flags == .control)
+        let redoKey = key == "z" && (flags == [.command, .shift] || flags == [.control, .shift])
+            || key == "y" && flags == .control
+        guard undoKey || redoKey else { return false }
+        // 字号等普通输入框保留系统自己的撤销，不得误改截图。
+        if let input = window?.firstResponder as? NSTextView, input !== canvas.textEditor { return false }
+        if undoKey { undo(nil) } else { redo(nil) }
+        return true
+    }
+    @objc func undo(_ sender: Any?) {
+        guard canvas.editingEnabled, window?.attachedSheet == nil, screenshotView?.isAdjusting != true else { return }
+        if let input = canvas.textEditor {
+            guard !input.hasMarkedText() else { return }
+            input.breakUndoCoalescing(); input.undoManager?.undo(); updateControls()
+        } else if canvas.hasDraft { canvas.cancelGesture() }
+        else { annotationDocument.undo() }
+    }
+    @objc func redo(_ sender: Any?) {
+        guard canvas.editingEnabled, window?.attachedSheet == nil, screenshotView?.isAdjusting != true else { return }
+        if let input = canvas.textEditor {
+            guard !input.hasMarkedText() else { return }
+            input.breakUndoCoalescing(); input.undoManager?.redo(); updateControls()
+        } else { guard !canvas.hasDraft else { return }; annotationDocument.redo() }
+    }
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         if menuItem.action == #selector(copySelectedText) { return !canvas.hasDraft && !overlay.isHidden && !overlay.selectedText.isEmpty }
         if menuItem.action == #selector(copyAllText) { return !canvas.hasDraft && !annotationDocument.inTransaction && !overlay.text.isEmpty }
         if let action = menuItem.action, [#selector(copyImage),#selector(saveImage),#selector(saveDocument(_:)),#selector(pinImage)].contains(action) { return !closed && !canvas.hasDraft && !annotationDocument.inTransaction && canvas.previewImage != nil }
         if menuItem.action == #selector(opacityPreset(_:)) { menuItem.state = Int(((window?.alphaValue ?? 1)*100).rounded()) == menuItem.tag ? .on : .off; return pinned }
-        if menuItem.action == #selector(undo(_:)) { return annotationDocument.canUndo && !canvas.hasDraft && !annotationDocument.inTransaction }
-        if menuItem.action == #selector(redo(_:)) { return annotationDocument.canRedo && !canvas.hasDraft && !annotationDocument.inTransaction }
+        if menuItem.action == #selector(undo(_:)) || menuItem.action == #selector(redo(_:)) {
+            guard canvas.editingEnabled, window?.attachedSheet == nil, screenshotView?.isAdjusting != true else { return false }
+            let isUndo = menuItem.action == #selector(undo(_:))
+            if let input = canvas.textEditor {
+                return !input.hasMarkedText() && (isUndo ? input.undoManager?.canUndo : input.undoManager?.canRedo) == true
+            }
+            return !canvas.hasDraft && !annotationDocument.inTransaction && (isUndo ? annotationDocument.canUndo : annotationDocument.canRedo)
+        }
         return true
     }
     private func prepareOutput()->Bool {
@@ -1136,7 +1175,7 @@ extension ImageWindow {
         canvas.mouseDown(with:selectionEvent(.leftMouseDown)); canvas.mouseUp(with:selectionEvent(.leftMouseUp))
         fontSizeField.stringValue = "0"; changeFontSize()
         fontSizeField.stringValue = "200"; changeFontSize()
-        result["corrected_range_keeps_new_layout_error"] = canvas.selected?.id == longText.id && canvas.currentStyle.fontSize == 24 && status.stringValue == "文字超出截图，请调小字号"
+        result["corrected_range_keeps_new_layout_error"] = canvas.selected?.id == longText.id && canvas.currentStyle.fontSize == longText.style.fontSize && status.stringValue == "文字超出截图，请调小字号"
         canvas.chooseTool(.select); annotationDocument.commit(originalState)
         root.layoutSubtreeIfNeeded()
         result["selection_hides_irrelevant_style_controls"] = styleRow.isHidden && optionRow.isHidden

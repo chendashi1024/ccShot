@@ -29,6 +29,7 @@ build/image-encoding-tests > build/image-encoding.json
 if [ "${1:-}" = "--core-only" ]; then
   exit 0
 fi
+bash check-interactions.sh
 build/ccShot.app/Contents/MacOS/ccShot \
   --fixture "$PWD/../prototype/local-ocr/results/2026-11-03-native-01/fixtures/01-01.png" \
   --smoke-test "$PWD/build/smoke.json"

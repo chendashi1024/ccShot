@@ -87,7 +87,16 @@ import AppKit
         return CGPoint(x: rect.minX+point.x/imageSize.width*rect.width, y: rect.minY+point.y/imageSize.height*rect.height)
     }
     private var tolerance: CGFloat { 6 * imageSize.width / max(1, contentRect.width) }
-    private func object(at point: CGPoint) -> AnnotationObject? { document.state.objects.reversed().first { $0.hit(point, tolerance: tolerance) } }
+    private func object(at point: CGPoint) -> AnnotationObject? {
+        // 先命中可见笔画，再考虑空心框内部，避免大框挡住里面的小标注。
+        let geometricTool = [.arrow, .line, .rectangle, .ellipse].contains(tool)
+        let objects = document.state.objects.reversed().filter { !geometricTool || $0.tool == tool }
+        if let hit = objects.first(where: { $0.hit(point, tolerance: tolerance) }) { return hit }
+        if let selected, selected.containsInterior(point) { return selected }
+        // 选择工具下，未选中的空心框不抢占原图文字的拖选。
+        if tool == .select, canStartTextSelection?(viewPoint(point)) == true { return nil }
+        return objects.first { $0.containsInterior(point) }
+    }
     func canSelectText(at point: CGPoint) -> Bool {
         guard !hasDraft, tool == .select, let p = canonical(point) else { return false }
         return !editingEnabled || object(at: p) == nil
@@ -130,7 +139,7 @@ import AppKit
             context.restoreGState()
         }
         guard editingEnabled, textEditor == nil, let object = draft ?? selected else { return }
-        if compactStyles && object.tool == .arrow && (tool != .select || hasDraft && selectedID == nil) { return }
+        if compactStyles && object.tool == .arrow && hasDraft && selectedID == nil { return }
         let handleColor = compactStyles ? CoreAppearance.captureBorder : .systemBlue
         handleColor.setStroke()
         let topLeft = viewPoint(CGPoint(x: object.bounds.minX, y: object.bounds.minY))
@@ -158,12 +167,13 @@ import AppKit
         guard let point = canonical(convert(event.locationInWindow, from: nil)) else { return }
         if textEditor != nil { _ = finishTextEditing(); return }
         window?.makeFirstResponder(self)
+        let forceDraw = tool != .select && event.modifierFlags.contains(.option)
         // 已显示的控制点在当前工具下也应可拖动；空白区域继续绘制。
-        if let object = selected {
+        if !forceDraw, let object = selected {
             if object.tool == .line || object.tool == .arrow {
-                if (!compactStyles || tool == .select), hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
-                if (!compactStyles || tool == .select), hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
-                if object.tool == .arrow, (!compactStyles || tool == .select), hypot(point.x-object.arrowMidpoint.x,point.y-object.arrowMidpoint.y) <= tolerance {
+                if hypot(point.x-object.start.x, point.y-object.start.y) <= tolerance { begin(.endpoint(object, true), at: point, object: object); return }
+                if hypot(point.x-object.end.x, point.y-object.end.y) <= tolerance { begin(.endpoint(object, false), at: point, object: object); return }
+                if object.tool == .arrow, hypot(point.x-object.arrowMidpoint.x,point.y-object.arrowMidpoint.y) <= tolerance {
                     begin(.bend(object),at:point,object:object); return
                 }
             } else if let handle = SelectionHandle.allCases.first(where: { hypot(point.x-$0.point(in: object.bounds).x, point.y-$0.point(in: object.bounds).y) <= tolerance }) {
@@ -176,7 +186,8 @@ import AppKit
             return
         }
         // 已选几何对象可直接挪动；画笔、遮挡和连续编号仍保留原来的绘制方式。
-        if [.arrow,.line,.rectangle,.ellipse].contains(tool), let object = selected, object.hit(point,tolerance:tolerance) {
+        if !forceDraw, [.arrow,.line,.rectangle,.ellipse].contains(tool), let object = object(at: point) {
+            selectedID = object.id; onSelectionChanged?()
             begin(.move(object),at:point,object:object); return
         }
         if tool == .select {
@@ -196,6 +207,7 @@ import AppKit
                 var state = document.state; state.objects.append(object); state.nextNumber += 1
                 selectedID = object.id; document.commit(state); onSelectionChanged?()
             } else {
+                selectedID = nil
                 let object = AnnotationObject(tool: tool, style: style, start: point, end: point, points: tool == .pen || tool == .highlight || tool == .mask && style.maskBrush ? [point] : [])
                 begin(.draw, at: point, object: object)
             }
@@ -217,6 +229,12 @@ import AppKit
         case .draw:
             guard var object = draft else { return }
             object.end = object.tool == .line || object.tool == .arrow ? snapped(point, from: anchor, event: event) : point
+            if [.rectangle, .ellipse].contains(object.tool), event.modifierFlags.contains(.shift) {
+                let dx = point.x-anchor.x, dy = point.y-anchor.y
+                let side = min(max(abs(dx), abs(dy)), dx < 0 ? anchor.x : imageSize.width-anchor.x,
+                               dy < 0 ? anchor.y : imageSize.height-anchor.y)
+                object.end = CGPoint(x: anchor.x + (dx < 0 ? -side : side), y: anchor.y + (dy < 0 ? -side : side))
+            }
             if object.tool == .arrow && compactStyles { object.applyPresetCurve(in: imageSize) }
             if object.tool == .pen || object.tool == .highlight || object.tool == .mask && object.style.maskBrush {
                 if let last = object.points.last, hypot(last.x-point.x,last.y-point.y) >= 0.5 { object.points.append(point) }
@@ -224,7 +242,11 @@ import AppKit
             draft = object
         case .move(let original):
             let b = original.bounds
-            let delta = CGPoint(x: min(max(point.x-anchor.x,-b.minX),imageSize.width-b.maxX), y: min(max(point.y-anchor.y,-b.minY),imageSize.height-b.maxY))
+            var movement = CGPoint(x: point.x-anchor.x, y: point.y-anchor.y)
+            if event.modifierFlags.contains(.shift) {
+                if abs(movement.x) >= abs(movement.y) { movement.y = 0 } else { movement.x = 0 }
+            }
+            let delta = CGPoint(x: min(max(movement.x,-b.minX),imageSize.width-b.maxX), y: min(max(movement.y,-b.minY),imageSize.height-b.maxY))
             draft = original.moved(by: delta)
         case .resize(let original, let handle):
             var value = original.resized(to: handle.resize(original.bounds, toward: point, canvas: imageSize, minimum: CGSize(width: 1, height: 1)))
@@ -299,9 +321,8 @@ import AppKit
         guard !hasDraft, target == .arrow || target == .rectangle else { return }
         if let color { markupColors[target] = color }
         if let curved { curvedArrow = curved }
-        // 未显式选中对象时，更新当前工具最近画的一条。
+        // 没有选中对象时只改变下一次绘制的样式。
         let index = selectedID.flatMap { id in document.state.objects.firstIndex { $0.id == id } }
-            ?? document.state.objects.lastIndex { $0.tool == target }
         guard let index else { onSelectionChanged?(); return }
         var state = document.state
         if let color { state.objects[index].style.color = color }
@@ -346,6 +367,8 @@ import AppKit
             else { onExit?() }
             return true
         }
+        // 鼠标还没松开时不能用删除、微调或完成覆盖正在预览的对象。
+        if hasDraft { return true }
         if event.keyCode == 49 { onSpace?(); return true }
         if event.isScreenshotReturn { onConfirm?(); return true }
         if !editingEnabled { return false }
