@@ -8,7 +8,8 @@
 
 <p align="center">
   <a href="https://ccshot.app/">官网</a> ·
-  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">下载 Mac 预览版</a> ·
+  <a href="https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg">下载 Mac 公开预览版</a> ·
+  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">GitHub Release</a> ·
   <a href="CHANGELOG.md">更新日志</a> ·
   <a href="https://github.com/chendashi1024/ccShot/issues">问题反馈</a>
 </p>
@@ -28,13 +29,13 @@
 
 | 版本 | 芯片 | 系统要求 |
 | --- | --- | --- |
-| [v0.1.0 公开预览版](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0) | Apple Silicon（M 系列） | 构建目标为 macOS 14 或更新版本 |
+| [v0.1.0 公开预览版](https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg) | Apple Silicon（arm64，M 系列） | 构建目标为 macOS 14 或更新版本 |
 
-1. 从发布页下载 DMG，打开后将 **ccShot.app** 拖入「应用程序」。
-2. 首版采用临时签名，未经 Apple 公证。若系统阻止首次打开，在确认来源和发布页提供的 SHA-256 校验值后，前往「系统设置 → 隐私与安全性」选择「仍要打开」。参见 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)。
+1. 下载 [DMG](https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg)。同一文件也可从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg) 下载。SHA-256 为 `24bf3982b6d282085ad5fe19ab96b42946c9841fa575a9f6737a188004a9fcfb`，对照 [校验文件](https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg.sha256)。打开后将 **ccShot.app** 拖入「应用程序」。
+2. 首版采用临时签名，未经 Apple 公证。若系统阻止首次打开，在确认来源和 SHA-256 后，前往「系统设置 → 隐私与安全性」选择「仍要打开」。参见 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)。
 3. 打开 ccShot，点击菜单栏的四角 C 图标，选择「区域截图」。按提示允许屏幕录制，再重新打开 App。
 
-目前在 Apple Silicon、macOS 15.4.1 上验证。Intel Mac 无安装包。完整标注烟测仍有已知失败，详见[更新日志](CHANGELOG.md)。
+维护者在一台 Apple Silicon、macOS 15.4.1 上安装并打开过。这不是全部机型、干净设备、实体快捷键或混合缩放多屏的验收。没有 Intel 安装包。完整标注烟测仍有已知失败，详见[更新日志](CHANGELOG.md)。
 
 ## 常用操作
 
