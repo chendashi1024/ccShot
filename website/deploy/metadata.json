@@ -1,0 +1,28 @@
+{
+  "main_module": "index.js",
+  "compatibility_date": "2026-11-09",
+  "compatibility_flags": [],
+  "logpush": false,
+  "observability": {
+    "enabled": false
+  },
+  "bindings": [
+    {
+      "type": "assets",
+      "name": "ASSETS"
+    },
+    {
+      "type": "analytics_engine",
+      "name": "CLICKS",
+      "dataset": "ccshot_clicks"
+    }
+  ],
+  "assets": {
+    "jwt": "<assets/upload 返回 201 时的 completion jwt；若 buckets 为空则用 assets-upload-session 返回的 jwt>",
+    "config": {
+      "html_handling": "auto-trailing-slash",
+      "not_found_handling": "404-page",
+      "run_worker_first": ["/go/*"]
+    }
+  }
+}

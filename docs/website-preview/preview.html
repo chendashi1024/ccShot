@@ -2,7 +2,7 @@
   <div class="site">
     <header class="header wrap">
       <a class="brand" href="#cc-home" aria-label="ccShot 首页"><img src="assets/icon.png" width="36" height="36" alt="">ccShot</a>
-      <nav aria-label="主导航"><a href="#cc-features">功能</a><a href="#cc-styles">样式</a><a class="nav-link" href="https://github.com/chendashi1024/ccShot">GitHub ↗</a><a class="button compact" href="#cc-download">免费下载</a></nav>
+      <nav aria-label="主导航"><a href="#cc-features">功能</a><a href="#cc-styles">样式</a><a class="nav-link nav-keep" data-exit="github" href="https://github.com/chendashi1024/ccShot">GitHub 标星</a><a class="button compact nav-keep" href="#cc-download">免费下载</a></nav>
     </header>
 
     <main id="cc-home">
@@ -10,8 +10,8 @@
         <p class="badge"><span></span>完全免费 · Mac 原生</p>
         <h1>截完图，<span>直接选字。</span></h1>
         <p class="hero-intro">截图、标注、提取文字。常用的功能，刚刚好。</p>
-        <div class="hero-actions"><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a></div>
-        <p class="platform">v0.1.0 预览版 · Apple Silicon · macOS 14+</p>
+        <div class="hero-actions"><a class="button" data-exit="github" href="https://github.com/chendashi1024/ccShot">GitHub 标星 <span aria-hidden="true">★</span></a><a class="button" data-exit="download" href="https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a></div>
+        <p class="platform">v0.1.0 公开预览版 · Apple Silicon（arm64）· macOS 14+</p>
         <button class="image-button hero-image" data-zoom="arrow" aria-label="放大查看截图标注界面"><img src="assets/arrow.jpg" alt="绿色圆润的 ccShot 截图界面示意，珊瑚橙曲线箭头指向笔记重点，下方为精简工具栏" width="1088" height="660"></button>
       </section>
 
@@ -58,15 +58,22 @@
         <div class="wrap download-inner">
           <img class="closing-icon" src="assets/icon.png" width="64" height="64" alt="">
           <h2>好用的截图工具。<br><span>完全免费。</span></h2>
-          <a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a>
-          <p class="platform">v0.1.0 预览版 · Apple Silicon · macOS 14+</p>
-          <a class="text-link" href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">安装说明与校验值 ↗</a>
+          <div class="download-actions"><a class="button" data-exit="github" href="https://github.com/chendashi1024/ccShot">GitHub 标星 <span aria-hidden="true">★</span></a><a class="button" data-exit="download" href="https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a></div>
+          <p class="platform">v0.1.0 公开预览版 · Apple Silicon（arm64）· macOS 14+</p>
+          <div class="install-notes">
+            <p>只提供 Apple Silicon（arm64，M 系列）安装包，构建目标是 macOS 14 或更新版本。没有 Intel 安装包。</p>
+            <p>安装包是临时签名，没有经过 Apple 公证。首次若被系统拦住，请先核对 SHA-256，再打开「系统设置 → 隐私与安全性」选择「仍要打开」。见 <a href="https://support.apple.com/zh-cn/102445">Apple 的打开应用指引</a>。</p>
+            <p>文件大小 2,035,236 字节。SHA-256<br><code>24bf3982b6d282085ad5fe19ab96b42946c9841fa575a9f6737a188004a9fcfb</code><a href="https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg.sha256">校验文件</a></p>
+            <p>发布说明记录：维护者在一台 Apple Silicon、macOS 15.4.1 上检查过安装和打开。这不是全部机型、干净设备、实体快捷键或混合缩放多屏的验收。部分标注自动检查仍未通过。</p>
+            <p>这个版本没有 AI 问答，也没有截图美化。</p>
+            <p>同一份安装包也可以从 GitHub Releases 下载。<a data-exit="download-github" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg">GitHub 安装包</a> · <a data-exit="release" href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">安装说明</a></p>
+          </div>
         </div>
       </section>
     </main>
-    <footer class="footer wrap"><a class="brand" href="#cc-home"><img src="assets/icon.png" width="28" height="28" alt="">ccShot</a><a class="nav-link" href="https://github.com/chendashi1024/ccShot">GitHub ↗</a></footer>
+    <footer class="footer wrap"><a class="brand" href="#cc-home"><img src="assets/icon.png" width="28" height="28" alt="">ccShot</a><a class="nav-link" data-exit="github" href="https://github.com/chendashi1024/ccShot">GitHub 标星 ↗</a></footer>
   </div>
-  <dialog class="zoom-dialog" aria-label="查看界面大图"><button class="close-dialog" aria-label="关闭大图">×</button><img data-zoom-image alt="界面样式大图"><p>ccShot · 界面样式预览</p></dialog>
+  <dialog class="zoom-dialog" aria-label="查看界面大图"><button class="close-dialog" aria-label="关闭大图">×</button><img data-zoom-image alt="界面样式大图"><p>ccShot · 界面示意</p></dialog>
 </div>
 <style>
 #ccShot-website-v2{--paper:#fafbf7;--ink:#23382d;--green:#2b664f;--muted:#56665c;--line:#dde5dc;color-scheme:light;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:16px;line-height:1.6;width:100%}
@@ -78,12 +85,12 @@
 #ccShot-website-v2 a{color:inherit;text-decoration:none}
 #ccShot-website-v2 button{font:inherit;color:inherit;cursor:pointer}
 #ccShot-website-v2 button:focus-visible,#ccShot-website-v2 a:focus-visible{outline:3px solid #477bc7;outline-offset:5px}
-#ccShot-website-v2 .header{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+#ccShot-website-v2 .header{min-height:88px;height:auto;display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
 #ccShot-website-v2 .brand{display:flex;align-items:center;gap:9px;font-size:21px;letter-spacing:-.7px;font-weight:650}
 #ccShot-website-v2 .brand img{display:block}
-#ccShot-website-v2 nav{display:flex;align-items:center;gap:30px;font-size:14px}
+#ccShot-website-v2 nav{display:flex;align-items:center;justify-content:flex-end;gap:30px;flex-wrap:wrap;font-size:14px}
 #ccShot-website-v2 .nav-link{padding:0;border:0;background:transparent;font-size:14px}
-#ccShot-website-v2 .button{display:inline-flex;align-items:center;justify-content:center;gap:20px;border:0;border-radius:999px;background:var(--green);color:#fff;padding:14px 25px;font-size:16px;font-weight:550;line-height:1.5;transition:background .18s,transform .18s}
+#ccShot-website-v2 .button{display:inline-flex;align-items:center;justify-content:center;gap:20px;border:0;border-radius:999px;background:var(--green);color:#fff;padding:14px 25px;font-size:16px;font-weight:550;line-height:1.5;white-space:nowrap;transition:background .18s,transform .18s}
 #ccShot-website-v2 .button:hover{background:#204f3c;transform:translateY(-1px)}
 #ccShot-website-v2 .button.compact{padding:9px 18px;font-size:14px}
 #ccShot-website-v2 .hero{text-align:center;padding:66px 0 0}
@@ -92,7 +99,7 @@
 #ccShot-website-v2 h1{font-size:clamp(40px,5.7vw,72px);line-height:1.16;letter-spacing:-3px;font-weight:680}
 #ccShot-website-v2 h1 span{color:var(--green)}
 #ccShot-website-v2 .hero-intro{margin:19px 0 25px;color:var(--muted);font-size:18px}
-#ccShot-website-v2 .hero-actions{display:flex;justify-content:center;align-items:center;gap:29px;margin-bottom:43px}
+#ccShot-website-v2 .hero-actions{display:flex;justify-content:center;align-items:center;gap:16px 29px;margin-bottom:43px;flex-wrap:wrap}
 #ccShot-website-v2 .text-link{font-size:15px;display:flex;gap:14px}
 #ccShot-website-v2 .image-button{display:block;padding:0;border:0;background:transparent;width:100%;border-radius:26px;overflow:hidden;text-align:left}
 #ccShot-website-v2 .image-button img{width:100%;height:auto;display:block}
@@ -129,7 +136,11 @@
 #ccShot-website-v2 .closing-icon{margin-bottom:14px}
 #ccShot-website-v2 .download-inner h2{font-size:clamp(32px,4vw,48px);line-height:1.35}
 #ccShot-website-v2 .download-inner h2 span{color:var(--green)}
-#ccShot-website-v2 .download-inner .button{margin-top:26px}
+#ccShot-website-v2 .download-actions{display:flex;justify-content:center;align-items:center;gap:16px 20px;flex-wrap:wrap;margin-top:26px}
+#ccShot-website-v2 .install-notes{max-width:640px;margin:8px auto 0;text-align:left;color:var(--muted);font-size:14px;line-height:1.75}
+#ccShot-website-v2 .install-notes p{margin:0 0 10px}
+#ccShot-website-v2 .install-notes a{color:var(--green);text-decoration:underline;text-underline-offset:3px}
+#ccShot-website-v2 .install-notes code{display:block;margin-top:4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;color:var(--ink);overflow-wrap:anywhere}
 #ccShot-website-v2 .footer{display:flex;align-items:center;justify-content:space-between;padding:30px 0;font-size:13px;color:var(--muted)}
 #ccShot-website-v2 p.platform{margin:12px 0;color:var(--muted);font-size:14px}
 #ccShot-website-v2 .footer .brand{font-size:17px;color:var(--ink)}
@@ -150,8 +161,8 @@
 }
 @media(max-width:620px){
 #ccShot-website-v2 .wrap{width:calc(100% - 36px)}
-#ccShot-website-v2 .header{height:74px}
-#ccShot-website-v2 nav>a,#ccShot-website-v2 nav>.nav-link{display:none}
+#ccShot-website-v2 .header{min-height:74px;padding:10px 0}
+#ccShot-website-v2 nav>a:not(.nav-keep){display:none}
 #ccShot-website-v2 .hero{padding-top:42px}
 #ccShot-website-v2 h1{font-size:40px;letter-spacing:-2px}
 #ccShot-website-v2 h1 span{display:block}

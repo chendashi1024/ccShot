@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "/404.html": {
+      "hash": "e335ee5964b66cac4bba16ed21bb43dc",
+      "size": 571
+    },
+    "/icon.png": {
+      "hash": "de6441d5065174cd0e490f8362d4040d",
+      "size": 8088
+    },
+    "/index.html": {
+      "hash": "bc2a9b080982ee6ce37f948d3678e018",
+      "size": 631820
+    },
+    "/og.jpg": {
+      "hash": "b838c8f8ceed51b94c3a9ca0fd5c5b76",
+      "size": 51312
+    },
+    "/robots.txt": {
+      "hash": "de01507d74043eaccd11d315264755d8",
+      "size": 64
+    },
+    "/sitemap.xml": {
+      "hash": "a872b096c69507e101d314a623dc5645",
+      "size": 154
+    }
+  }
+}

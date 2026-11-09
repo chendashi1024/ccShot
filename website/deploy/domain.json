@@ -1,0 +1,8 @@
+{
+  "hostname": "ccshot.app",
+  "service": "ccshot-site",
+  "zone_name": "ccshot.app",
+  "zone_id": "759006d6464177df51c03bb343482584",
+  "enabled": true,
+  "previews_enabled": false
+}
