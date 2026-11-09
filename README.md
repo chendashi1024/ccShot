@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ccshot.app/">官网</a> ·
-  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0">下载 Mac 预览版</a> ·
+  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.1">下载 Mac 预览版</a> ·
   <a href="CHANGELOG.md">更新日志</a> ·
   <a href="https://github.com/chendashi1024/ccShot/issues">问题反馈</a>
 </p>
@@ -28,7 +28,7 @@
 
 | 版本 | 芯片 | 系统要求 |
 | --- | --- | --- |
-| [v0.1.0 公开预览版](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0) | Apple Silicon（M 系列） | 构建目标为 macOS 14 或更新版本 |
+| [v0.1.1 公开预览版](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.1) | Apple Silicon（M 系列） | 构建目标为 macOS 14 或更新版本 |
 
 1. 从发布页下载 DMG，打开后将 **ccShot.app** 拖入「应用程序」。
 2. 首版采用临时签名，未经 Apple 公证。若系统阻止首次打开，在确认来源和发布页提供的 SHA-256 校验值后，前往「系统设置 → 隐私与安全性」选择「仍要打开」。参见 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)。
