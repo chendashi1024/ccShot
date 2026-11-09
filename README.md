@@ -42,7 +42,7 @@
 | --- | --- |
 | 开始截图 | F1，或从菜单栏进入。功能键模式下可试 Fn+F1，默认备用键为 ⌃⌥S |
 | 复制 | ⌘C 复制当前选中文字或图片，保留编辑窗 |
-| 完成 | Return 或点「完成」，复制后关闭编辑窗 |
+| 完成 | Return、点「完成」，或用选择工具双击截图内的空白处，复制后关闭编辑窗 |
 | 钉图 | F3，或从菜单栏选择「钉住剪贴板」 |
 
 更新时退出 App，从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases) 下载新版，替换「应用程序」里的旧版。若升级后仍提示授权且列表里已有 ccShot，退出应用，在终端运行 `tccutil reset ScreenCapture com.ccshot.dev`，然后打开新版，在「隐私与安全性 → 屏幕与系统音频录制」重新授权。

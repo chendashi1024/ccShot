@@ -17,6 +17,7 @@ import AppKit
     var onSelectionChanged: (() -> Void)?
     var onStyleKey: ((CGFloat?, Int?) -> Void)?
     var onConfirm: (() -> Void)?
+    var onBlankDoubleClick: (() -> Void)?
     var onSpace: (() -> Void)?
     var onExit: (() -> Void)?
     var onError: ((String) -> Void)?
@@ -95,8 +96,10 @@ import AppKit
         let local = convert(point, from: superview)
         guard bounds.contains(local) else { return nil }
         if textEditor != nil { return super.hitTest(point) }
-        if !editingEnabled,onBackgroundDrag != nil,canStartTextSelection?(local) != true {return self}
         if editingEnabled && (tool != .select || selectedID != nil || (canonical(local).flatMap { object(at: $0) } != nil)) { return self }
+        // 空白处交给画布，避免双击的第一下清除已选文字。
+        if (onBlankDoubleClick != nil || (!editingEnabled && onBackgroundDrag != nil)),
+           canStartTextSelection?(local) != true { return self }
         return super.hitTest(point)
     }
     func chooseTool(_ value: AnnotationTool) {
@@ -177,8 +180,12 @@ import AppKit
             begin(.move(object),at:point,object:object); return
         }
         if tool == .select {
-            if event.clickCount >= 2, let object = object(at: point), object.tool == .text { beginTextEditing(object, at: point); return }
-            guard let object = object(at: point) else { deselect(); return }
+            guard let object = object(at: point) else {
+                if event.clickCount == 2, let onBlankDoubleClick { onBlankDoubleClick() }
+                else { deselect() }
+                return
+            }
+            if event.clickCount >= 2, object.tool == .text { beginTextEditing(object, at: point); return }
             selectedID = object.id; onSelectionChanged?(); begin(.move(object), at: point, object: object)
         } else {
             let style = newStyle(for: tool)

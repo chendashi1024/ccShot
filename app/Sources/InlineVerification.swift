@@ -51,6 +51,40 @@ import AppKit
         await editor.recognitionForVerification?.value
         var checks=editor.inlineLayoutChecks(previewPath: previewPath)
         checks.merge(await editor.screenshotOutputChecks()) { _, new in new }
+        for copySelectedText in [false, true] {
+            let doubleClickEditor = ImageWindow(annotationDocument: AnnotationDocument(image: crop), pinned: false,
+                                                preferences: AppPreferences(store: store), screenshot: presentation, pasteboard: pasteboard)
+            defer { doubleClickEditor.close() }
+            await doubleClickEditor.recognitionForVerification?.value
+            guard let window = doubleClickEditor.window else { return false }
+            if copySelectedText {
+                let canvas = doubleClickEditor.canvas
+                let textPoint = CGPoint(x: 130, y: 381)
+                let hit = canvas.hitTest(canvas.convert(textPoint, to: canvas.superview))
+                checks["text_hit_goes_to_selection_layer"] = canvas.canStartTextSelection?(textPoint) == true && hit != nil && hit !== canvas
+                doubleClickEditor.selectAll(nil)
+            }
+            let selectedText = doubleClickEditor.selectedTextForVerification
+            pasteboard.clearContents()
+            let blank = doubleClickEditor.canvas.convert(CGPoint(x: 200, y: 150), to: nil)
+            for count in 1...2 {
+                for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+                    let event = NSEvent.mouseEvent(with: type, location: blank, modifierFlags: [],
+                                                   timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                                   eventNumber: 1, clickCount: count, pressure: type == .leftMouseDown ? 1 : 0)!
+                    window.sendEvent(event)
+                }
+                if count == 1 && !copySelectedText {
+                    checks["single_click_keeps_screenshot_open"] = window.isVisible && pasteboard.data(forType: .png) == nil
+                }
+            }
+            if copySelectedText {
+                checks["double_click_copies_selected_text_and_closes_screenshot"] = !window.isVisible
+                    && !selectedText.isEmpty && pasteboard.string(forType: .string) == selectedText
+            } else {
+                checks["double_click_copies_image_and_closes_screenshot"] = !window.isVisible && pasteboard.data(forType: .png) != nil
+            }
+        }
         let payload:[String:Any]=["schema":"ccshot.inline-editor.v1","checks":checks,"passed":!checks.isEmpty && checks.values.allSatisfy{$0},"general_clipboard_written":false,"system_input_method_verified":false]
         guard let data=try? JSONSerialization.data(withJSONObject:payload,options:[.prettyPrinted,.sortedKeys]),(try? data.write(to:URL(fileURLWithPath:reportPath),options:.atomic)) != nil else {return false}
         return !checks.isEmpty && checks.values.allSatisfy{$0}

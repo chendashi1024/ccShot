@@ -183,7 +183,14 @@ import UniformTypeIdentifiers
         canvas.onConfirm = { [weak self] in self?.completeScreenshot() }
         canvas.onSpace = { [weak self] in if self?.pinned == true { self?.toggleEditing() } else { self?.completeScreenshot() } }
         if screenshot != nil {
+            canvas.onBlankDoubleClick = canvas.onConfirm
             window.copyScreenshotSelection = { [weak self] in self?.copy(nil) }
+        }
+        canvas.canStartTextSelection = { [weak self] point in
+            guard let self, !overlay.isHidden else { return false }
+            let local = overlay.convert(point, from: canvas)
+            // VisionKit 的文字命中查询以图片左上角为原点，AppKit 事件以左下角为原点。
+            return overlay.analysisHasText(at: CGPoint(x: local.x, y: overlay.bounds.maxY - local.y))
         }
         canvas.onExit = { [weak self] in self?.cancelOperation(nil) }
         canvas.onZoom = { [weak self] factor in self?.zoom(factor) }
@@ -343,12 +350,6 @@ import UniformTypeIdentifiers
             else if event.type == .leftMouseDragged,let start=dragStart {
                 window.setFrameOrigin(CGPoint(x:start.origin.x+mouse.x-start.mouse.x,y:start.origin.y+mouse.y-start.mouse.y))
             } else if event.type == .leftMouseUp {dragStart=nil}
-        }
-        canvas.canStartTextSelection={ [weak self] point in
-            guard let self,!overlay.isHidden else {return false}
-            let local=overlay.convert(point,from:canvas)
-            // VisionKit 的文字命中查询以图片左上角为原点，AppKit 事件以左下角为原点。
-            return overlay.analysisHasText(at:CGPoint(x:local.x,y:overlay.bounds.maxY-local.y))
         }
     }
     private func layoutPin() {
