@@ -33,4 +33,9 @@ cat > build/ccShot.app/Contents/Info.plist <<PLIST
 </dict></plist>
 PLIST
 /usr/libexec/PlistBuddy -c "Add :ccShotSourceRevision string $source_revision" build/ccShot.app/Contents/Info.plist
-codesign --force --sign "${CCSHOT_SIGNING_IDENTITY:-${CCSHORT_SIGNING_IDENTITY:--}}" build/ccShot.app
+signing_identity=${CCSHOT_SIGNING_IDENTITY:-${CCSHORT_SIGNING_IDENTITY:-}}
+local_identity_file=../.local/signing-identity
+if [[ -z "$signing_identity" && -f "$local_identity_file" && ! -L "$local_identity_file" ]]; then
+  signing_identity=$(<"$local_identity_file")
+fi
+codesign --force --sign "${signing_identity:--}" build/ccShot.app

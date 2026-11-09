@@ -1,6 +1,6 @@
 # ccShot 原生开发底座
 
-最低构建目标 macOS 14、arm64；目前只在 macOS 15.4.1 本机验证。使用已有 Xcode，无第三方依赖；构建生成本地 ad-hoc 签名的 `build/ccShot.app`，不安装到 Applications。
+最低构建目标 macOS 14、arm64；目前只在 macOS 15.4.1 本机验证。使用已有 Xcode，无第三方依赖；构建默认生成本地 ad-hoc 签名的 `build/ccShot.app`，不安装到 Applications。
 
 ```bash
 bash build.sh
@@ -27,6 +27,12 @@ bash check.sh
 
 2026-11-03：上述自动检查通过，真实开发版窗口已通过 CUA 打开检查，样本识别完成、按钮可见。鼠标框选全流程、保存对话框、真实全局按键、权限恢复和混合多屏尚未通过完整验收。完整标注、美化、云 AI 与发布仍未完成；44 项范围继续保留。这是开发底座，不是完整本地体验版。
 
+
+## 本机固定签名
+
+先在 Xcode 的「设置 → 账户 → 管理证书」中创建可用的 Apple Development 证书。将钥匙串中该签名身份的名称或证书指纹单独写入仓库根目录的 `.local/signing-identity`。之后 `bash app/build.sh` 会使用该身份签名，`bash app/install-local.sh` 在新包满足已安装 App 的签名要求时保留系统授权记录。切换签名身份后，首次截图仍需要在 macOS 中授权一次。
+
+临时构建可以用 `CCSHOT_SIGNING_IDENTITY` 覆盖本机设置。公开发行脚本明确使用临时签名，个人证书和私钥保存在系统钥匙串。
 
 ## 选区交互（2026-11-03）
 

@@ -11,7 +11,7 @@ if [[ ! -d "$source_app" ]]; then
   exit 1
 fi
 
-# 先验证并准备完整的应用包，再退出旧版和重置授权。
+# 先验证并准备完整的应用包，再退出旧版。
 stage=/Applications/.ccShot-install
 mkdir "$stage"
 cleanup() {
@@ -26,7 +26,13 @@ trap 'exit 1' HUP INT TERM
 /usr/bin/ditto "$source_app" "$stage/ccShot.app"
 /usr/bin/codesign --verify --deep --strict -R="identifier \"$bundle_id\"" "$stage/ccShot.app"
 
+kept_screen_permission=false
 if [[ -e "$target_app" ]]; then
+  if old_requirement=$(/usr/bin/codesign -d -r- "$target_app" 2>&1 | sed -nE 's/^(# )?designated => //p') &&
+     [[ -n "$old_requirement" ]] &&
+     /usr/bin/codesign --verify --strict -R "=$old_requirement" "$stage/ccShot.app" >/dev/null 2>&1; then
+    kept_screen_permission=true
+  fi
   /usr/bin/osascript -l JavaScript - "$bundle_id" "$target_app" <<'JXA'
 ObjC.import('AppKit');
 
@@ -49,10 +55,16 @@ JXA
     attempts=$((attempts + 1))
     sleep 0.1
   done
-  /usr/bin/tccutil reset ScreenCapture "$bundle_id"
+  if [[ "$kept_screen_permission" == false ]]; then
+    /usr/bin/tccutil reset ScreenCapture "$bundle_id"
+  fi
   mv "$target_app" "$stage/previous.app"
 fi
 
 mv "$stage/ccShot.app" "$target_app"
 /usr/bin/open "$target_app"
-echo "ccShot 已安装。首次截图时，请按 macOS 提示允许屏幕录制，然后重新打开 ccShot。"
+if [[ "$kept_screen_permission" == true ]]; then
+  echo "ccShot 已安装。新旧应用签名身份匹配，已保留现有屏幕录制授权记录。"
+else
+  echo "ccShot 已安装。首次截图时，请按 macOS 提示允许屏幕录制，然后重新打开 ccShot。"
+fi

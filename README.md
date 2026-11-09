@@ -57,7 +57,7 @@ bash app/install-local.sh
 bash app/check.sh --core-only
 ```
 
-本地安装脚本会在替换「应用程序」里的 ccShot 前重置旧版的屏幕录制权限。重装后需在 macOS 里重新授权一次。
+本地安装脚本先核对新旧应用的签名身份。匹配时保留已有屏幕录制授权记录，身份变更时清理旧记录，由用户为新版重新授权。固定本机签名的配置方法见[开发说明](app/README.md#本机固定签名)。
 
 详见[开发说明](app/README.md)、[贡献指南](CONTRIBUTING.md)和[发布流程](docs/发布流程.md)。
 
