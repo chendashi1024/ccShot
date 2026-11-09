@@ -45,7 +45,7 @@
 | 完成 | Return 或点「完成」，复制后关闭编辑窗 |
 | 钉图 | F3，或从菜单栏选择「钉住剪贴板」 |
 
-更新时退出 App，从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases) 下载新版，替换「应用程序」里的旧版。升级后若无法截图，在系统设置中重新授权。
+更新时退出 App，从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases) 下载新版，替换「应用程序」里的旧版。若升级后仍提示授权且列表里已有 ccShot，退出应用，在终端运行 `tccutil reset ScreenCapture com.ccshot.dev`，然后打开新版，在「隐私与安全性 → 屏幕与系统音频录制」重新授权。
 
 ## 从源码构建
 
@@ -53,9 +53,11 @@
 
 ```bash
 bash app/build.sh
-open app/build/ccShot.app
+bash app/install-local.sh
 bash app/check.sh --core-only
 ```
+
+本地安装脚本会在替换「应用程序」里的 ccShot 前重置旧版的屏幕录制权限。重装后需在 macOS 里重新授权一次。
 
 详见[开发说明](app/README.md)、[贡献指南](CONTRIBUTING.md)和[发布流程](docs/发布流程.md)。
 
