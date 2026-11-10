@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ccshot.app/">官网</a> ·
-  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.1">下载 Mac 预览版</a> ·
+  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2">下载 Mac 预览版</a> ·
   <a href="CHANGELOG.md">更新日志</a> ·
   <a href="https://github.com/chendashi1024/ccShot/issues">问题反馈</a>
 </p>
@@ -28,27 +28,27 @@
 
 | 版本 | 芯片 | 系统要求 |
 | --- | --- | --- |
-| [v0.1.1 公开预览版](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.1) | Apple Silicon（M 系列） | 构建目标为 macOS 14 或更新版本 |
+| [v0.1.2 公开预览版](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2) | Apple Silicon（M 系列） | 构建目标为 macOS 14 或更新版本 |
 
 1. 从发布页下载 DMG，打开后将 **ccShot.app** 拖入「应用程序」。
-2. 首版采用临时签名，未经 Apple 公证。若系统阻止首次打开，在确认来源和发布页提供的 SHA-256 校验值后，前往「系统设置 → 隐私与安全性」选择「仍要打开」。参见 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)。
+2. 预览版采用临时签名，未经 Apple 公证。若系统阻止首次打开，在确认来源和发布页提供的 SHA-256 校验值后，前往「系统设置 → 隐私与安全性」选择「仍要打开」。参见 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)。
 3. 打开 ccShot，点击菜单栏的四角 C 图标，选择「区域截图」。按提示允许屏幕录制，再重新打开 App。
 
-目前在 Apple Silicon、macOS 15.4.1 上验证。Intel Mac 无安装包。公开预览版的已知问题见[更新日志](CHANGELOG.md)，当前源码的基础交互验证见[排查记录](docs/基础标注交互排查-2026-11-09.md)。
+已在 Apple Silicon 的 macOS 14.8.7 干净测试环境验证首装和覆盖升级，并在 macOS 15.4.1 实机验证不同缩放比例的双屏截图、钉图和选字。Intel Mac 无安装包。公开预览版的已知问题见[更新日志](CHANGELOG.md)，当前源码的基础交互验证见[排查记录](docs/基础标注交互排查-2026-11-09.md)。
 
 ## 常用操作
 
 | 操作 | 默认方式 |
 | --- | --- |
-| 开始截图 | F1，或从菜单栏进入。功能键模式下可试 Fn+F1，默认备用键为 ⌃⌥S |
+| 开始截图 | F1，或从菜单栏进入。如果 F1 调节亮度，可试 Fn+F1，默认备用键为 ⌃⌥S |
 | 复制 | ⌘C 复制当前选中文字或图片，保留编辑窗 |
-| 撤销 / 重做 | ⌘Z / ⌘⇧Z；兼容 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y（当前源码，尚未发版） |
-| 调整标注 | 拖框内部或箭头线身移动，拖控制点调整；Delete 删除，方向键微调（当前源码） |
-| 连续绘制 | 空白处继续画；在已有同类标注上另画，按住 Option 拖动（当前源码） |
+| 撤销 / 重做 | ⌘Z / ⌘⇧Z；兼容 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y |
+| 调整标注 | 拖框内部或箭头线身移动，拖控制点调整；Delete 删除，方向键微调 |
+| 连续绘制 | 空白处继续画；在已有同类标注上另画，按住 Option 拖动 |
 | 完成 | Return、点「完成」，或用选择工具双击截图内的空白处，复制后关闭编辑窗 |
 | 钉图 | F3，或从菜单栏选择「钉住剪贴板」 |
 
-更新时退出 App，从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases) 下载新版，替换「应用程序」里的旧版。若升级后仍提示授权且列表里已有 ccShot，退出应用，在终端运行 `tccutil reset ScreenCapture com.ccshot.dev`，然后打开新版，在「隐私与安全性 → 屏幕与系统音频录制」重新授权。
+更新时退出 App，从 [GitHub Releases](https://github.com/chendashi1024/ccShot/releases) 下载新版，替换「应用程序」里的旧版。如果系统阻止打开新版，核对校验值后到「隐私与安全性」选择「仍要打开」。若升级后仍提示授权且列表里已有 ccShot，退出应用，在终端运行 `tccutil reset ScreenCapture com.ccshot.dev`，然后打开新版，在「隐私与安全性 → 屏幕与系统音频录制」重新授权。
 
 ## 从源码构建
 
