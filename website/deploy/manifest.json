@@ -5,12 +5,16 @@
       "size": 571
     },
     "/icon.png": {
-      "hash": "de6441d5065174cd0e490f8362d4040d",
-      "size": 8088
+      "hash": "55a5059450104d2500d91b8f40faeecb",
+      "size": 7391
     },
     "/index.html": {
-      "hash": "22d76c5cc70d75f6a5ca38040e3949bb",
-      "size": 631656
+      "hash": "0d02c808fbf322826c4a2e0ff77565e5",
+      "size": 319193
+    },
+    "/ocr-demo.jpg": {
+      "hash": "82b9840fa91b2e2d18986d0e0bb4b65e",
+      "size": 78530
     },
     "/og.jpg": {
       "hash": "b838c8f8ceed51b94c3a9ca0fd5c5b76",
