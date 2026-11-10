@@ -44,7 +44,23 @@ import QuartzCore
                 let displayID = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
                 checks[prefix+"_window_on_requested_screen"] = (window.screen?.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber) == displayID
                 checks[prefix+"_self_excluded_from_window_targets"] = !WindowCapture.targets(in:content,screen:screen).contains(where:{$0.id == UInt32(window.windowNumber)})
-                let captured = try await WindowCapture.capture(id:UInt32(window.windowNumber),ownerPID:ProcessInfo.processInfo.processIdentifier)
+                let captured: CGImage
+                do {
+                    // 系统会将子工具栏与钉图合并后缩放，像素对齐检查只取钉图本体。
+                    let toolbars = (window.childWindows ?? []).map { (window: $0, wasVisible: $0.isVisible) }
+                    for toolbar in toolbars {
+                        window.removeChildWindow(toolbar.window)
+                        toolbar.window.orderOut(nil)
+                    }
+                    defer {
+                        for toolbar in toolbars {
+                            window.addChildWindow(toolbar.window, ordered: .above)
+                            if !toolbar.wasVisible { toolbar.window.orderOut(nil) }
+                        }
+                    }
+                    CATransaction.flush()
+                    captured = try await WindowCapture.capture(id:UInt32(window.windowNumber),ownerPID:ProcessInfo.processInfo.processIdentifier)
+                }
                 let filter = SCContentFilter(desktopIndependentWindow:target)
                 let scale = CGFloat(filter.pointPixelScale)
                 checks[prefix+"_capture_native_size"] = captured.width == Int(ceil(window.frame.width*scale)) && captured.height == Int(ceil(window.frame.height*scale))
