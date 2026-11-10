@@ -42,9 +42,9 @@ structured = {
     'name': 'ccShot',
     'operatingSystem': 'macOS',
     'applicationCategory': 'UtilitiesApplication',
-    'softwareVersion': '0.1.0',
+    'softwareVersion': '0.1.2',
     'url': 'https://ccshot.app/',
-    'downloadUrl': 'https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg',
+    'downloadUrl': 'https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg',
     'license': 'https://opensource.org/licenses/MIT',
     'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'},
 }
@@ -59,7 +59,7 @@ head = (
     '<meta property="og:locale" content="zh_CN">'
     '<meta property="og:site_name" content="ccShot">'
     '<meta property="og:title" content="ccShot · 截完图，直接选字">'
-    '<meta property="og:description" content="免费的 macOS 原生截图工具。v0.1.0 公开预览版只提供 Apple Silicon（arm64），截图后可以直接选字、标注和钉图。">'
+    '<meta property="og:description" content="免费的 macOS 原生截图工具。v0.1.2 公开预览版只提供 Apple Silicon（arm64），截图后可以直接选字、标注和钉图。">'
     '<meta property="og:url" content="https://ccshot.app/">'
     '<meta name="twitter:card" content="summary_large_image">'
     '<meta name="theme-color" content="#2b664f">'

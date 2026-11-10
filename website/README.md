@@ -1,15 +1,15 @@
 # ccShot 官网部署包
 
-这是 `ccshot.app` 的可部署静态页和跳转 Worker。本次没有把网站发布到线上。访问统计还没开始记，点击数据集也要等第一次真实跳转之后才会出现。
+这是 `ccshot.app` 的可部署静态页和跳转 Worker。本仓库的部署包用于更新已有的生产 Worker。
 
 ## 页面上的下载
 
-- 主按钮「免费下载」在部署后先到 `/go/download`，再跳到 `https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg`。
-- 「GitHub 安装包」到 `/go/download?source=github`，再跳到 GitHub Release 里的同一份 DMG。
+- 主按钮「免费下载」先到 `/go/download`，再跳到 `https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg`。
+- 旧链接 `/go/download?source=github` 继续指向同一份 DMG。等 R2 有对应版本并通过文件校验后，再设置 `r2DownloadUrl`。
 - 「GitHub 标星」到 `/go/github?to=repo`。发布页链接到 `/go/github?to=release`。标星要在 GitHub 页面上完成，点一下这里只表示有人离开官网前往 GitHub。
-- v0.1.0 是公开预览版，只提供 Apple Silicon（arm64）。安装包是临时签名，没有 Apple 公证。页面不写 Intel 可用，也不写国内直连或加速保证。
+- v0.1.2 是公开预览版，只提供 Apple Silicon（arm64）。安装包是临时签名，没有 Apple 公证。页面不写 Intel 可用，也不写国内直连或加速保证。
 
-已核对的文件：2,035,236 字节，SHA-256 `24bf3982b6d282085ad5fe19ab96b42946c9841fa575a9f6737a188004a9fcfb`。校验文件是 `https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg.sha256`。
+已核对的文件：1,837,416 字节，SHA-256 `93b6209f1f9c992b0bf9e9853201304e1d4aa45633bc5d31b651a549a7fc4a70`。校验文件是 `https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg.sha256`。
 
 ## 统计
 
@@ -20,7 +20,7 @@
 | 字段 | 内容 |
 | --- | --- |
 | `index1` | `download_r2`、`download_github` 或 `github_exit` |
-| `blob1` | 下载记 `0.1.0`；GitHub 出口记 `repo` 或 `release` |
+| `blob1` | 下载记 `0.1.2`；GitHub 出口记 `repo` 或 `release` |
 | `double1` | `1` |
 
 不写 IP、完整浏览器标识、账号或可识别身份。`download_r2` 表示有人点了主下载并被转到已核对的地址，不是文件一定下完。`github_exit` 不是已经标星。
@@ -57,7 +57,7 @@ ORDER BY clicks DESC
 3. PUT `/accounts/ff616a1cf63158f320063c31353d5a30/workers/scripts/ccshot-site`，`multipart/form-data`：  
    - `metadata`：`deploy/metadata.json`，把 `assets.jwt` 换成上一步的 completion jwt，Content-Type 为 `application/json`。  
    - `index.js`：`src/index.js`，Content-Type 为 `application/javascript+module`。
-4. PUT `/accounts/ff616a1cf63158f320063c31353d5a30/workers/domains`，正文用 `deploy/domain.json`。
+已有域名绑定沿用现有设置。发布前记下当前 Worker 部署版本，用于回滚。
 
 上线后用这三条确认跳转，再跑上面的 SQL，看到对应事件才算点击采集生效：
 
@@ -67,7 +67,7 @@ curl -sI "https://ccshot.app/go/download?source=github"
 curl -sI "https://ccshot.app/go/github?to=repo"
 ```
 
-期望的 `location` 依次是 R2 的 DMG、GitHub 的 DMG、GitHub 仓库。首页源码里不应出现 `beacon.min.js`。
+期望的 `location` 依次是 GitHub 的 DMG、同一份 GitHub DMG、GitHub 仓库。首页源码里不应出现 `beacon.min.js`。
 
 本地检查：
 
@@ -76,10 +76,3 @@ python3 docs/website-preview/build.py
 python3 website/deploy/make-manifest.py
 node --test website/test/*.js
 ```
-
-## 还没做
-
-- 没有执行上面的上传，`ccshot.app` 还没有这个网站。
-- 访问数字要等页面通过该域名对外提供之后，才会进入已经开启的 Web Analytics。
-- `ccshot_clicks` 要等部署后的第一次跳转才会出现；现在查询不会有这张表。
-- 没有发 GitHub Release，没有改 App，没有做推广。

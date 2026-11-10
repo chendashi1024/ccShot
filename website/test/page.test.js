@@ -16,32 +16,28 @@ function hrefs(html, marker) {
 
 test("deployed page counts clicks and keeps GitHub visible", () => {
   assert.deepEqual(hrefs(site, 'data-exit="download"'), ["/go/download", "/go/download"]);
-  assert.deepEqual(hrefs(site, 'data-exit="download-github"'), ["/go/download?source=github"]);
   assert.ok(hrefs(site, 'data-exit="github"').every((href) => href === "/go/github?to=repo"));
   assert.deepEqual(hrefs(site, 'data-exit="release"'), ["/go/github?to=release"]);
   assert.ok(site.includes("GitHub 标星"));
-  assert.ok(site.includes("https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg"));
-  assert.ok(site.includes("https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg.sha256"));
+  assert.ok(site.includes("https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg"));
+  assert.ok(site.includes("https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg.sha256"));
   assert.equal((site.match(/<h1>/g) || []).length, 1);
   assert.ok(site.includes('lang="zh-CN"'));
   assert.ok(site.includes('name="viewport"'));
   assert.ok(site.includes('rel="canonical" href="https://ccshot.app/"'));
-  assert.ok(site.includes("v0.1.0 公开预览版 · Apple Silicon（arm64）"));
+  assert.ok(site.includes("v0.1.2 公开预览版 · Apple Silicon（arm64）"));
   assert.ok(site.includes("没有 Intel 安装包"));
   assert.ok(site.includes("临时签名"));
   assert.ok(site.includes("没有经过 Apple 公证"));
-  assert.ok(site.includes("24bf3982b6d282085ad5fe19ab96b42946c9841fa575a9f6737a188004a9fcfb"));
+  assert.ok(site.includes("93b6209f1f9c992b0bf9e9853201304e1d4aa45633bc5d31b651a549a7fc4a70"));
   assert.ok(site.includes("这个版本没有 AI 问答，也没有截图美化。"));
-  assert.ok(site.includes("不是全部机型"));
+  assert.ok(site.includes("清除旧授权并重新授权"));
 });
 
 test("offline page downloads the real files without the worker", () => {
   assert.deepEqual(hrefs(offline, 'data-exit="download"'), [
-    "https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg",
-    "https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg",
-  ]);
-  assert.deepEqual(hrefs(offline, 'data-exit="download-github"'), [
-    "https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg",
+    "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg",
+    "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg",
   ]);
 });
 
