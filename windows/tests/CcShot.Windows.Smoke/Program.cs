@@ -13,6 +13,7 @@ using CcShot.Windows.Capture;
 using CcShot.Windows.Editor;
 using CcShot.Windows.Interop;
 using CcShot.Windows.Pin;
+using CcShot.Windows.Rendering;
 
 internal static class Program
 {
@@ -156,6 +157,28 @@ internal static class Program
         if (windowImage.Width != rect.Width || windowImage.Height != rect.Height || windowImage.GetPixel(2, 2).R <= 210)
             throw new InvalidOperationException("窗口截图的范围或像素与样本不一致。");
         Console.WriteLine("通过：窗口点选取到了自制窗口，画面未包含选区遮罩。");
+
+        Press(0x11, 0x43);
+        await WaitUntil(() => Clipboard.GetImage() is { } bitmap && bitmap.PixelWidth == rect.Width
+            && bitmap.PixelHeight == rect.Height, "剪贴板图片像素尺寸");
+        string output = Directory.CreateTempSubdirectory("ccshot-exports-").FullName;
+        try
+        {
+            foreach (string extension in new[] { "png", "jpg" })
+            {
+                string file = Path.Combine(output, $"window.{extension}");
+                BitmapInterop.Save(windowImage, file);
+                using var stream = File.OpenRead(file);
+                var decoded = BitmapDecoder.Create(stream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad).Frames[0];
+                if (decoded.PixelWidth != rect.Width || decoded.PixelHeight != rect.Height)
+                    throw new InvalidOperationException($"{extension} 文件尺寸与窗口截图不一致。");
+            }
+        }
+        finally
+        {
+            Directory.Delete(output, recursive: true);
+        }
+        Console.WriteLine("通过：剪贴板图片及 PNG/JPG 保存后回读的像素尺寸正确。");
     }
 
     private static async Task VerifySelectedLetter(EditorCanvas canvas, string label)

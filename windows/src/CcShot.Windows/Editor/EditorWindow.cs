@@ -456,7 +456,7 @@ internal sealed class EditorWindow : Window
         {
             Title = "保存截图",
             Filter = "PNG 图片|*.png|JPG 图片|*.jpg",
-            FileName = $"ccShot-{DateTime.Now:yyyyMMdd-HHmmss}.png",
+            FileName = $"ccShot-{DateTime.Now:yyyyMMdd-HHmmss}",
             InitialDirectory = _settings.ResolvedSaveDirectory,
         };
         if (dialog.ShowDialog(this) != true) return;
