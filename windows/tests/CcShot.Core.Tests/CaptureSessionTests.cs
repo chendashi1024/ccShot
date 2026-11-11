@@ -58,8 +58,11 @@ public class CaptureSessionTests
         Assert.Equal(TextOutput.NoText, session.CheckTextOutput());
     }
 
-    [Fact]
-    public void AddingAnAnnotationInvalidatesRecognizedText()
+    [Theory]
+    [InlineData(MaskEffect.Solid)]
+    [InlineData(MaskEffect.Mosaic)]
+    [InlineData(MaskEffect.Blur)]
+    public void AddingAnyMaskInvalidatesRecognizedText(MaskEffect effect)
     {
         var session = NewSession();
         int request = session.BeginOcr();
@@ -67,10 +70,24 @@ public class CaptureSessionTests
         Assert.Equal(TextOutput.Allowed, session.CheckTextOutput());
 
         session.Annotations.Add(new MaskItem(new[] { new PointF(5, 5) }, AnnotationStyle.Default(AnnotationKind.Mask),
-            MaskEffect.Solid, new RectF(0, 0, 30, 30)));
+            effect, new RectF(0, 0, 30, 30)));
 
         Assert.Equal(TextOutput.Stale, session.CheckTextOutput());
-        Assert.Single(session.OpaqueMasks);
+        Assert.Null(session.OcrPage);
+    }
+
+    [Fact]
+    public void AResultInFlightCannotBeCopiedAfterMasking()
+    {
+        var session = NewSession();
+        int revision = session.ImageRevision;
+        int request = session.BeginOcr();
+
+        session.Annotations.Add(new MaskItem(new[] { new PointF(5, 5) }, AnnotationStyle.Default(AnnotationKind.Mask),
+            MaskEffect.Blur, new RectF(0, 0, 30, 30)));
+
+        Assert.Equal(TextOutput.Stale, session.CheckTextOutput());
+        Assert.False(session.TryCompleteOcr(request, revision, FakeOcr.Line("文字", 0, 0, 20, 30)));
     }
 
     [Fact]
@@ -83,7 +100,24 @@ public class CaptureSessionTests
         session.Annotations.Add(new ArrowItem(new PointF(5, 5), new PointF(40, 40), AnnotationStyle.Default(AnnotationKind.Arrow)));
 
         Assert.Equal(TextOutput.Allowed, session.CheckTextOutput());
-        Assert.Empty(session.OpaqueMasks);
+        Assert.Empty(session.ObscuredTextRects);
+    }
+
+    [Fact]
+    public void PinCopyKeepsEditableAnnotationsWithoutSharingOcrOrEdits()
+    {
+        var session = NewSession();
+        var original = session.Annotations.Add(new RectItem(new RectF(5, 5, 20, 20), AnnotationStyle.Default(AnnotationKind.Rect)));
+        int request = session.BeginOcr();
+        Assert.True(session.TryCompleteOcr(request, session.ImageRevision, FakeOcr.Line("文字", 0, 0, 20, 30)));
+
+        var pin = session.CreateIndependentCopy();
+        var copied = Assert.Single(pin.Annotations.Items);
+        copied.Move(10, 0);
+
+        Assert.Equal(5, original.Bounds.X);
+        Assert.Equal(15, copied.Bounds.X);
+        Assert.Null(pin.OcrPage);
     }
 
     [Fact]

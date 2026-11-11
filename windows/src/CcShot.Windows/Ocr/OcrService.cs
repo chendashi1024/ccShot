@@ -19,6 +19,7 @@ internal sealed class OcrService : IDisposable
     private readonly object _gate = new();
     private PaddleOcrEngine? _engine;
     private string? _loadedFrom;
+    private bool _disposed;
 
     public string? LastError { get; private set; }
     public string? LoadedFrom => _loadedFrom;
@@ -64,6 +65,11 @@ internal sealed class OcrService : IDisposable
         error = string.Empty;
         lock (_gate)
         {
+            if (_disposed)
+            {
+                error = "文字识别已关闭";
+                return false;
+            }
             if (_engine != null) return true;
             var directory = ResolveModelDirectory(settings.OcrModelDirectory);
             if (directory == null)
@@ -91,16 +97,16 @@ internal sealed class OcrService : IDisposable
         }
     }
 
-    public Task<(OcrPage? Page, string? Error)> RecognizeAsync(PixelImage image, CancellationToken token) =>
+    public Task<(OcrPage? Page, string? Error)> RecognizeAsync(PixelImage image, AppSettings settings, CancellationToken token) =>
         Task.Run(() =>
         {
             try
             {
                 lock (_gate)
                 {
-                    if (_engine == null) return ((OcrPage?)null, LastError ?? "文字识别未准备好");
                     token.ThrowIfCancellationRequested();
-                    var page = _engine.Recognize(image, token);
+                    if (!TryPrepare(settings, out string error)) return ((OcrPage?)null, error);
+                    var page = _engine!.Recognize(image, token);
                     return ((OcrPage?)page, (string?)null);
                 }
             }
@@ -112,12 +118,13 @@ internal sealed class OcrService : IDisposable
             {
                 return ((OcrPage?)null, "识别失败：" + ex.Message);
             }
-        }, token);
+        });
 
     public void Dispose()
     {
         lock (_gate)
         {
+            _disposed = true;
             _engine?.Dispose();
             _engine = null;
         }

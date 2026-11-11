@@ -18,6 +18,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../CcShot.Core/CcShot.Core.csproj" />
+    <InternalsVisibleTo Include="CcShot.Windows.Smoke" />
   </ItemGroup>
   <ItemGroup>
     <None Update="Assets\ccshot.ico" CopyToOutputDirectory="PreserveNewest" />

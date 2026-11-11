@@ -19,6 +19,7 @@ internal sealed class TrayIcon : IDisposable
         menu.Items.Add(_captureItem);
         menu.Items.Add(new ToolStripMenuItem("当前屏幕", null, (_, _) => ScreenCaptureRequested?.Invoke(this, EventArgs.Empty)));
         menu.Items.Add(new ToolStripMenuItem("选择窗口", null, (_, _) => WindowCaptureRequested?.Invoke(this, EventArgs.Empty)));
+        menu.Items.Add(new ToolStripMenuItem("钉住剪贴板", null, (_, _) => PinClipboardRequested?.Invoke(this, EventArgs.Empty)));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(new ToolStripMenuItem("设置…", null, (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty)));
         menu.Items.Add(new ToolStripSeparator());
@@ -37,6 +38,7 @@ internal sealed class TrayIcon : IDisposable
     public event EventHandler? CaptureRequested;
     public event EventHandler? ScreenCaptureRequested;
     public event EventHandler? WindowCaptureRequested;
+    public event EventHandler? PinClipboardRequested;
     public event EventHandler? SettingsRequested;
     public event EventHandler? ExitRequested;
 
@@ -59,8 +61,8 @@ internal sealed class TrayIcon : IDisposable
     {
         string shortcut = binding?.ToString() ?? "未注册";
         _captureItem.Text = $"区域截图（{shortcut}）";
-        _icon.Text = note == null ? $"ccShot · 截图与选字（{shortcut}）" : $"ccShot · {note}";
-        if (_icon.Text.Length > 63) _icon.Text = _icon.Text[..63];
+        string text = note == null ? $"ccShot · 截图与选字（{shortcut}）" : $"ccShot · {note}";
+        _icon.Text = text.Length > 63 ? text[..63] : text;
     }
 
     public void Notify(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)

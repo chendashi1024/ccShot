@@ -6,7 +6,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using CcShot.Core.Settings;
 using CcShot.Windows.Interop;
-using CcShot.Windows.Ocr;
 using CcShot.Windows.Theme;
 
 namespace CcShot.Windows.Settings;
@@ -18,17 +17,17 @@ namespace CcShot.Windows.Settings;
 internal sealed class SettingsWindow : Window
 {
     private readonly AppSettings _settings;
-    private readonly OcrService _ocr;
-    private readonly Action<AppSettings> _apply;
+    private readonly GlobalHotkey _hotkey;
+    private readonly Action<HotkeyBinding> _apply;
     private readonly TextBox _hotkeyBox;
     private readonly TextBox _directoryBox;
     private readonly TextBlock _hotkeyError;
     private readonly TextBlock _directoryError;
 
-    public SettingsWindow(AppSettings settings, OcrService ocr, Action<AppSettings> apply)
+    public SettingsWindow(AppSettings settings, GlobalHotkey hotkey, Action<HotkeyBinding> apply)
     {
         _settings = settings;
-        _ocr = ocr;
+        _hotkey = hotkey;
         _apply = apply;
 
         Title = "ccShot 设置";
@@ -56,18 +55,6 @@ internal sealed class SettingsWindow : Window
         directoryRow.Children.Add(browse);
         Grid.SetColumn(browse, 1);
 
-        var modelInfo = new TextBlock
-        {
-            TextWrapping = TextWrapping.Wrap,
-            FontSize = 12,
-            Foreground = Palette.InkSoftBrush,
-            Margin = new Thickness(0, 6, 0, 0),
-        };
-        var modelDirectory = _ocr.LoadedFrom ?? OcrService.ResolveModelDirectory(settings.OcrModelDirectory);
-        modelInfo.Text = modelDirectory == null
-            ? "文字识别模型：未找到。把 models/mobile 放到程序目录，或运行 tools/fetch-models.sh 后复制过来；截图和标注仍可用。"
-            : $"文字识别模型：{modelDirectory}（本地 CPU 运行，不联网）";
-
         var save = new Button { Content = "保存", Padding = new Thickness(18, 5, 18, 5), IsDefault = true, Margin = new Thickness(0, 0, 8, 0) };
         save.Click += (_, _) => Commit();
         var cancel = new Button { Content = "取消", Padding = new Thickness(18, 5, 18, 5), IsCancel = true };
@@ -85,8 +72,6 @@ internal sealed class SettingsWindow : Window
         panel.Children.Add(Header("默认保存位置", top: 14));
         panel.Children.Add(directoryRow);
         panel.Children.Add(_directoryError);
-        panel.Children.Add(Header("文字识别", top: 14));
-        panel.Children.Add(modelInfo);
         panel.Children.Add(buttons);
         Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
 
@@ -122,12 +107,6 @@ internal sealed class SettingsWindow : Window
             _hotkeyError.Text = parseError;
             valid = false;
         }
-        else if (!GlobalHotkey.CanRegister(binding, out string registerError))
-        {
-            _hotkeyError.Text = registerError;
-            valid = false;
-        }
-
         string directory = _directoryBox.Text.Trim();
         if (directory.Length == 0)
         {
@@ -139,9 +118,8 @@ internal sealed class SettingsWindow : Window
             try
             {
                 Directory.CreateDirectory(directory);
-                var probe = Path.Combine(directory, ".ccshot-write-test");
-                File.WriteAllText(probe, "ok");
-                File.Delete(probe);
+                var probe = Path.Combine(directory, $".ccshot-write-test-{Guid.NewGuid():N}");
+                using var stream = new FileStream(probe, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose);
             }
             catch (Exception ex)
             {
@@ -151,11 +129,16 @@ internal sealed class SettingsWindow : Window
         }
 
         if (!valid) return;
+        if (!_hotkey.Register(binding))
+        {
+            _hotkeyError.Text = _hotkey.LastError;
+            return;
+        }
 
         _settings.CaptureHotkey = binding.ToString();
         _settings.SaveDirectory = directory;
         _settings.Save();
-        _apply(_settings);
+        _apply(binding);
         Close();
     }
 }

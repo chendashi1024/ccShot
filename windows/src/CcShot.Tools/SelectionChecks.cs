@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using CcShot.Core.Geometry;
 using CcShot.Core.Ocr;
 using CcShot.Core.Ocr.Selection;
@@ -9,8 +10,7 @@ namespace CcShot.Tools;
 
 /// <summary>
 /// Turns a recognized page plus per-character ground truth into selection evidence.
-/// Recognition error and selection error are scored separately on purpose: a wrong character must not
-/// be reported as a selection bug, and a wrong selection range must not hide behind a good CER.
+/// 字框几何与实际选中文字分别统计，选字结果以固定标准答案为准。
 /// </summary>
 internal static class SelectionChecks
 {
@@ -71,7 +71,7 @@ internal static class SelectionChecks
             var selection = model.Select(new PointF(x0, y), new PointF(x1, y));
             var text = model.Text(selection);
             result.SingleCharTotal++;
-            if (text.Length == 1)
+            if (text == truth.Char)
             {
                 result.SingleCharCorrect++;
             }
@@ -81,20 +81,30 @@ internal static class SelectionChecks
             }
         }
 
-        // 3. Whole line drag: selecting from the first to the last character must reproduce the line.
-        foreach (var line in page.Lines)
+        // 用样本坐标起止拖选整行，识别漏行同样计入。
+        if (fixture.TruthLines is { Count: > 0 } lines)
         {
-            if (line.Glyphs.Count == 0) continue;
-            var first = line.Glyphs[0].Box;
-            var last = line.Glyphs[^1].Box;
-            // A single-glyph line needs a real drag (edge to edge); centre to centre is a click.
-            var selection = line.Glyphs.Count == 1
-                ? model.Select(new PointF(first.X + 0.5f, first.CenterY), new PointF(first.Right - 0.5f, first.CenterY))
-                : model.Select(new PointF(first.X + 1f, first.CenterY), new PointF(last.Right - 1f, last.CenterY));
-            var text = model.Text(selection);
-            result.RangeTotal++;
-            if (text == line.Text) result.RangeCorrect++;
-            else if (result.Mismatches.Count < 5) result.Mismatches.Add($"line '{line.Text}' -> '{text}'");
+            int offset = 0;
+            foreach (string expected in lines)
+            {
+                var tokens = expected.EnumerateRunes().Where(rune => !Rune.IsWhiteSpace(rune)).Select(rune => rune.ToString()).ToArray();
+                if (tokens.Length == 0) continue;
+                var glyphs = truthGlyphs.Skip(offset).Take(tokens.Length).ToArray();
+                offset += tokens.Length;
+                if (!glyphs.Select(glyph => glyph.Char).SequenceEqual(tokens))
+                    throw new InvalidDataException($"{fixture.Id} 的逐字框与行真值不一致");
+                var first = glyphs[0];
+                var last = glyphs[^1];
+                var centers = glyphs.Select(glyph => glyph.Y + glyph.H / 2).OrderBy(y => y).ToArray();
+                float y = (float)centers[centers.Length / 2];
+                var start = new PointF((float)(first.X + first.W * 0.2), y);
+                var end = new PointF((float)(last.X + last.W * 0.8), y);
+                string text = model.Text(model.Select(start, end));
+                result.RangeTotal++;
+                if (text == expected && model.Text(model.Select(end, start)) == expected) result.RangeCorrect++;
+                else if (result.Mismatches.Count < 5) result.Mismatches.Add($"line '{expected}' -> '{text}'");
+            }
+            if (offset != truthGlyphs.Count) throw new InvalidDataException($"{fixture.Id} 有未计入的逐字框");
         }
 
         return result;

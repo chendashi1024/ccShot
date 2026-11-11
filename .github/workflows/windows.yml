@@ -1,0 +1,59 @@
+name: Windows 构建与桌面验证
+
+on:
+  push:
+    branches: [workbuddy/ccshot-windows]
+    paths: ['windows/**', '.github/workflows/windows.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: 构建与核心测试
+        shell: pwsh
+        run: |
+          dotnet build windows/CcShot.sln -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet test windows/tests/CcShot.Core.Tests -c Release --no-build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: 校验并准备本地轻量模型
+        shell: pwsh
+        run: |
+          $lock = Get-Content windows/models/models.lock.json -Raw | ConvertFrom-Json
+          foreach ($asset in $lock.assets | Where-Object { $_.path.StartsWith('models/mobile/') }) {
+            $path = Join-Path windows $asset.path
+            New-Item -ItemType Directory -Force (Split-Path $path) | Out-Null
+            Invoke-WebRequest -Uri $asset.url -OutFile $path
+            if ((Get-FileHash $path -Algorithm SHA256).Hash -ne $asset.sha256) {
+              throw "模型校验失败 $($asset.path)"
+            }
+          }
+      - name: 运行 Windows x64 同图识字
+        shell: pwsh
+        run: |
+          dotnet run --project windows/src/CcShot.Tools -c Release --no-build -- bench --manifest windows/testdata/windows-01/manifest.json --out "$env:RUNNER_TEMP/ccshot-ocr.json" --model mobile=windows/models/mobile --repeat 1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $report = Get-Content "$env:RUNNER_TEMP/ccshot-ocr.json" -Raw | ConvertFrom-Json
+          if ($report.models[0].aggregate.failures -ne 0 -or $report.models[0].aggregate.emptyOutputs -ne 0) {
+            throw '至少一张固定样本识字失败'
+          }
+      - name: 实际唤起、截图、选字与剪贴板检查
+        shell: pwsh
+        run: |
+          dotnet build windows/tests/CcShot.Windows.Smoke -c Release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $output = 'windows/tests/CcShot.Windows.Smoke/bin/Release/net8.0-windows'
+          New-Item -ItemType Directory -Force "$output/models" | Out-Null
+          Copy-Item -Recurse windows/models/mobile "$output/models"
+          dotnet "$output/CcShot.Windows.Smoke.dll" windows/testdata/windows-01/01-en.png
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

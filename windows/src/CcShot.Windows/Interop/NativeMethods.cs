@@ -20,6 +20,7 @@ internal static class NativeMethods
 
     public const int MDT_EFFECTIVE_DPI = 0;
     public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
+    public const int DWMWA_CLOAKED = 14;
     public const uint GA_ROOT = 2;
 
     public const uint SWP_NOSIZE = 0x0001;
@@ -70,6 +71,22 @@ internal static class NativeMethods
     }
 
     public delegate bool MonitorEnumProc(IntPtr hMonitor, IntPtr hdcMonitor, ref RECT lprcMonitor, IntPtr dwData);
+    public delegate bool WindowEnumProc(IntPtr hwnd, IntPtr data);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(WindowEnumProc callback, IntPtr data);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetShellWindow();
+
+    [DllImport("dwmapi.dll", EntryPoint = "DwmGetWindowAttribute")]
+    public static extern int DwmGetWindowAttributeInt(IntPtr hwnd, int attribute, out int value, int size);
 
     [DllImport("user32.dll")]
     public static extern bool EnumDisplayMonitors(IntPtr hdc, IntPtr lprcClip, MonitorEnumProc lpfnEnum, IntPtr dwData);

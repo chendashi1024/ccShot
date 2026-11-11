@@ -27,6 +27,15 @@ public sealed class AnnotationDocument
             _styles[kind] = AnnotationStyle.Default(kind);
     }
 
+    internal AnnotationDocument CreateIndependentCopy()
+    {
+        var copy = new AnnotationDocument();
+        copy._items.AddRange(Snapshot());
+        foreach (var (kind, style) in _styles) copy._styles[kind] = style;
+        copy._nextNumber = _nextNumber;
+        return copy;
+    }
+
     public IReadOnlyList<AnnotationItem> Items => _items;
     public int Revision => _revision;
     public int NextNumber => _nextNumber;

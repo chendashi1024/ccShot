@@ -48,11 +48,11 @@ internal sealed class EditorCanvas : FrameworkElement
 
     private readonly CaptureSession _session;
     private readonly BitmapSource _bitmap;
-    private readonly MaskImages _masks;
+    private readonly bool _readOnly;
+    private MaskImages? _masks;
 
     private TextSelectionModel? _textModel;
     private TextSelection _selection = TextSelection.Empty;
-    private Caret _caretAnchor;
     private AnnotationItem? _selectedItem;
     private EditorTool _tool = EditorTool.Select;
 
@@ -64,21 +64,25 @@ internal sealed class EditorCanvas : FrameworkElement
     private int _handleIndex = -1;
     private float _arrowCurve;
 
-    public EditorCanvas(CaptureSession session)
+    public EditorCanvas(CaptureSession session, bool readOnly = false)
     {
         _session = session;
         _bitmap = BitmapInterop.ToBitmapSource(session.Image);
-        _masks = ImageCompositor.BuildMaskImages(session.Image);
+        _readOnly = readOnly;
         Focusable = true;
         ClipToBounds = true;
         SnapsToDevicePixels = true;
         Cursor = Cursors.Cross;
-        session.Annotations.Changed += (_, _) =>
-        {
-            if (!ReferenceEquals(_selectedItem, null) && !session.Annotations.Items.Contains(_selectedItem)) _selectedItem = null;
-            InvalidateVisual();
-            DocumentChanged?.Invoke(this, EventArgs.Empty);
-        };
+        session.Annotations.Changed += OnDocumentChanged;
+    }
+
+    public void Detach() => Document.Changed -= OnDocumentChanged;
+
+    private void OnDocumentChanged(object? sender, EventArgs e)
+    {
+        if (_selectedItem != null && !Document.Items.Contains(_selectedItem)) _selectedItem = null;
+        InvalidateVisual();
+        DocumentChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public CaptureSession Session => _session;
@@ -106,10 +110,28 @@ internal sealed class EditorCanvas : FrameworkElement
     public event EventHandler? ToolChanged;
     public event EventHandler? SelectionChanged;
     public event EventHandler<PointF>? TextEditRequested;
+    public event Action? PanRequested;
 
     public bool HasTextSelection => !_selection.IsEmpty;
     public string SelectedText => _textModel == null ? string.Empty : _textModel.Text(_selection);
     public AnnotationItem? SelectedItem => _selectedItem;
+    public bool IsEditingAnnotation => _gesture is Gesture.Draw or Gesture.Move or Gesture.Resize;
+
+    public bool CancelGesture()
+    {
+        if (_gesture == Gesture.None) return false;
+        var active = _gesture;
+        _gesture = Gesture.None;
+        _pendingItem = null;
+        _handleIndex = -1;
+        if (active is Gesture.Move or Gesture.Resize) Document.CancelTransaction();
+        if (active == Gesture.TextDrag) ClearTextSelection();
+        ReleaseMouseCapture();
+        InvalidateVisual();
+        return true;
+    }
+
+    protected override void OnLostMouseCapture(MouseEventArgs e) => CancelGesture();
 
     public static AnnotationKind KindOf(EditorTool tool) => tool switch
     {
@@ -201,6 +223,9 @@ internal sealed class EditorCanvas : FrameworkElement
     {
         dc.DrawImage(_bitmap, new Rect(0, 0, ActualWidth, ActualHeight));
 
+        if (_masks == null && (Document.Items.OfType<MaskItem>().Any(mask => mask.Effect != MaskEffect.Solid)
+                || _pendingItem is MaskItem { Effect: not MaskEffect.Solid }))
+            _masks = ImageCompositor.BuildMaskImages(_session.Image);
         foreach (var item in Document.Items) AnnotationRenderer.Draw(dc, item, DipPerPixel, _masks);
         if (_pendingItem != null) AnnotationRenderer.Draw(dc, _pendingItem, DipPerPixel, _masks);
 
@@ -242,13 +267,19 @@ internal sealed class EditorCanvas : FrameworkElement
 
         if (_tool == EditorTool.Select)
         {
-            if (_textModel != null && (_selection.IsEmpty || !_selection.IsEmpty) && PointOnText(point))
+            if (_textModel != null && PointOnText(point))
             {
                 _gesture = Gesture.TextDrag;
-                _caretAnchor = _textModel.CaretAt(point);
                 _selection = TextSelection.Empty;
                 CaptureMouse();
                 InvalidateVisual();
+                return;
+            }
+
+            if (_readOnly)
+            {
+                ClearTextSelection();
+                PanRequested?.Invoke();
                 return;
             }
 
@@ -333,7 +364,11 @@ internal sealed class EditorCanvas : FrameworkElement
     {
         base.OnMouseMove(e);
         var point = ToImage(e.GetPosition(this));
-        if (_gesture == Gesture.None) return;
+        if (_gesture == Gesture.None)
+        {
+            if (_readOnly) Cursor = PointOnText(point) ? Cursors.IBeam : Cursors.SizeAll;
+            return;
+        }
         _gestureCurrent = point;
 
         switch (_gesture)

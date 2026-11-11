@@ -76,6 +76,7 @@ internal sealed class GlobalHotkey : IDisposable
     private const int HotkeyId = 0x4353;
     private HwndSource? _source;
     private bool _registered;
+    private int _activeId = HotkeyId;
     private uint _modifiers;
     private uint _key;
 
@@ -85,7 +86,6 @@ internal sealed class GlobalHotkey : IDisposable
 
     public bool Register(HotkeyBinding binding)
     {
-        Unregister();
         if (!VirtualKeys.TryParse(binding.Key, out uint vk))
         {
             LastError = $"无法识别按键：{binding.Key}";
@@ -94,7 +94,14 @@ internal sealed class GlobalHotkey : IDisposable
 
         EnsureWindow();
         uint modifiers = VirtualKeys.ToWin32(binding.Modifiers);
-        if (!NativeMethods.RegisterHotKey(_source!.Handle, HotkeyId, modifiers, vk))
+        if (_registered && modifiers == _modifiers && vk == _key)
+        {
+            LastError = null;
+            return true;
+        }
+
+        int nextId = _activeId == HotkeyId ? HotkeyId + 1 : HotkeyId;
+        if (!NativeMethods.RegisterHotKey(_source!.Handle, nextId, modifiers, vk))
         {
             int code = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
             LastError = code == 1409
@@ -103,35 +110,13 @@ internal sealed class GlobalHotkey : IDisposable
             return false;
         }
 
+        Unregister();
+        _activeId = nextId;
         _registered = true;
         _modifiers = modifiers;
         _key = vk;
         LastError = null;
         return true;
-    }
-
-    /// <summary>Verifies a binding can be registered without disturbing the active one.</summary>
-    public static bool CanRegister(HotkeyBinding binding, out string error)
-    {
-        error = string.Empty;
-        if (!VirtualKeys.TryParse(binding.Key, out uint vk))
-        {
-            error = $"无法识别按键：{binding.Key}";
-            return false;
-        }
-
-        using var probe = new GlobalHotkey();
-        probe.EnsureWindow();
-        bool ok = NativeMethods.RegisterHotKey(probe._source!.Handle, HotkeyId, VirtualKeys.ToWin32(binding.Modifiers), vk);
-        if (ok)
-        {
-            NativeMethods.UnregisterHotKey(probe._source!.Handle, HotkeyId);
-            return true;
-        }
-
-        int code = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
-        error = code == 1409 ? $"{binding} 已被其他程序占用" : $"注册 {binding} 失败（错误码 {code}）";
-        return false;
     }
 
     private void EnsureWindow()
@@ -151,7 +136,7 @@ internal sealed class GlobalHotkey : IDisposable
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        if (msg != NativeMethods.WM_HOTKEY || wParam.ToInt32() != HotkeyId) return IntPtr.Zero;
+        if (msg != NativeMethods.WM_HOTKEY || wParam.ToInt32() != _activeId) return IntPtr.Zero;
         handled = true;
         Pressed?.Invoke(this, EventArgs.Empty);
         return IntPtr.Zero;
@@ -161,7 +146,7 @@ internal sealed class GlobalHotkey : IDisposable
     {
         if (_registered && _source != null)
         {
-            NativeMethods.UnregisterHotKey(_source.Handle, HotkeyId);
+            NativeMethods.UnregisterHotKey(_source.Handle, _activeId);
             _registered = false;
         }
     }

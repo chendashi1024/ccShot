@@ -12,6 +12,9 @@ using CcShot.Windows.Capture;
 using CcShot.Windows.Editor;
 using CcShot.Windows.Interop;
 using CcShot.Windows.Ocr;
+using CcShot.Windows.Pin;
+using CcShot.Windows.Rendering;
+using Microsoft.Win32;
 using CcShot.Windows.Settings;
 using CcShot.Windows.Shell;
 
@@ -49,7 +52,8 @@ internal sealed class App : Application
         _tray.ScreenCaptureRequested += (_, _) => _ = CaptureCurrentScreenAsync();
         _tray.WindowCaptureRequested += (_, _) => _ = StartCaptureAsync(CaptureMode.Window);
         _tray.SettingsRequested += (_, _) => ShowSettings();
-        _tray.ExitRequested += (_, _) => ExitApplication();
+        _tray.ExitRequested += (_, _) => Shutdown();
+        _tray.PinClipboardRequested += (_, _) => PinClipboard();
 
         _hotkey = new GlobalHotkey();
         _hotkey.Pressed += (_, _) => _ = StartCaptureAsync(CaptureMode.Region);
@@ -82,85 +86,41 @@ internal sealed class App : Application
 
     private void ShowSettings()
     {
-        var window = new SettingsWindow(_settings, _ocr, _ => ApplyHotkey());
+        var window = new SettingsWindow(_settings, _hotkey!, binding => _tray!.Update(binding));
         window.ShowDialog();
     }
 
-    private async Task CaptureCurrentScreenAsync()
-    {
-        var layout = MonitorService.Enumerate();
-        NativeMethods.GetCursorPos(out var cursor);
-        var monitor = layout.MonitorAt(new PointF(cursor.X, cursor.Y)) ?? layout.Primary;
-        await CaptureAsync(layout, monitor.BoundsPx);
-    }
+    private Task CaptureCurrentScreenAsync() => StartCaptureAsync(null);
 
-    private async Task StartCaptureAsync(CaptureMode mode)
-    {
-        if (_capturing) return;
-        var layout = MonitorService.Enumerate();
-        RectI? picked = await PickAsync(layout, mode);
-        if (picked == null) return;
-        await CaptureAsync(layout, picked.Value);
-    }
-
-    /// <summary>Shows the selection overlay on every monitor and waits for a rectangle.</summary>
-    private Task<RectI?> PickAsync(MonitorLayout layout, CaptureMode mode)
-    {
-        var completion = new TaskCompletionSource<RectI?>();
-        var windows = new List<CaptureOverlayWindow>();
-
-        void CloseAll()
-        {
-            foreach (var window in windows)
-            {
-                try { window.Close(); }
-                catch (InvalidOperationException) { /* already closed */ }
-            }
-        }
-
-        foreach (var monitor in layout.Monitors)
-            windows.Add(new CaptureOverlayWindow(monitor, mode, completion, CloseAll));
-
-        foreach (var window in windows) window.Show();
-        if (windows.Count > 0)
-        {
-            windows[0].Activate();
-            windows[0].Focus();
-        }
-
-        return completion.Task;
-    }
-
-    private async Task CaptureAsync(MonitorLayout layout, RectI selection)
+    private async Task StartCaptureAsync(CaptureMode? mode)
     {
         if (_capturing) return;
         _capturing = true;
         try
         {
-            var clamped = selection.Intersect(layout.VirtualDesktopPx);
+            var layout = MonitorService.Enumerate();
+            var bounds = layout.VirtualDesktopPx;
+            NativeMethods.GetCursorPos(out var cursor);
+            var monitor = layout.MonitorAt(new PointF(cursor.X, cursor.Y)) ?? layout.Primary;
+            var targets = mode == CaptureMode.Window ? ScreenCaptureService.SnapshotWindowBounds(bounds) : Array.Empty<RectI>();
+            var snapshotBounds = mode.HasValue ? bounds : monitor.BoundsPx;
+            var desktop = await Task.Run(() => ScreenCaptureService.Capture(snapshotBounds));
+            if (!layout.Monitors.SequenceEqual(MonitorService.Enumerate().Monitors)) return;
+
+            RectI? picked = mode.HasValue
+                ? await PickAsync(layout, mode.Value, desktop, targets, monitor)
+                : monitor.BoundsPx;
+            if (picked is not RectI selected || !layout.Monitors.SequenceEqual(MonitorService.Enumerate().Monitors)) return;
+            var clamped = selected.Intersect(snapshotBounds);
             if (clamped.Width < 4 || clamped.Height < 4) return;
 
-            PixelImage desktop;
-            try
-            {
-                desktop = await Task.Run(() => ScreenCaptureService.Capture(layout.VirtualDesktopPx));
-            }
-            catch (Exception ex)
-            {
-                _tray?.Notify("截图失败", ex.Message, System.Windows.Forms.ToolTipIcon.Error);
-                return;
-            }
-
-            var localRect = clamped.Offset(-layout.VirtualDesktopPx.X, -layout.VirtualDesktopPx.Y);
-            var image = desktop.Crop(localRect);
-            if (image.IsEmpty) return;
-
-            var center = new PointF(clamped.X + clamped.Width / 2f, clamped.Y + clamped.Height / 2f);
-            var monitor = layout.MonitorAt(center) ?? layout.NearestMonitor(center);
-            var session = new CaptureSession(image);
-            var editor = new EditorWindow(session, monitor, clamped, _settings, _ocr);
-            editor.Show();
-            editor.Activate();
+            var image = desktop.Crop(clamped.Offset(-snapshotBounds.X, -snapshotBounds.Y));
+            var center = clamped.ToRectF().Center;
+            OpenEditor(new CaptureSession(image), layout.MonitorAt(center) ?? layout.NearestMonitor(center), clamped);
+        }
+        catch (Exception ex)
+        {
+            _tray?.Notify("截图失败", ex.Message, System.Windows.Forms.ToolTipIcon.Error);
         }
         finally
         {
@@ -168,12 +128,69 @@ internal sealed class App : Application
         }
     }
 
-    private void ExitApplication()
+    private async Task<RectI?> PickAsync(MonitorLayout layout, CaptureMode mode, PixelImage snapshot,
+        IReadOnlyList<RectI> targets, MonitorInfo focusedMonitor)
     {
-        _hotkey?.Dispose();
-        _tray?.Dispose();
-        _ocr.Dispose();
-        Shutdown();
+        var completion = new TaskCompletionSource<RectI?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var selection = new CaptureSelection();
+        var windows = new List<CaptureOverlayWindow>();
+
+        void Finish(RectI? result) => completion.TrySetResult(result);
+        void CancelForDisplayChange(object? sender, EventArgs e) => Finish(null);
+
+        SystemEvents.DisplaySettingsChanged += CancelForDisplayChange;
+        try
+        {
+            foreach (var monitor in layout.Monitors)
+            {
+                var local = monitor.BoundsPx.Offset(-layout.VirtualDesktopPx.X, -layout.VirtualDesktopPx.Y);
+                var background = BitmapInterop.ToBitmapSource(snapshot.Crop(local));
+                var overlay = new CaptureOverlayWindow(monitor, layout.VirtualDesktopPx, mode,
+                    background, targets, selection, Finish);
+                windows.Add(overlay);
+            }
+
+            foreach (var window in windows) window.Show();
+            int focusedIndex = layout.Monitors.ToList().IndexOf(focusedMonitor);
+            windows[Math.Max(0, focusedIndex)].Activate();
+            return await completion.Task;
+        }
+        finally
+        {
+            SystemEvents.DisplaySettingsChanged -= CancelForDisplayChange;
+            foreach (var window in windows)
+                if (window.IsVisible) window.Close();
+        }
+    }
+
+    private void OpenEditor(CaptureSession session, MonitorInfo monitor, RectI bounds)
+    {
+        var editor = new EditorWindow(session, monitor, bounds, _settings, _ocr);
+        editor.Show();
+        editor.Activate();
+    }
+
+    private void PinClipboard()
+    {
+        try
+        {
+            var bitmap = Clipboard.GetImage();
+            if (bitmap == null)
+            {
+                _tray?.Notify("剪贴板里没有图片", "先复制一张图片，再选择钉住剪贴板。");
+                return;
+            }
+
+            var layout = MonitorService.Enumerate();
+            NativeMethods.GetCursorPos(out var cursor);
+            var monitor = layout.MonitorAt(new PointF(cursor.X, cursor.Y)) ?? layout.Primary;
+            var session = new CaptureSession(BitmapInterop.ToPixelImage(bitmap));
+            new PinWindow(session, monitor, _settings, _ocr).Show();
+        }
+        catch (Exception ex)
+        {
+            _tray?.Notify("钉住剪贴板失败", ex.Message, System.Windows.Forms.ToolTipIcon.Error);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

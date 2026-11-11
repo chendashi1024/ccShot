@@ -26,7 +26,7 @@ internal static class FakeOcr
         }
 
         var line = new OcrLine(text, RectF.FromEdges(originX, originY, x, originY + height), glyphs, 0.95f);
-        return new OcrPage(new[] { line }, 1000, 600, null!, default);
+        return new OcrPage(new[] { line }, 1000, 600, null, OcrPage.Empty.Timing);
     }
 
     public static OcrPage Lines(params (string Text, float X, float Y)[] lines)
@@ -45,7 +45,7 @@ internal static class FakeOcr
             result.Add(new OcrLine(text, RectF.FromEdges(x, y, cx, y + 30f), glyphs, 0.95f));
         }
 
-        return new OcrPage(result, 1000, 600, null!, default);
+        return new OcrPage(result, 1000, 600, null, OcrPage.Empty.Timing);
     }
 
     public static OcrPage VaryingWidths((string Char, float X, float Width)[] chars, float y)
@@ -53,6 +53,6 @@ internal static class FakeOcr
         var glyphs = chars.Select(c => new OcrGlyph(c.Char, new RectF(c.X, y, c.Width, 32f))).ToList();
         var text = string.Concat(chars.Select(c => c.Char));
         var box = glyphs.Aggregate(glyphs[0].Box, (acc, g) => acc.Union(g.Box));
-        return new OcrPage(new[] { new OcrLine(text, box, glyphs, 0.9f) }, 1000, 600, null!, default);
+        return new OcrPage(new[] { new OcrLine(text, box, glyphs, 0.9f) }, 1000, 600, null, OcrPage.Empty.Timing);
     }
 }

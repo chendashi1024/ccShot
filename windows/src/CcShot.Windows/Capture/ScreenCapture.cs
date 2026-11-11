@@ -63,16 +63,30 @@ internal static class ScreenCaptureService
     {
         if (rect.IsEmpty) return PixelImage.Empty;
         IntPtr screenDc = NativeMethods.GetDC(IntPtr.Zero);
-        IntPtr memoryDc = NativeMethods.CreateCompatibleDC(screenDc);
-        IntPtr bitmap = NativeMethods.CreateCompatibleBitmap(screenDc, rect.Width, rect.Height);
-        IntPtr previous = NativeMethods.SelectObject(memoryDc, bitmap);
+        if (screenDc == IntPtr.Zero) throw new InvalidOperationException("无法读取屏幕。");
+        IntPtr memoryDc = IntPtr.Zero, bitmap = IntPtr.Zero;
         try
         {
-            bool copied = NativeMethods.BitBlt(memoryDc, 0, 0, rect.Width, rect.Height, screenDc, rect.X, rect.Y,
-                NativeMethods.SRCCOPY | NativeMethods.CAPTUREBLT);
-            if (!copied) throw new InvalidOperationException("屏幕截图失败：BitBlt 未完成。");
+            memoryDc = NativeMethods.CreateCompatibleDC(screenDc);
+            bitmap = NativeMethods.CreateCompatibleBitmap(screenDc, rect.Width, rect.Height);
+            if (memoryDc == IntPtr.Zero || bitmap == IntPtr.Zero)
+                throw new InvalidOperationException("无法为截图分配位图。");
 
-            var buffer = new byte[rect.Width * rect.Height * 4];
+            IntPtr previous = NativeMethods.SelectObject(memoryDc, bitmap);
+            if (previous == IntPtr.Zero || previous == new IntPtr(-1))
+                throw new InvalidOperationException("无法为截图选择位图。");
+            try
+            {
+                if (!NativeMethods.BitBlt(memoryDc, 0, 0, rect.Width, rect.Height, screenDc, rect.X, rect.Y,
+                        NativeMethods.SRCCOPY | NativeMethods.CAPTUREBLT))
+                    throw new InvalidOperationException("无法读取屏幕像素。");
+            }
+            finally
+            {
+                NativeMethods.SelectObject(memoryDc, previous);
+            }
+
+            var buffer = new byte[checked(rect.Width * rect.Height * 4)];
             var header = new NativeMethods.BITMAPINFOHEADER
             {
                 biSize = (uint)Marshal.SizeOf<NativeMethods.BITMAPINFOHEADER>(),
@@ -83,14 +97,15 @@ internal static class ScreenCaptureService
                 biCompression = NativeMethods.BI_RGB,
             };
             int lines = NativeMethods.GetDIBits(memoryDc, bitmap, 0, (uint)rect.Height, buffer, ref header, NativeMethods.DIB_RGB_COLORS);
-            if (lines == 0) throw new InvalidOperationException("屏幕截图失败：GetDIBits 未返回像素。");
+            if (lines != rect.Height) throw new InvalidOperationException("未读取到完整的屏幕像素。");
+            // BI_RGB 的第四字节未定义，屏幕快照按不透明图像处理。
+            for (int alpha = 3; alpha < buffer.Length; alpha += 4) buffer[alpha] = 255;
             return new PixelImage(rect.Width, rect.Height, buffer);
         }
         finally
         {
-            NativeMethods.SelectObject(memoryDc, previous);
-            NativeMethods.DeleteObject(bitmap);
-            NativeMethods.DeleteDC(memoryDc);
+            if (bitmap != IntPtr.Zero) NativeMethods.DeleteObject(bitmap);
+            if (memoryDc != IntPtr.Zero) NativeMethods.DeleteDC(memoryDc);
             NativeMethods.ReleaseDC(IntPtr.Zero, screenDc);
         }
     }
@@ -99,18 +114,22 @@ internal static class ScreenCaptureService
 
     public static PixelImage CaptureVirtualDesktop(MonitorLayout layout) => Capture(layout.VirtualDesktopPx);
 
-    /// <summary>Window under the given screen point, captured without the invisible DWM resize border.</summary>
-    public static (PixelImage Image, RectI Rect)? CaptureWindowAt(PointF screenPoint)
+    /// <summary>在遮罩打开前按层级保存可见窗口的物理屏幕坐标。</summary>
+    public static IReadOnlyList<RectI> SnapshotWindowBounds(RectI desktop)
     {
-        var point = new NativeMethods.POINT { X = (int)MathF.Round(screenPoint.X), Y = (int)MathF.Round(screenPoint.Y) };
-        IntPtr hwnd = NativeMethods.WindowFromPoint(point);
-        if (hwnd == IntPtr.Zero) return null;
-        IntPtr root = NativeMethods.GetAncestor(hwnd, NativeMethods.GA_ROOT);
-        if (root != IntPtr.Zero) hwnd = root;
+        var bounds = new List<RectI>();
+        IntPtr shell = NativeMethods.GetShellWindow();
+        NativeMethods.EnumWindows((window, _) =>
+        {
+            if (window == shell || !NativeMethods.IsWindowVisible(window) || NativeMethods.IsIconic(window)) return true;
+            if (NativeMethods.DwmGetWindowAttributeInt(window, NativeMethods.DWMWA_CLOAKED, out int cloaked, sizeof(int)) == 0 && cloaked != 0)
+                return true;
 
-        var rect = NativeMethods.GetVisibleWindowRect(hwnd);
-        if (rect.Width <= 0 || rect.Height <= 0) return null;
-        var bounds = new RectI(rect.Left, rect.Top, rect.Width, rect.Height);
-        return (Capture(bounds), bounds);
+            var rect = NativeMethods.GetVisibleWindowRect(window);
+            var visible = new RectI(rect.Left, rect.Top, rect.Width, rect.Height).Intersect(desktop);
+            if (!visible.IsEmpty) bounds.Add(visible);
+            return true;
+        }, IntPtr.Zero);
+        return bounds;
     }
 }

@@ -46,7 +46,7 @@ public sealed record OcrTiming(double PreprocessMs, double DetectMs, double Reco
 /// <summary>Result of one recognition. Immutable; bound to a capture revision by the session layer.</summary>
 public sealed class OcrPage
 {
-    public static readonly OcrPage Empty = new(Array.Empty<OcrLine>(), 0, 0, null!, default);
+    public static readonly OcrPage Empty = new(Array.Empty<OcrLine>(), 0, 0, null, new OcrTiming(0, 0, 0, 0));
 
     public OcrPage(IReadOnlyList<OcrLine> lines, int imageWidth, int imageHeight, OcrEngineInfo? engine, OcrTiming timing)
     {

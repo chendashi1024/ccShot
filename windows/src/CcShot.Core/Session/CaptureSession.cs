@@ -51,11 +51,13 @@ public sealed class CaptureSession
     private string? _failureReason;
     private string _redactionSignature = string.Empty;
 
-    public CaptureSession(PixelImage image)
+    public CaptureSession(PixelImage image) : this(image, new AnnotationDocument()) { }
+
+    private CaptureSession(PixelImage image, AnnotationDocument annotations)
     {
         Id = Guid.NewGuid();
         Image = image;
-        Annotations = new AnnotationDocument();
+        Annotations = annotations;
         _redactionSignature = RedactionSignature();
         Annotations.Changed += (_, _) => OnImageChanged();
     }
@@ -64,13 +66,12 @@ public sealed class CaptureSession
     public PixelImage Image { get; private set; }
     public AnnotationDocument Annotations { get; }
 
+    public CaptureSession CreateIndependentCopy() => new(Image, Annotations.CreateIndependentCopy());
+
     /// <summary>Any committed change (annotation, crop, image swap). Used for UI refreshes.</summary>
     public int Revision { get; private set; }
 
-    /// <summary>
-    /// Pixel-affecting revision: crops, image swaps and redaction changes only. Recognition is bound to
-    /// this number, so drawing an arrow while text is being recognized does not throw the result away.
-    /// </summary>
+    /// <summary>裁剪、换图和遮挡使用独立版本，普通标注不打断识字。</summary>
     public int ImageRevision { get; private set; }
 
     public OcrState OcrState
@@ -88,11 +89,7 @@ public sealed class CaptureSession
         get { lock (_gate) return _ocr; }
     }
 
-    /// <summary>
-    /// Every committed change bumps the revision so a late recognition result is dropped, but only
-    /// redaction (opaque masks, opaque text backgrounds) actually invalidates recognized text.
-    /// Drawing an arrow over a screenshot must not wipe the text the user was about to select.
-    /// </summary>
+    /// <summary>遮挡变化立即丢弃旧文字和识别请求。</summary>
     private void OnImageChanged()
     {
         Revision++;
@@ -100,7 +97,7 @@ public sealed class CaptureSession
         if (signature == _redactionSignature) return;
         _redactionSignature = signature;
         ImageRevision++;
-        if (_state == OcrState.Ready) Invalidate(OcrState.Invalidated, "遮挡后需要重新识别");
+        Invalidate(OcrState.Invalidated, "遮挡后需要重新识别");
     }
 
     private string RedactionSignature()
@@ -108,8 +105,8 @@ public sealed class CaptureSession
         var parts = new List<string>();
         foreach (var item in Annotations.Items)
         {
-            if (item is MaskItem mask && mask.IsOpaqueRedaction)
-                parts.Add($"mask:{mask.EffectiveBounds}");
+            if (item is MaskItem mask)
+                parts.Add($"mask:{mask.Effect}:{mask.EffectiveBounds}:{mask.Style}:{string.Join(",", mask.Points)}");
             else if (item is TextItem text && text.HasBackground)
                 parts.Add($"textbg:{text.Bounds}");
         }
@@ -171,7 +168,7 @@ public sealed class CaptureSession
             _ocr = page;
             _ocrRevision = imageRevision;
             _pendingRequest = -1;
-            _state = page.HasText ? OcrState.Ready : OcrState.Ready;
+            _state = OcrState.Ready;
             return true;
         }
     }
@@ -199,15 +196,11 @@ public sealed class CaptureSession
         }
     }
 
-    /// <summary>True when an opaque mask was added after recognition, so text must be re-recognized first.</summary>
-    public bool NeedsReRecognitionAfterMask()
-    {
-        if (Annotations.OpaqueMaskRects().Count == 0) return false;
-        return CheckTextOutput() != TextOutput.Allowed;
-    }
-
-    /// <summary>Opaque redaction areas; only these hide original text. Mosaic and blur are not treated as redaction.</summary>
-    public IReadOnlyList<RectF> OpaqueMasks => Annotations.OpaqueMaskRects();
+    /// <summary>所有遮挡都阻止对应原文复制，笔刷使用保守的外接边界。</summary>
+    public IReadOnlyList<RectF> ObscuredTextRects => Annotations.Items
+        .Where(item => item is MaskItem or TextItem { HasBackground: true })
+        .Select(item => item is MaskItem ? item.EffectiveBounds : item.Bounds.Inflate(4f))
+        .ToList();
 }
 
 /// <summary>

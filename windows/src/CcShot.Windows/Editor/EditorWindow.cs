@@ -30,8 +30,6 @@ namespace CcShot.Windows.Editor;
 /// </summary>
 internal sealed class EditorWindow : Window
 {
-    private const double ToolbarHeightDip = 74;
-
     private readonly CaptureSession _session;
     private readonly AppSettings _settings;
     private readonly OcrService _ocr;
@@ -41,13 +39,16 @@ internal sealed class EditorWindow : Window
     private readonly TextBox _textEditor;
     private readonly TextBlock _status;
     private readonly Border _statusPanel;
-    private readonly StackPanel _toolRow;
-    private readonly StackPanel _actionRow;
-    private readonly StackPanel _styleRow;
+    private readonly WrapPanel _toolRow;
+    private readonly WrapPanel _actionRow;
+    private readonly WrapPanel _styleRow;
     private readonly Slider _thickness;
     private CancellationTokenSource? _ocrCts;
     private readonly double _scale;
-    private bool _ocrRunning;
+    private readonly double _displayScale;
+
+    internal bool HasRecognizedText => _session.CheckTextOutput() == TextOutput.Allowed;
+    internal EditorCanvas SelectionSurface => _canvas;
 
     public EditorWindow(CaptureSession session, MonitorInfo monitor, RectI screenRect, AppSettings settings, OcrService ocr)
     {
@@ -68,10 +69,15 @@ internal sealed class EditorWindow : Window
         UseLayoutRounding = true;
         Title = "ccShot";
 
-        double imageWidthDip = session.Image.Width / _scale;
-        double imageHeightDip = session.Image.Height / _scale;
+        double maxWidth = monitor.BoundsPx.Width / _scale;
+        double maxHeight = monitor.BoundsPx.Height / _scale;
+        double zoom = Math.Min(1.0, Math.Min(monitor.BoundsPx.Width / (double)session.Image.Width,
+            Math.Max(1, monitor.BoundsPx.Height - 150 * _scale) / session.Image.Height));
+        _displayScale = zoom / _scale;
+        double imageWidthDip = session.Image.Width * _displayScale;
+        double imageHeightDip = session.Image.Height * _displayScale;
 
-        _canvas = new EditorCanvas(session) { DipPerPixel = 1 / _scale };
+        _canvas = new EditorCanvas(session) { DipPerPixel = _displayScale };
         _canvas.DocumentChanged += (_, _) => { UpdateButtons(); RefreshSafeText(); };
         _canvas.SelectionChanged += (_, _) => UpdateButtons();
         _canvas.ToolChanged += (_, _) => UpdateButtons();
@@ -89,7 +95,7 @@ internal sealed class EditorWindow : Window
             BorderBrush = Palette.AccentBrush,
             BorderThickness = new Thickness(1),
         };
-        _textEditor.KeyDown += TextEditorKeyDown;
+        _textEditor.PreviewKeyDown += TextEditorKeyDown;
         _textEditor.LostFocus += (_, _) => CommitTextEditor();
 
         _status = new TextBlock
@@ -111,9 +117,9 @@ internal sealed class EditorWindow : Window
             Visibility = Visibility.Collapsed,
         };
 
-        _toolRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-        _actionRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
-        _styleRow = new StackPanel { Orientation = Orientation.Horizontal };
+        _toolRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+        _actionRow = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 4) };
+        _styleRow = new WrapPanel { Orientation = Orientation.Horizontal };
         _thickness = new Slider { Minimum = 1, Maximum = 12, Value = 3, Width = 80, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 8, 0) };
         _thickness.ValueChanged += (_, e) =>
         {
@@ -132,11 +138,25 @@ internal sealed class EditorWindow : Window
             Child = new StackPanel { Children = { _toolRow, _actionRow, _styleRow } },
         };
 
-        bool toolbarBelow = screenRect.Bottom + ToolbarHeightDip * _scale < monitor.BoundsPx.Bottom;
+        toolbar.Measure(new Size(maxWidth, maxHeight));
+        double widthDip = Math.Min(maxWidth, Math.Max(imageWidthDip, toolbar.DesiredSize.Width));
+        double toolbarHeight = toolbar.DesiredSize.Height;
+        int widthPx = (int)Math.Ceiling(widthDip * _scale);
+        int heightPx = Math.Min(monitor.BoundsPx.Height, (int)Math.Ceiling((imageHeightDip + toolbarHeight) * _scale));
+        int windowX = Math.Clamp(screenRect.X, monitor.BoundsPx.X, monitor.BoundsPx.Right - widthPx);
+        bool toolbarBelow = screenRect.Y + heightPx <= monitor.BoundsPx.Bottom;
+        int idealY = toolbarBelow ? screenRect.Y : screenRect.Y - (int)Math.Ceiling(toolbarHeight * _scale);
+        int windowY = Math.Clamp(idealY, monitor.BoundsPx.Y, monitor.BoundsPx.Bottom - heightPx);
+        var windowBounds = new RectI(windowX, windowY, widthPx, heightPx);
         var grid = new Grid();
-        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        var canvasHost = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = toolbarBelow ? new GridLength(imageHeightDip) : GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = toolbarBelow ? GridLength.Auto : new GridLength(imageHeightDip) });
+        var canvasHost = new Grid
+        {
+            Width = imageWidthDip,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(Math.Clamp((screenRect.X - windowX) / _scale, 0, Math.Max(0, widthDip - imageWidthDip)), 0, 0, 0),
+        };
         canvasHost.Children.Add(_canvas);
         canvasHost.Children.Add(_textEditor);
         canvasHost.Children.Add(_statusPanel);
@@ -156,31 +176,30 @@ internal sealed class EditorWindow : Window
         grid.Children.Add(canvasHost);
         Content = grid;
 
-        Width = Math.Max(320, imageWidthDip);
-        Height = Math.Max(200, imageHeightDip + ToolbarHeightDip);
+        Width = widthDip;
+        Height = heightPx / _scale;
 
-        SourceInitialized += (_, _) => PlaceWindow(toolbarBelow);
+        SourceInitialized += (_, _) => PlaceWindow(windowBounds);
         Loaded += (_, _) =>
         {
             _canvas.Focus();
-            PlaceWindow(toolbarBelow);
+            PlaceWindow(windowBounds);
             RunOcr();
         };
         PreviewKeyDown += OnPreviewKeyDown;
-        Closed += (_, _) => _ocrCts?.Cancel();
+        Closed += (_, _) =>
+        {
+            _ocrCts?.Cancel();
+            _canvas.Detach();
+        };
     }
 
-    private void PlaceWindow(bool toolbarBelow)
+    private void PlaceWindow(RectI bounds)
     {
         var handle = new WindowInteropHelper(this).Handle;
         if (handle == IntPtr.Zero) return;
-        int toolbarPx = (int)Math.Round(ToolbarHeightDip * _scale);
-        int width = _session.Image.Width;
-        int height = _session.Image.Height + toolbarPx;
-        int x = _screenRect.X;
-        int y = toolbarBelow ? _screenRect.Y : _screenRect.Y - toolbarPx;
-        NativeMethods.SetWindowPos(handle, IntPtr.Zero, x, y, width, height,
-            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW);
+        NativeMethods.SetWindowPos(handle, IntPtr.Zero, bounds.X, bounds.Y, bounds.Width, bounds.Height,
+            NativeMethods.SWP_NOZORDER | NativeMethods.SWP_NOACTIVATE);
     }
 
     private Button MakeButton(string text, Action onClick, string tooltip, double minWidth = 0)
@@ -314,63 +333,59 @@ internal sealed class EditorWindow : Window
 
     private async void RunOcr()
     {
-        if (_ocrRunning) return;
-        _ocrRunning = true;
+        _ocrCts?.Cancel();
+        using var requestCancellation = new CancellationTokenSource();
+        _ocrCts = requestCancellation;
+        var token = requestCancellation.Token;
         int request = _session.BeginOcr();
         int revision = _session.ImageRevision;
-        _ocrCts?.Cancel();
-        _ocrCts = new CancellationTokenSource();
-        var token = _ocrCts.Token;
+        _canvas.SetTextModel(null);
 
-        if (!_ocr.TryPrepare(_settings, out string error))
+        try
         {
-            _session.FailOcr(request, error);
-            ShowStatus(error, isError: true);
-            _ocrRunning = false;
-            return;
-        }
+            var obscured = _session.ObscuredTextRects;
+            var source = obscured.Count == 0 ? _session.Image : ImageCompositor.Compose(_session.Image, _session.Annotations);
+            var (page, failure) = await _ocr.RecognizeAsync(source, _settings, token);
+            if (token.IsCancellationRequested) return;
+            if (page == null)
+            {
+                _session.FailOcr(request, failure ?? "识别失败");
+                ShowStatus(failure ?? "识别失败", isError: true);
+                return;
+            }
 
-        // When anything opaque covers the screenshot, recognition runs on the composed image so the
-        // recognized text always describes what the user can actually see (and hides what is masked).
-        var source = _session.OpaqueMasks.Count > 0
-            ? ImageCompositor.Compose(_session.Image, _session.Annotations)
-            : _session.Image;
-        var (page, failure) = await _ocr.RecognizeAsync(source, token);
-        _ocrRunning = false;
-        if (token.IsCancellationRequested) return;
-        if (failure != null || page == null)
+            var (visibleText, _) = OcrPrivacyFilter.RemoveGlyphsUnder(page, obscured);
+            if (!_session.TryCompleteOcr(request, revision, visibleText)) return;
+            _canvas.SetTextModel(new TextSelectionModel(visibleText));
+        }
+        catch (Exception ex) when (!token.IsCancellationRequested)
         {
-            _session.FailOcr(request, failure ?? "识别失败");
-            ShowStatus(failure ?? "识别失败", isError: true);
-            return;
+            _session.FailOcr(request, ex.Message);
+            ShowStatus("识别失败：" + ex.Message, isError: true);
         }
-
-        if (!_session.TryCompleteOcr(request, revision, page))
+        finally
         {
-            // The image changed while recognition was running; the result is dropped on purpose.
-            ShowStatus("图片已修改，旧识别结果已丢弃", isError: true);
-            return;
+            if (ReferenceEquals(_ocrCts, requestCancellation)) _ocrCts = null;
         }
-
-        _canvas.SetTextModel(new TextSelectionModel(page));
-        ShowStatus(page.HasText ? "可以直接在文字上拖选，Ctrl+Shift+C 复制全部" : "没有识别到文字，仍可标注和输出图片");
     }
 
-    /// <summary>
-    /// After a mask or crop the recognized text no longer matches the visible pixels. Text output stays
-    /// blocked until recognition runs again on the composed image (never on the cached original).
-    /// </summary>
     private void RefreshSafeText()
     {
-        var state = _session.CheckTextOutput();
-        if (state is TextOutput.Stale && !_ocrRunning) RunOcr();
+        if (_session.CheckTextOutput() != TextOutput.Stale) return;
+        if (_canvas.IsEditingAnnotation)
+        {
+            _ocrCts?.Cancel();
+            _canvas.SetTextModel(null);
+            return;
+        }
+        RunOcr();
     }
 
-    private string ComposePath(string extension)
+    private bool CanOutput()
     {
-        var dir = _settings.ResolvedSaveDirectory;
-        Directory.CreateDirectory(dir);
-        return Path.Combine(dir, $"ccShot-{DateTime.Now:yyyyMMdd-HHmmss}.{extension}");
+        if (!_canvas.IsEditingAnnotation) return true;
+        ShowStatus("请先完成当前标注");
+        return false;
     }
 
     private (PixelImage Image, BitmapSource Bitmap) Compose()
@@ -381,6 +396,7 @@ internal sealed class EditorWindow : Window
 
     private void CopyImage()
     {
+        if (!CanOutput()) return;
         var (_, bitmap) = Compose();
         try
         {
@@ -395,6 +411,7 @@ internal sealed class EditorWindow : Window
 
     private void CopyText(bool all)
     {
+        if (!CanOutput()) return;
         switch (_session.CheckTextOutput())
         {
             case TextOutput.Allowed:
@@ -434,6 +451,7 @@ internal sealed class EditorWindow : Window
 
     private void SaveImage()
     {
+        if (!CanOutput()) return;
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
             Title = "保存截图",
@@ -456,8 +474,8 @@ internal sealed class EditorWindow : Window
 
     private void PinImage()
     {
-        var (image, _) = Compose();
-        new Pin.PinWindow(image, _monitor).Show();
+        if (!CanOutput()) return;
+        new Pin.PinWindow(_session.CreateIndependentCopy(), _monitor, _settings, _ocr).Show();
         ShowStatus("已钉图：拖动移动，滚轮缩放，Esc 关闭");
     }
 
@@ -465,8 +483,8 @@ internal sealed class EditorWindow : Window
     {
         _textEditor.Text = string.Empty;
         _textEditor.Visibility = Visibility.Visible;
-        _textEditor.Width = Math.Max(120, _session.Image.Width / _scale * 0.5);
-        var position = new Point(origin.X / _scale, origin.Y / _scale);
+        _textEditor.Width = Math.Max(80, _session.Image.Width * _displayScale * 0.5);
+        var position = new Point(origin.X * _displayScale, origin.Y * _displayScale);
         _textEditor.Margin = new Thickness(Math.Max(0, position.X), Math.Max(0, position.Y), 0, 0);
         _textEditor.HorizontalAlignment = HorizontalAlignment.Left;
         _textEditor.VerticalAlignment = VerticalAlignment.Top;
@@ -502,7 +520,7 @@ internal sealed class EditorWindow : Window
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (Keyboard.FocusedElement is TextBox tb && !ReferenceEquals(tb, _textEditor))
+        if (Keyboard.FocusedElement is TextBox)
         {
             // A real input control owns its keys; do not hijack typing.
             return;
@@ -547,6 +565,11 @@ internal sealed class EditorWindow : Window
         switch (e.Key)
         {
             case Key.Escape:
+                if (_canvas.CancelGesture())
+                {
+                    e.Handled = true;
+                    return;
+                }
                 if (_canvas.HasTextSelection)
                 {
                     _canvas.ClearTextSelection();
