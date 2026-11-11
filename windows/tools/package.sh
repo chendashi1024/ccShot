@@ -46,7 +46,7 @@ copy_common() {
   cp "$ROOT/models/mobile/det.onnx" "$ROOT/models/mobile/rec.onnx" "$ROOT/models/mobile/dict.txt" "$target/models/mobile/"
   cp "$ROOT/../LICENSE" "$target/LICENSES/ccshot-LICENSE.txt"
   cp "$ROOT/third-party/licenses/"*.txt "$target/LICENSES/"
-  cp "$ROOT/docs/使用说明.txt" "$target/README-使用说明.txt"
+  cp "$ROOT/docs/使用说明.txt" "$target/README.txt"
   cp "$ROOT/THIRD-PARTY-NOTICES.md" "$target/THIRD-PARTY-NOTICES.txt"
   printf 'ccShot Windows preview\ncommit: %s\nbuilt: %s\n' "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$target/BUILD-INFO.txt"
 }
@@ -130,7 +130,7 @@ echo "download fd       $(size_of ccShot-win-x64-fd.zip)"
 echo "download sc       $(size_of ccShot-win-x64-sc.zip)"
 echo
 echo "SHA-256:"
-shasum -a 256 ccShot-win-x64-fd.zip ccShot-win-x64-sc.zip | sed 's|  |  |'
+shasum -a 256 ccShot-win-x64-fd.zip ccShot-win-x64-sc.zip | tee SHA256SUMS.txt
 cd "$ROOT"
 if [[ -e "$OUT" ]]; then
   OUT="$OUT-$(date -u +%Y%m%dT%H%M%SZ)"
