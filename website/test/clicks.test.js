@@ -9,10 +9,10 @@ import {
   validHttps,
 } from "../src/index.js";
 
-const R2 = "https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg";
-const GITHUB = "https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg";
+const R2 = "https://download.ccshot.app/example.dmg";
+const GITHUB = "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg";
 const REPO = "https://github.com/chendashi1024/ccShot";
-const RELEASE = "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0";
+const RELEASE = "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2";
 
 function fakeEnv() {
   return {
@@ -31,12 +31,11 @@ function fakeEnv() {
 }
 fakeEnv.points = [];
 
-test("primary download redirects to the verified R2 file", () => {
+test("primary download redirects to the verified GitHub file", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download?utm=ignored"));
-  assert.equal(decision.event, "download_r2");
-  assert.equal(decision.kind, "0.1.0");
-  assert.equal(decision.location, R2);
-  assert.equal(downloadConfig.r2DownloadUrl, R2);
+  assert.equal(decision.event, "download_github");
+  assert.equal(decision.kind, "0.1.2");
+  assert.equal(decision.location, GITHUB);
 });
 
 test("github backup stays on the release asset", () => {
@@ -45,13 +44,13 @@ test("github backup stays on the release asset", () => {
   assert.equal(decision.location, GITHUB);
 });
 
-test("missing R2 config falls back to GitHub without claiming an R2 click", () => {
+test("a configured mirror remains available for the primary download", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download"), {
     ...downloadConfig,
-    r2DownloadUrl: null,
+    r2DownloadUrl: R2,
   });
-  assert.equal(decision.event, "download_github");
-  assert.equal(decision.location, GITHUB);
+  assert.equal(decision.event, "download_r2");
+  assert.equal(decision.location, R2);
 });
 
 test("unsafe configured URLs are not used", () => {
@@ -90,10 +89,10 @@ test("GET records one point and redirects; HEAD does not record", async () => {
   const env = fakeEnv();
   const response = await handleRequest(new Request("https://ccshot.app/go/download"), env);
   assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), R2);
+  assert.equal(response.headers.get("location"), GITHUB);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(fakeEnv.points.length, 1);
-  assert.equal(fakeEnv.points[0].indexes[0], "download_r2");
+  assert.deepEqual(fakeEnv.points[0], { indexes: ["download_github"], blobs: ["0.1.2"], doubles: [1] });
 
   const head = await handleRequest(new Request("https://ccshot.app/go/github?to=repo", { method: "HEAD" }), env);
   assert.equal(head.status, 302);
