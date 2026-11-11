@@ -9,7 +9,7 @@ PaddleOCR 模型 + ONNX Runtime 在 CPU 上跑，不需要账号、网络、独�
 |---|---|
 | 代码 | 已实现：托盘与全局快捷键、区域/窗口/当前屏截图、原位编辑窗口、七类标注、文字拖选与复制、复制/保存/钉图、设置 |
 | 构建 | 已在 macOS 上交叉编译通过（`dotnet build` / `dotnet publish -r win-x64`，0 错误）；Windows 本机构建未执行 |
-| 逻辑实测 | 58 项单元测试在 macOS 上通过（坐标、拖选、撤销、遮挡失效、设置、图像效果、字墨分析） |
+| 逻辑实测 | 60 项单元测试在 macOS 上通过（坐标、拖选、撤销、遮挡失效、设置、图像效果、字墨分析） |
 | OCR 实测 | 在 macOS（Apple M4）上跑完两套模型 × 两组样本，原始数据见 `reports/` |
 | 打包 | 已生成 framework-dependent 与 self-contained 两个 ZIP（未签名、未上传、未公开发布） |
 | **Windows 真机运行** | **未执行**：本机没有 Windows 设备或虚拟机，热键、屏幕捕获、DPI、剪贴板、安装升级均未在 Windows 上验证 |
@@ -41,7 +41,7 @@ windows/
 # 依赖 .NET 8 SDK
 cd windows
 dotnet build -c Release                     # 三个工程 + 测试工程，可在 macOS 上交叉编译
-dotnet test tests/CcShot.Core.Tests         # 58 项逻辑测试
+dotnet test tests/CcShot.Core.Tests         # 60 项逻辑测试
 
 ./tools/fetch-models.sh mobile              # 下载 PP-OCRv4 轻量模型（14.9 MB）
 ./tools/package.sh                          # 生成 dist/packages/<commit>/ 下的两个 ZIP

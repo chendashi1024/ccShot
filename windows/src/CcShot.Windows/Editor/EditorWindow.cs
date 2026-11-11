@@ -317,7 +317,7 @@ internal sealed class EditorWindow : Window
         if (_ocrRunning) return;
         _ocrRunning = true;
         int request = _session.BeginOcr();
-        int revision = _session.Revision;
+        int revision = _session.ImageRevision;
         _ocrCts?.Cancel();
         _ocrCts = new CancellationTokenSource();
         var token = _ocrCts.Token;
@@ -330,7 +330,12 @@ internal sealed class EditorWindow : Window
             return;
         }
 
-        var (page, failure) = await _ocr.RecognizeAsync(_session.Image, token);
+        // When anything opaque covers the screenshot, recognition runs on the composed image so the
+        // recognized text always describes what the user can actually see (and hides what is masked).
+        var source = _session.OpaqueMasks.Count > 0
+            ? ImageCompositor.Compose(_session.Image, _session.Annotations)
+            : _session.Image;
+        var (page, failure) = await _ocr.RecognizeAsync(source, token);
         _ocrRunning = false;
         if (token.IsCancellationRequested) return;
         if (failure != null || page == null)

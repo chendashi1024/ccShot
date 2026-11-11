@@ -49,12 +49,14 @@ public sealed class CaptureSession
     private int _lastRequest;
     private OcrState _state = OcrState.None;
     private string? _failureReason;
+    private string _redactionSignature = string.Empty;
 
     public CaptureSession(PixelImage image)
     {
         Id = Guid.NewGuid();
         Image = image;
         Annotations = new AnnotationDocument();
+        _redactionSignature = RedactionSignature();
         Annotations.Changed += (_, _) => OnImageChanged();
     }
 
@@ -62,8 +64,14 @@ public sealed class CaptureSession
     public PixelImage Image { get; private set; }
     public AnnotationDocument Annotations { get; }
 
-    /// <summary>Image revision: bumped by crops and by any committed annotation change.</summary>
+    /// <summary>Any committed change (annotation, crop, image swap). Used for UI refreshes.</summary>
     public int Revision { get; private set; }
+
+    /// <summary>
+    /// Pixel-affecting revision: crops, image swaps and redaction changes only. Recognition is bound to
+    /// this number, so drawing an arrow while text is being recognized does not throw the result away.
+    /// </summary>
+    public int ImageRevision { get; private set; }
 
     public OcrState OcrState
     {
@@ -80,10 +88,33 @@ public sealed class CaptureSession
         get { lock (_gate) return _ocr; }
     }
 
+    /// <summary>
+    /// Every committed change bumps the revision so a late recognition result is dropped, but only
+    /// redaction (opaque masks, opaque text backgrounds) actually invalidates recognized text.
+    /// Drawing an arrow over a screenshot must not wipe the text the user was about to select.
+    /// </summary>
     private void OnImageChanged()
     {
         Revision++;
-        if (_state == OcrState.Ready) Invalidate(OcrState.Invalidated, "图片已修改");
+        string signature = RedactionSignature();
+        if (signature == _redactionSignature) return;
+        _redactionSignature = signature;
+        ImageRevision++;
+        if (_state == OcrState.Ready) Invalidate(OcrState.Invalidated, "遮挡后需要重新识别");
+    }
+
+    private string RedactionSignature()
+    {
+        var parts = new List<string>();
+        foreach (var item in Annotations.Items)
+        {
+            if (item is MaskItem mask && mask.IsOpaqueRedaction)
+                parts.Add($"mask:{mask.EffectiveBounds}");
+            else if (item is TextItem text && text.HasBackground)
+                parts.Add($"textbg:{text.Bounds}");
+        }
+
+        return string.Join("|", parts);
     }
 
     /// <summary>Replaces the visible image after a crop and discards every result bound to the old pixels.</summary>
@@ -94,6 +125,7 @@ public sealed class CaptureSession
         Image = Image.Crop(clipped);
         Annotations.ApplyCrop(new RectI(0, 0, Image.Width, Image.Height), clipped.X, clipped.Y);
         Revision++;
+        ImageRevision++;
         Invalidate(OcrState.Invalidated, "裁剪后需要重新识别");
     }
 
@@ -102,6 +134,7 @@ public sealed class CaptureSession
         Image = image;
         Annotations.Clear();
         Revision++;
+        ImageRevision++;
         Invalidate(OcrState.Invalidated, "已更换图片");
     }
 
@@ -129,14 +162,14 @@ public sealed class CaptureSession
         }
     }
 
-    /// <summary>Accepts a result only when both the request and the revision still match.</summary>
-    public bool TryCompleteOcr(int requestId, int revision, OcrPage page)
+    /// <summary>Accepts a result only when both the request and the image revision still match.</summary>
+    public bool TryCompleteOcr(int requestId, int imageRevision, OcrPage page)
     {
         lock (_gate)
         {
-            if (requestId != _pendingRequest || revision != Revision) return false;
+            if (requestId != _pendingRequest || imageRevision != ImageRevision) return false;
             _ocr = page;
-            _ocrRevision = revision;
+            _ocrRevision = imageRevision;
             _pendingRequest = -1;
             _state = page.HasText ? OcrState.Ready : OcrState.Ready;
             return true;
@@ -160,7 +193,7 @@ public sealed class CaptureSession
         {
             if (_state == OcrState.Pending) return TextOutput.Pending;
             if (_state == OcrState.Failed) return TextOutput.Failed;
-            if (_ocr == null || _ocrRevision != Revision || _state != OcrState.Ready) return TextOutput.Stale;
+            if (_ocr == null || _ocrRevision != ImageRevision || _state != OcrState.Ready) return TextOutput.Stale;
             if (!_ocr.HasText) return TextOutput.NoText;
             return TextOutput.Allowed;
         }

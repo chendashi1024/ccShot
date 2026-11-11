@@ -17,10 +17,10 @@ public class CaptureSessionTests
     {
         var session = NewSession();
         int request = session.BeginOcr();
-        int revision = session.Revision;
+        int revision = session.ImageRevision;
 
         session.ApplyCrop(new RectI(0, 0, 100, 100));
-        Assert.True(session.Revision > revision);
+        Assert.True(session.ImageRevision > revision);
 
         var page = FakeOcr.Line("文字", 0, 0, 20, 30);
         Assert.False(session.TryCompleteOcr(request, revision, page));
@@ -32,7 +32,7 @@ public class CaptureSessionTests
     {
         var session = NewSession();
         int request = session.BeginOcr();
-        int revision = session.Revision;
+        int revision = session.ImageRevision;
 
         session.Invalidate(OcrState.Invalidated, "用户取消");
         Assert.False(session.TryCompleteOcr(request, revision, FakeOcr.Line("文字", 0, 0, 20, 30)));
@@ -44,7 +44,7 @@ public class CaptureSessionTests
     {
         var session = NewSession();
         int request = session.BeginOcr();
-        int revision = session.Revision;
+        int revision = session.ImageRevision;
         Assert.True(session.TryCompleteOcr(request, revision, FakeOcr.Line("文字", 0, 0, 20, 30)));
         Assert.Equal(TextOutput.Allowed, session.CheckTextOutput());
     }
@@ -54,7 +54,7 @@ public class CaptureSessionTests
     {
         var session = NewSession();
         int request = session.BeginOcr();
-        Assert.True(session.TryCompleteOcr(request, session.Revision, OcrPage.Empty));
+        Assert.True(session.TryCompleteOcr(request, session.ImageRevision, OcrPage.Empty));
         Assert.Equal(TextOutput.NoText, session.CheckTextOutput());
     }
 
@@ -63,7 +63,7 @@ public class CaptureSessionTests
     {
         var session = NewSession();
         int request = session.BeginOcr();
-        Assert.True(session.TryCompleteOcr(request, session.Revision, FakeOcr.Line("文字", 0, 0, 20, 30)));
+        Assert.True(session.TryCompleteOcr(request, session.ImageRevision, FakeOcr.Line("文字", 0, 0, 20, 30)));
         Assert.Equal(TextOutput.Allowed, session.CheckTextOutput());
 
         session.Annotations.Add(new MaskItem(new[] { new PointF(5, 5) }, AnnotationStyle.Default(AnnotationKind.Mask),
@@ -71,6 +71,35 @@ public class CaptureSessionTests
 
         Assert.Equal(TextOutput.Stale, session.CheckTextOutput());
         Assert.Single(session.OpaqueMasks);
+    }
+
+    [Fact]
+    public void DrawingAnArrowKeepsRecognizedTextUsable()
+    {
+        var session = NewSession();
+        int request = session.BeginOcr();
+        Assert.True(session.TryCompleteOcr(request, session.ImageRevision, FakeOcr.Line("文字", 0, 0, 20, 30)));
+
+        session.Annotations.Add(new ArrowItem(new PointF(5, 5), new PointF(40, 40), AnnotationStyle.Default(AnnotationKind.Arrow)));
+
+        Assert.Equal(TextOutput.Allowed, session.CheckTextOutput());
+        Assert.Empty(session.OpaqueMasks);
+    }
+
+    [Fact]
+    public void RemovingTheMaskDoesNotReviveOldText()
+    {
+        var session = NewSession();
+        int request = session.BeginOcr();
+        Assert.True(session.TryCompleteOcr(request, session.ImageRevision, FakeOcr.Line("文字", 0, 0, 20, 30)));
+
+        var mask = session.Annotations.Add(new MaskItem(new[] { new PointF(5, 5) }, AnnotationStyle.Default(AnnotationKind.Mask),
+            MaskEffect.Solid, new RectF(0, 0, 30, 30)));
+        Assert.Equal(TextOutput.Stale, session.CheckTextOutput());
+
+        session.Annotations.Remove(mask);
+        // Removing the mask changes the picture again; the old page must stay retired until re-recognition.
+        Assert.Equal(TextOutput.Stale, session.CheckTextOutput());
     }
 
     [Fact]
