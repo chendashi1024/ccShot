@@ -1,16 +1,16 @@
 {
   "manifest": {
     "/404.html": {
-      "hash": "e335ee5964b66cac4bba16ed21bb43dc",
-      "size": 571
+      "hash": "23f353d26276d1b570348d81cecdc6a8",
+      "size": 602
     },
     "/icon.png": {
       "hash": "de6441d5065174cd0e490f8362d4040d",
       "size": 8088
     },
     "/index.html": {
-      "hash": "bc2a9b080982ee6ce37f948d3678e018",
-      "size": 631820
+      "hash": "1bede32376a68b1d4d71d1a95c2ec05f",
+      "size": 632037
     },
     "/og.jpg": {
       "hash": "b838c8f8ceed51b94c3a9ca0fd5c5b76",

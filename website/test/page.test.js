@@ -29,6 +29,21 @@ test("deployed page uses download and GitHub redirects", () => {
   assert.ok(site.includes("v0.1.0 公开预览版 · Apple Silicon（arm64）"));
 });
 
+test("public pages open external pages in a new tab", () => {
+  const notFound = readFileSync(new URL("../public/404.html", import.meta.url), "utf8");
+  for (const page of [site, notFound]) {
+    for (const [link, href] of page.matchAll(/<a\b[^>]*\bhref="([^"]+)"[^>]*>/g)) {
+      const external = href.startsWith("/go/github") || href.startsWith("https://");
+      if (external) {
+        assert.match(link, /\btarget="_blank"/, href);
+        assert.match(link, /\brel="noopener"/, href);
+      } else {
+        assert.doesNotMatch(link, /\btarget="_blank"/, href);
+      }
+    }
+  }
+});
+
 test("offline page downloads the real files without the worker", () => {
   const links = [...offline.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map((match) => match[1]);
   const release = "https://github.com/chendashi1024/ccShot/releases";
