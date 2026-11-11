@@ -16,17 +16,21 @@ function hrefs(html, marker) {
 
 test("deployed page uses download and GitHub redirects", () => {
   assert.deepEqual(hrefs(site, 'data-exit="download"'), ["/go/download", "/go/download"]);
-  assert.deepEqual(hrefs(site, 'data-exit="download-github"'), ["/go/download?source=github"]);
   assert.ok(hrefs(site, 'data-exit="github"').every((href) => href === "/go/github?to=repo"));
   assert.deepEqual(hrefs(site, 'data-exit="release"'), ["/go/github?to=release"]);
   assert.ok(site.includes("GitHub 标星"));
   assert.ok(site.includes("https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg"));
-  assert.ok(site.includes("https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg.sha256"));
   assert.equal((site.match(/<h1>/g) || []).length, 1);
   assert.ok(site.includes('lang="zh-CN"'));
   assert.ok(site.includes('name="viewport"'));
   assert.ok(site.includes('rel="canonical" href="https://ccshot.app/"'));
   assert.ok(site.includes("v0.1.0 公开预览版 · Apple Silicon（arm64）"));
+});
+
+test("the download section shows one line of compatibility and an installation link", () => {
+  const section = site.match(/<section\b[^>]*id="cc-download"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
+  assert.match(section, /<p class="platform">v0\.1\.0 公开预览版 · Apple Silicon（arm64）· macOS 14\+ · <a\b[^>]*>安装说明<\/a><\/p>/);
+  assert.equal((section.match(/<p\b/g) ?? []).length, 1);
 });
 
 test("public pages open external pages in a new tab", () => {
