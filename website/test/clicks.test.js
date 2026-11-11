@@ -9,10 +9,10 @@ import {
   validHttps,
 } from "../src/index.js";
 
-const R2 = "https://download.ccshot.app/example.dmg";
-const GITHUB = "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg";
+const R2 = "https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg";
+const GITHUB = "https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg";
 const REPO = "https://github.com/chendashi1024/ccShot";
-const RELEASE = "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2";
+const RELEASE = "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0";
 
 function fakeEnv() {
   return {
@@ -31,26 +31,27 @@ function fakeEnv() {
 }
 fakeEnv.points = [];
 
-test("primary download serves the verified release asset", () => {
+test("primary download redirects to the verified R2 file", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download?utm=ignored"));
-  assert.equal(decision.event, "download_github");
-  assert.equal(decision.kind, "0.1.2");
-  assert.equal(decision.location, GITHUB);
+  assert.equal(decision.event, "download_r2");
+  assert.equal(decision.kind, "0.1.0");
+  assert.equal(decision.location, R2);
+  assert.equal(downloadConfig.r2DownloadUrl, R2);
 });
 
-test("explicit GitHub download stays on the release asset", () => {
+test("github backup stays on the release asset", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download?source=github&next=https://evil.example"));
   assert.equal(decision.event, "download_github");
   assert.equal(decision.location, GITHUB);
 });
 
-test("configured mirror stays the primary download", () => {
+test("missing R2 config falls back to GitHub without claiming an R2 click", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download"), {
     ...downloadConfig,
-    r2DownloadUrl: R2,
+    r2DownloadUrl: null,
   });
-  assert.equal(decision.event, "download_r2");
-  assert.equal(decision.location, R2);
+  assert.equal(decision.event, "download_github");
+  assert.equal(decision.location, GITHUB);
 });
 
 test("unsafe configured URLs are not used", () => {
@@ -78,9 +79,9 @@ test("github exits are separate and allowlisted", () => {
 });
 
 test("datapoints contain only event, kind, and a count", () => {
-  const point = dataPoint("download_r2", "0.1.2");
+  const point = dataPoint("download_r2", "0.1.0");
   assert.deepEqual(Object.keys(point).sort(), ["blobs", "doubles", "indexes"]);
-  assert.deepEqual(point, { indexes: ["download_r2"], blobs: ["0.1.2"], doubles: [1] });
+  assert.deepEqual(point, { indexes: ["download_r2"], blobs: ["0.1.0"], doubles: [1] });
   assert.throws(() => dataPoint("star", "repo"));
 });
 
@@ -89,10 +90,10 @@ test("GET records one point and redirects; HEAD does not record", async () => {
   const env = fakeEnv();
   const response = await handleRequest(new Request("https://ccshot.app/go/download"), env);
   assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), GITHUB);
+  assert.equal(response.headers.get("location"), R2);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(fakeEnv.points.length, 1);
-  assert.equal(fakeEnv.points[0].indexes[0], "download_github");
+  assert.equal(fakeEnv.points[0].indexes[0], "download_r2");
 
   const head = await handleRequest(new Request("https://ccshot.app/go/github?to=repo", { method: "HEAD" }), env);
   assert.equal(head.status, 302);

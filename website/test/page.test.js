@@ -16,15 +16,17 @@ function hrefs(html, marker) {
 
 test("deployed page uses download and GitHub redirects", () => {
   assert.deepEqual(hrefs(site, 'data-exit="download"'), ["/go/download", "/go/download"]);
+  assert.deepEqual(hrefs(site, 'data-exit="download-github"'), ["/go/download?source=github"]);
   assert.ok(hrefs(site, 'data-exit="github"').every((href) => href === "/go/github?to=repo"));
   assert.deepEqual(hrefs(site, 'data-exit="release"'), ["/go/github?to=release"]);
   assert.ok(site.includes("GitHub 标星"));
-  assert.ok(site.includes("https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg"));
+  assert.ok(site.includes("https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg"));
+  assert.ok(site.includes("https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg.sha256"));
   assert.equal((site.match(/<h1>/g) || []).length, 1);
   assert.ok(site.includes('lang="zh-CN"'));
   assert.ok(site.includes('name="viewport"'));
   assert.ok(site.includes('rel="canonical" href="https://ccshot.app/"'));
-  assert.ok(site.includes("v0.1.2 公开预览版 · Apple Silicon（arm64）"));
+  assert.ok(site.includes("v0.1.0 公开预览版 · Apple Silicon（arm64）"));
 });
 
 test("offline page downloads the real files without the worker", () => {

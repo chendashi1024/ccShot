@@ -402,4 +402,4 @@ HTML 已展示以上流程，用路径输入模拟文件夹选择，支持取消
 
 ### 2026-11-11 官网发布
 
-正式站 [ccshot.app](https://ccshot.app/) 已上线实机选字展示、标注示例和 v0.1.2 下载入口。官网从本机通过 Codex 的 Cloudflare 插件发布，发布源与操作步骤见 [官网发布说明](../website/README.md)。
+正式站 [ccshot.app](https://ccshot.app/) 沿用原有页面内容。官网从本机通过 Codex 的 Cloudflare 插件发布，发布源与操作步骤见 [官网发布说明](../website/README.md)。

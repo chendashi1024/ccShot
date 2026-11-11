@@ -2,10 +2,10 @@
 // Counts are redirect requests, not completed downloads and not GitHub stars.
 
 export const downloadConfig = {
-  version: "0.1.2",
-  r2DownloadUrl: null,
-  githubReleaseAsset: "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg",
-  githubReleasePage: "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2",
+  version: "0.1.0",
+  r2DownloadUrl: "https://download.ccshot.app/ccShot-0.1.0-macos-arm64.dmg",
+  githubReleaseAsset: "https://github.com/chendashi1024/ccShot/releases/download/v0.1.0/ccShot-0.1.0-macos-arm64.dmg",
+  githubReleasePage: "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.0",
   githubRepository: "https://github.com/chendashi1024/ccShot",
 };
 

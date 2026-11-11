@@ -68,3 +68,5 @@
 ## 6. 官网部署
 
 ccShot 官网在本机使用 Codex 的 Cloudflare 插件发布。正式站点 `ccshot.app` 使用现有 Worker `ccshot-site`，发布源为主分支的 `website/public/` 与 `website/src/index.js`。部署和验收步骤见 [官网发布说明](website/README.md)。
+
+只调整发布方式时，沿用当前正式版的页面、图片和下载跳转。官网内容的修改以用户明确提出的范围为准。
