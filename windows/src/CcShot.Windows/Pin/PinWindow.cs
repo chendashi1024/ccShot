@@ -31,6 +31,9 @@ internal sealed class PinWindow : Window
     private double _zoom;
     private bool _closed;
 
+    internal bool HasRecognizedText => !string.IsNullOrEmpty(_allText);
+    internal EditorCanvas? SelectionSurface => _canvas;
+
     public PinWindow(CaptureSession document, MonitorInfo monitor, AppSettings settings, OcrService ocr)
     {
         _document = document;
@@ -158,7 +161,7 @@ internal sealed class PinWindow : Window
         RunOutput(() => Clipboard.SetText(text));
     }
 
-    private void EditPin()
+    internal void EditPin()
     {
         var layout = MonitorService.Enumerate();
         NativeMethods.GetWindowRect(new WindowInteropHelper(this).Handle, out var current);

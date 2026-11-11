@@ -29,14 +29,6 @@ internal static class BitmapInterop
         return new PixelImage(width, height, buffer);
     }
 
-    public static PixelImage FromRenderTarget(RenderTargetBitmap target)
-    {
-        int width = target.PixelWidth, height = target.PixelHeight;
-        var buffer = new byte[width * height * 4];
-        target.CopyPixels(buffer, width * 4, 0);
-        return new PixelImage(width, height, buffer);
-    }
-
     /// <summary>Encodes to PNG or JPEG. JPEG has no alpha, so transparent areas become white like the macOS build.</summary>
     public static void Save(PixelImage image, string path)
     {

@@ -13,21 +13,38 @@ cd "$ROOT"
 
 VERSION="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo nogit)"
 COMMIT="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
-STAMP="$(date +%Y%m%d)"
 OUT="$ROOT/dist/packages/$VERSION"
-rm -rf "$OUT"
-mkdir -p "$OUT"
+# 每个 .NET 桌面运行时版本都有对应的第三方声明。
+RUNTIME_VERSION=8.0.34
+export RUNTIME_VERSION
+mkdir -p "$(dirname "$OUT")"
+STAGING="$(mktemp -d "$(dirname "$OUT")/.package-$VERSION.XXXXXX")"
+trap 'rm -rf "$STAGING"' EXIT
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+python3 - <<'PY'
+import hashlib
+import json
+from pathlib import Path
+
+assets = json.loads(Path('models/models.lock.json').read_text())['assets']
+for asset in assets:
+    path = Path(asset['path'])
+    if path.parts[:2] != ('models', 'mobile'):
+        continue
+    if not path.is_file():
+        raise SystemExit(f'缺少 {path}，请运行 tools/fetch-models.sh mobile。')
+    data = path.read_bytes()
+    if len(data) != asset['bytes'] or hashlib.sha256(data).hexdigest() != asset['sha256']:
+        raise SystemExit(f'{path} 与锁定的模型不一致。')
+PY
 
 copy_common() {
   local target="$1"
   mkdir -p "$target/models/mobile" "$target/LICENSES"
-  if [[ -f "$ROOT/models/mobile/det.onnx" ]]; then
-    cp "$ROOT/models/mobile/det.onnx" "$ROOT/models/mobile/rec.onnx" "$ROOT/models/mobile/dict.txt" "$target/models/mobile/"
-  else
-    echo "warn: models/mobile 不存在，包内将不含模型（先运行 tools/fetch-models.sh）" >&2
-  fi
+  cp "$ROOT/models/mobile/det.onnx" "$ROOT/models/mobile/rec.onnx" "$ROOT/models/mobile/dict.txt" "$target/models/mobile/"
+  cp "$ROOT/../LICENSE" "$target/LICENSES/ccshot-LICENSE.txt"
   cp "$ROOT/third-party/licenses/"*.txt "$target/LICENSES/"
   cp "$ROOT/docs/使用说明.txt" "$target/README-使用说明.txt"
   cp "$ROOT/THIRD-PARTY-NOTICES.md" "$target/THIRD-PARTY-NOTICES.txt"
@@ -36,25 +53,58 @@ copy_common() {
 
 publish() {
   local selfcontained="$1" target="$2"
+  set --
+  if [[ "$selfcontained" == true ]]; then
+    set -- "-p:RuntimeFrameworkVersion=$RUNTIME_VERSION"
+  fi
   dotnet publish src/CcShot.Windows/CcShot.Windows.csproj -c Release -r win-x64 \
-    --self-contained "$selfcontained" -o "$target" -v quiet --nologo >/dev/null
+    --self-contained "$selfcontained" -o "$target" -v quiet --nologo "$@"
   # Documentation and symbols are not part of a trial package.
   find "$target" -name '*.pdb' -delete
 }
 
 echo "== framework-dependent"
-FD="$OUT/fd"
+FD="$STAGING/fd"
 mkdir -p "$FD"
 publish false "$FD"
 copy_common "$FD"
 
 echo "== self-contained"
-SC="$OUT/sc"
+SC="$STAGING/sc"
 mkdir -p "$SC"
 publish true "$SC"
 copy_common "$SC"
 
-cd "$OUT"
+python3 - "$SC" <<'PY'
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+
+target = Path(sys.argv[1])
+assets = json.loads(Path('src/CcShot.Windows/obj/project.assets.json').read_text())
+packs = json.loads((target / 'CcShot.deps.json').read_text())['libraries']
+for product, files in (
+    ('Microsoft.NETCore.App.Runtime.win-x64', ('LICENSE.TXT', 'THIRD-PARTY-NOTICES.TXT')),
+    ('Microsoft.WindowsDesktop.App.Runtime.win-x64', ('LICENSE',)),
+):
+    version = os.environ['RUNTIME_VERSION']
+    if f'runtimepack.{product}/{version}' not in packs:
+        raise SystemExit(f'自包含包的运行时与许可版本不一致：{product} {version}')
+    for name in files:
+        sources = [Path(folder) / product.lower() / version / name for folder in assets['packageFolders']]
+        source = next((path for path in sources if path.is_file()), None)
+        if source is None:
+            raise SystemExit(f'找不到 {product} {version} 的许可文件 {name}')
+        shutil.copyfile(source, target / 'LICENSES' / f'{product}-{Path(name).stem}.txt')
+notices = Path('third-party/licenses/dotnet-desktop') / os.environ['RUNTIME_VERSION']
+for component in ('wpf', 'winforms'):
+    name = f'{component}-THIRD-PARTY-NOTICES.txt'
+    shutil.copyfile(notices / name, target / 'LICENSES' / name)
+PY
+
+cd "$STAGING"
 rm -f ccShot-win-x64-fd.zip ccShot-win-x64-sc.zip
 zip -qr ccShot-win-x64-fd.zip fd
 zip -qr ccShot-win-x64-sc.zip sc
@@ -81,3 +131,9 @@ echo "download sc       $(size_of ccShot-win-x64-sc.zip)"
 echo
 echo "SHA-256:"
 shasum -a 256 ccShot-win-x64-fd.zip ccShot-win-x64-sc.zip | sed 's|  |  |'
+cd "$ROOT"
+if [[ -e "$OUT" ]]; then
+  OUT="$OUT-$(date -u +%Y%m%dT%H%M%SZ)"
+fi
+mv "$STAGING" "$OUT"
+echo "包目录 $OUT"

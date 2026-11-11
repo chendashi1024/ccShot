@@ -92,7 +92,7 @@ internal sealed class App : Application
 
     private Task CaptureCurrentScreenAsync() => StartCaptureAsync(null);
 
-    private async Task StartCaptureAsync(CaptureMode? mode)
+    internal async Task StartCaptureAsync(CaptureMode? mode)
     {
         if (_capturing) return;
         _capturing = true;

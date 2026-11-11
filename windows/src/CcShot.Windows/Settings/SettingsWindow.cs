@@ -129,15 +129,30 @@ internal sealed class SettingsWindow : Window
         }
 
         if (!valid) return;
+        var previousBinding = _hotkey.Current;
         if (!_hotkey.Register(binding))
         {
             _hotkeyError.Text = _hotkey.LastError;
             return;
         }
 
-        _settings.CaptureHotkey = binding.ToString();
-        _settings.SaveDirectory = directory;
-        _settings.Save();
+        string previousShortcut = _settings.CaptureHotkey;
+        string? previousDirectory = _settings.SaveDirectory;
+        try
+        {
+            _settings.CaptureHotkey = binding.ToString();
+            _settings.SaveDirectory = directory;
+            _settings.Save();
+        }
+        catch (Exception ex)
+        {
+            _settings.CaptureHotkey = previousShortcut;
+            _settings.SaveDirectory = previousDirectory;
+            if (previousBinding != null && previousBinding != binding) _hotkey.Register(previousBinding);
+            else if (previousBinding == null) _hotkey.Unregister();
+            _directoryError.Text = "无法保存设置：" + ex.Message;
+            return;
+        }
         _apply(binding);
         Close();
     }

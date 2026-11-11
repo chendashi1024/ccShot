@@ -25,17 +25,15 @@ internal static class ImageCompositor
         using (var dc = visual.RenderOpen())
         {
             dc.DrawImage(bitmap, imageRect);
-            var masks = new MaskImages(bitmap,
-                BitmapInterop.ToBitmapSource(ImageEffects.Pixelate(source, Math.Max(8, source.Width / 90))),
-                BitmapInterop.ToBitmapSource(ImageEffects.BoxBlur(source, Math.Max(3, source.Width / 300))),
-                imageRect);
+            var masks = document.Items.OfType<MaskItem>().Any(mask => mask.Effect != MaskEffect.Solid)
+                ? BuildMaskImages(source) : null;
             foreach (var item in document.Items) AnnotationRenderer.Draw(dc, item, 1.0, masks);
         }
 
         var target = new RenderTargetBitmap(source.Width, source.Height, 96, 96, PixelFormats.Pbgra32);
         RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
         target.Render(visual);
-        return BitmapInterop.FromRenderTarget(target);
+        return BitmapInterop.ToPixelImage(target);
     }
 
     /// <summary>Preview bitmap of the composed result for pinning without making the pin re-render annotations.</summary>

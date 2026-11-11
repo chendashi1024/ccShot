@@ -21,7 +21,6 @@ internal static class NativeMethods
     public const int MDT_EFFECTIVE_DPI = 0;
     public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
     public const int DWMWA_CLOAKED = 14;
-    public const uint GA_ROOT = 2;
 
     public const uint SWP_NOSIZE = 0x0001;
     public const uint SWP_NOMOVE = 0x0002;
@@ -131,13 +130,7 @@ internal static class NativeMethods
     public static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
     [DllImport("user32.dll")]
-    public static extern IntPtr WindowFromPoint(POINT point);
-
-    [DllImport("user32.dll")]
     public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
-
-    [DllImport("user32.dll")]
-    public static extern IntPtr GetAncestor(IntPtr hWnd, uint gaFlags);
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();

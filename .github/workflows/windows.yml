@@ -55,5 +55,29 @@ jobs:
           $output = 'windows/tests/CcShot.Windows.Smoke/bin/Release/net8.0-windows'
           New-Item -ItemType Directory -Force "$output/models" | Out-Null
           Copy-Item -Recurse windows/models/mobile "$output/models"
-          dotnet "$output/CcShot.Windows.Smoke.dll" windows/testdata/windows-01/01-en.png
+          $app = (Resolve-Path "$output/CcShot.Windows.Smoke.exe").Path
+          $rule = New-NetFirewallRule -DisplayName 'ccShot desktop smoke block outbound' -Program $app -Direction Outbound -Action Block -Profile Any
+          try {
+            Get-NetFirewallProfile -PolicyStore ActiveStore | Select-Object Name, Enabled | Format-Table
+            & $app windows/testdata/windows-01/01-en.png
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally {
+            Remove-NetFirewallRule -Name $rule.Name
+          }
+      - name: 验证自包含程序启动
+        shell: pwsh
+        run: |
+          $appDir = Join-Path $env:RUNNER_TEMP 'ccshot-portable'
+          dotnet publish windows/src/CcShot.Windows -c Release -r win-x64 --self-contained true -o $appDir
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory -Force "$appDir/models" | Out-Null
+          Copy-Item -Recurse windows/models/mobile "$appDir/models"
+          $process = Start-Process "$appDir/CcShot.exe" -PassThru
+          try {
+            Start-Sleep -Seconds 2
+            $process.Refresh()
+            if ($process.HasExited) { throw "自包含程序启动后退出：$($process.ExitCode)" }
+            Write-Host '通过：自包含 ccShot.exe 启动并保持运行。'
+          } finally {
+            if (-not $process.HasExited) { Stop-Process -Id $process.Id }
+          }
