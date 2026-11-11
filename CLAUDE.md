@@ -64,3 +64,7 @@
 - 默认零联网：没有统计、没有账号；只有用户主动问 AI 时才联网。
 - 产品名在代码、界面、仓库里统一写作 **ccShot**。
 - 改动 PRD 或做了新决定时，同步更新 `docs/PRD.md` 和 `docs/决策记录.md`。
+
+## 6. 官网部署
+
+ccShot 官网在本机使用 Codex 的 Cloudflare 插件发布。正式站点 `ccshot.app` 使用现有 Worker `ccshot-site`，发布源为主分支的 `website/public/` 与 `website/src/index.js`。部署和验收步骤见 [官网发布说明](website/README.md)。

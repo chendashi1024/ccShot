@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "/404.html": {
+      "hash": "e335ee5964b66cac4bba16ed21bb43dc",
+      "size": 571
+    },
+    "/icon.png": {
+      "hash": "55a5059450104d2500d91b8f40faeecb",
+      "size": 7391
+    },
+    "/index.html": {
+      "hash": "8a844f0172e06aca60b83cac3f4586df",
+      "size": 317820
+    },
+    "/ocr-demo.jpg": {
+      "hash": "82b9840fa91b2e2d18986d0e0bb4b65e",
+      "size": 78530
+    },
+    "/og.jpg": {
+      "hash": "b838c8f8ceed51b94c3a9ca0fd5c5b76",
+      "size": 51312
+    },
+    "/robots.txt": {
+      "hash": "de01507d74043eaccd11d315264755d8",
+      "size": 64
+    },
+    "/sitemap.xml": {
+      "hash": "a872b096c69507e101d314a623dc5645",
+      "size": 154
+    }
+  }
+}
