@@ -1,0 +1,77 @@
+fixtures: 32 (manifest sha256 ef11556e17c3)
+
+=== model 'mobile' from ../../models/mobile
+load: 86.1 ms
+engine: det=det.onnx (d2a7720d45a5, 4745517 bytes); rec=rec.onnx (48fc40f24f6d, 10857958 bytes); dict=dict.txt (6623 entries); runtime=Microsoft.ML.OnnxRuntime 1.20.1.0 (CPU) 1.20.1.0; limit=960; det_thresh=0.3/0.6; unclip=1.6; rec_h=48; rec_max_w=1280; min_box=3; threads=auto; restore_spaces=0.3
+01-01      cer=0.0000 exact=Y   168.8ms lines=3 
+01-02      cer=0.0000 exact=Y   140.3ms lines=3 
+01-03      cer=0.0000 exact=Y   161.3ms lines=3 
+01-04      cer=0.0000 exact=Y   127.5ms lines=3 
+02-01      cer=0.0000 exact=Y   159.0ms lines=3 
+02-02      cer=0.0000 exact=Y   140.1ms lines=3 
+02-03      cer=0.0000 exact=Y   160.6ms lines=3 
+02-04      cer=0.0000 exact=Y   148.9ms lines=3 
+03-01      cer=0.0120 exact=n   158.8ms lines=3 
+03-02      cer=0.0120 exact=n   157.0ms lines=3 
+03-03      cer=0.0000 exact=Y   159.7ms lines=3 
+03-04      cer=0.0120 exact=n   143.8ms lines=3 
+04-01      cer=0.0123 exact=n   159.6ms lines=3 
+04-02      cer=0.0123 exact=n   142.5ms lines=3 
+04-03      cer=0.0123 exact=n   159.2ms lines=3 
+04-04      cer=0.0247 exact=n   146.9ms lines=3 
+05-01      cer=0.0345 exact=n   183.1ms lines=3 
+05-02      cer=0.0690 exact=n   143.0ms lines=3 
+05-03      cer=0.0345 exact=n   153.2ms lines=3 
+05-04      cer=0.0690 exact=n   135.8ms lines=3 
+06-01      cer=0.0000 exact=Y   159.5ms lines=3 
+06-02      cer=0.0000 exact=Y   141.2ms lines=3 
+06-03      cer=0.0104 exact=n   147.1ms lines=3 
+06-04      cer=0.0104 exact=n   131.6ms lines=3 
+07-01      cer=0.0455 exact=n   160.6ms lines=3 
+07-02      cer=0.0606 exact=n   148.7ms lines=3 
+07-03      cer=0.0152 exact=n   165.4ms lines=3 
+07-04      cer=0.0455 exact=n   151.8ms lines=3 
+08-01      cer=0.0000 exact=Y   154.2ms lines=3 
+08-02      cer=0.0000 exact=Y   134.3ms lines=3 
+08-03      cer=0.0000 exact=Y   143.7ms lines=3 
+08-04      cer=0.0000 exact=Y   140.6ms lines=3 
+micro CER loose=0.0147 strict=0.0330 exact=15/32 P50=150.4ms P95=167.0ms peakWS=n/a (measure externally)
+
+=== model 'accurate' from ../../models/server
+load: 303.3 ms
+engine: det=det.onnx (cfa39a3f298f, 113352104 bytes); rec=rec.onnx (6a2676219be9, 90530732 bytes); dict=dict.txt (6623 entries); runtime=Microsoft.ML.OnnxRuntime 1.20.1.0 (CPU) 1.20.1.0; limit=960; det_thresh=0.3/0.6; unclip=1.6; rec_h=48; rec_max_w=1280; min_box=3; threads=auto; restore_spaces=0.3
+01-01      cer=0.0000 exact=Y  1332.1ms lines=3 
+01-02      cer=0.0000 exact=Y  1231.1ms lines=3 
+01-03      cer=0.0000 exact=Y  1319.7ms lines=3 
+01-04      cer=0.0000 exact=Y  1251.1ms lines=3 
+02-01      cer=0.0000 exact=Y  1403.0ms lines=3 
+02-02      cer=0.0000 exact=Y  1292.1ms lines=3 
+02-03      cer=0.0000 exact=Y  1401.3ms lines=3 
+02-04      cer=0.0000 exact=Y  1310.6ms lines=3 
+03-01      cer=0.0000 exact=Y  1325.9ms lines=3 
+03-02      cer=0.0000 exact=Y  1264.2ms lines=3 
+03-03      cer=0.0000 exact=Y  1411.6ms lines=3 
+03-04      cer=0.0000 exact=Y  1299.4ms lines=3 
+04-01      cer=0.0000 exact=Y  1364.4ms lines=3 
+04-02      cer=0.0123 exact=n  1239.5ms lines=3 
+04-03      cer=0.0123 exact=n  1365.6ms lines=3 
+04-04      cer=0.0123 exact=n  1262.7ms lines=3 
+05-01      cer=0.0345 exact=n  1362.5ms lines=3 
+05-02      cer=0.0862 exact=n  1299.3ms lines=3 
+05-03      cer=0.0345 exact=n  1412.4ms lines=3 
+05-04      cer=0.0862 exact=n  1380.5ms lines=3 
+06-01      cer=0.0000 exact=Y  1558.4ms lines=3 
+06-02      cer=0.0000 exact=Y  1267.3ms lines=3 
+06-03      cer=0.0000 exact=Y  1383.9ms lines=3 
+06-04      cer=0.0000 exact=Y  1274.6ms lines=3 
+07-01      cer=0.0152 exact=n  1477.7ms lines=3 
+07-02      cer=0.0303 exact=n  1396.2ms lines=3 
+07-03      cer=0.0152 exact=n  1484.3ms lines=3 
+07-04      cer=0.0303 exact=n  1386.5ms lines=3 
+08-01      cer=0.0000 exact=Y  1371.1ms lines=3 
+08-02      cer=0.0000 exact=Y  1300.9ms lines=3 
+08-03      cer=0.0000 exact=Y  1364.6ms lines=3 
+08-04      cer=0.0000 exact=Y  1284.4ms lines=3 
+micro CER loose=0.0102 strict=0.0288 exact=21/32 P50=1347.3ms P95=1480.7ms peakWS=n/a (measure externally)
+
+report: /Users/chenchen/Documents/ccShot/windows/reports/2026-11-11-native01.json

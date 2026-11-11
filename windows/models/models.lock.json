@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-11-11",
+  "note": "实际下载并用于 windows/reports/2026-11-11-*.json 的模型；重新下载后需核对哈希，哈希不一致时旧报告不再可比。",
+  "assets": [
+    {
+      "path": "models/mobile/det.onnx",
+      "role": "PP-OCRv4 文本检测（轻量）",
+      "url": "https://huggingface.co/SWHL/RapidOCR/resolve/main/PP-OCRv4/ch_PP-OCRv4_det_infer.onnx",
+      "bytes": 4745517,
+      "sha256": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9",
+      "license": "Apache-2.0",
+      "upstream": "PaddleOCR 权重，经 RapidOCR 转 ONNX；仓库 card 声明 license: apache-2.0"
+    },
+    {
+      "path": "models/mobile/rec.onnx",
+      "role": "PP-OCRv4 文本识别（轻量）",
+      "url": "https://huggingface.co/SWHL/RapidOCR/resolve/main/PP-OCRv4/ch_PP-OCRv4_rec_infer.onnx",
+      "bytes": 10857958,
+      "sha256": "48fc40f24f6d2a207a2b1091d3437eb3cc3eb6b676dc3ef9c37384005483683b",
+      "license": "Apache-2.0",
+      "upstream": "同上"
+    },
+    {
+      "path": "models/mobile/dict.txt",
+      "role": "识别字典（6623 条）",
+      "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/ppocr_keys_v1.txt",
+      "bytes": 26250,
+      "sha256": "a1c84d9bdb9ab29043c58896224d32941783eb821629618416dcb08f12886492",
+      "license": "Apache-2.0",
+      "upstream": "PaddleOCR"
+    },
+    {
+      "path": "models/server/det.onnx",
+      "role": "PP-OCRv4 文本检测（精度优先，仅对比用，未进包）",
+      "url": "https://huggingface.co/SWHL/RapidOCR/resolve/main/PP-OCRv4/ch_PP-OCRv4_det_server_infer.onnx",
+      "bytes": 113352104,
+      "sha256": "cfa39a3f298f6d3fc71789834d15da36d11a6c59b489fc16ea4733728012f786",
+      "license": "Apache-2.0",
+      "upstream": "同上"
+    },
+    {
+      "path": "models/server/rec.onnx",
+      "role": "PP-OCRv4 文本识别（精度优先，仅对比用，未进包）",
+      "url": "https://huggingface.co/SWHL/RapidOCR/resolve/main/PP-OCRv4/ch_PP-OCRv4_rec_server_infer.onnx",
+      "bytes": 90530732,
+      "sha256": "6a2676219be9907c7fc9cf61ebaa843bf2898777def567925b78886fcd90c07a",
+      "license": "Apache-2.0",
+      "upstream": "同上"
+    },
+    {
+      "path": "models/server/dict.txt",
+      "role": "识别字典（与轻量组合相同）",
+      "url": "https://raw.githubusercontent.com/PaddlePaddle/PaddleOCR/main/ppocr/utils/ppocr_keys_v1.txt",
+      "bytes": 26250,
+      "sha256": "a1c84d9bdb9ab29043c58896224d32941783eb821629618416dcb08f12886492",
+      "license": "Apache-2.0",
+      "upstream": "PaddleOCR"
+    }
+  ]
+}

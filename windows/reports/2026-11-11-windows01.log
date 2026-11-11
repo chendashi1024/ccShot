@@ -1,0 +1,35 @@
+fixtures: 10 (manifest sha256 db44531ad059)
+
+=== model 'mobile' from ../../models/mobile
+load: 79.2 ms
+engine: det=det.onnx (d2a7720d45a5, 4745517 bytes); rec=rec.onnx (48fc40f24f6d, 10857958 bytes); dict=dict.txt (6623 entries); runtime=Microsoft.ML.OnnxRuntime 1.20.1.0 (CPU) 1.20.1.0; limit=960; det_thresh=0.3/0.6; unclip=1.6; rec_h=48; rec_max_w=1280; min_box=3; threads=auto; restore_spaces=0.3
+01-en      cer=0.0088 exact=n   140.4ms lines=3 
+02-en2x    cer=0.0000 exact=Y   128.5ms lines=2 
+03-code    cer=0.0000 exact=Y   158.8ms lines=3 
+04-code2x  cer=0.0462 exact=n   139.8ms lines=3 
+05-small   cer=0.0000 exact=Y    65.5ms lines=2 
+06-small11 cer=0.0000 exact=Y    73.5ms lines=2 
+07-mixed   cer=0.0000 exact=Y    90.2ms lines=2 
+08-lowcontrast cer=0.0000 exact=Y    55.8ms lines=2 
+09-punct   cer=0.0000 exact=Y    58.5ms lines=2 
+10-dense   cer=0.0000 exact=Y    80.1ms lines=2 
+micro CER loose=0.0070 strict=0.0679 exact=8/10 P50=85.2ms P95=150.5ms peakWS=n/a (measure externally)
+selection single-char=99.2 % range=100.0 % glyphHit=99.3 % boundaryMAE=1.2px
+
+=== model 'accurate' from ../../models/server
+load: 353.2 ms
+engine: det=det.onnx (cfa39a3f298f, 113352104 bytes); rec=rec.onnx (6a2676219be9, 90530732 bytes); dict=dict.txt (6623 entries); runtime=Microsoft.ML.OnnxRuntime 1.20.1.0 (CPU) 1.20.1.0; limit=960; det_thresh=0.3/0.6; unclip=1.6; rec_h=48; rec_max_w=1280; min_box=3; threads=auto; restore_spaces=0.3
+01-en      cer=0.0000 exact=Y   875.4ms lines=3 
+02-en2x    cer=0.0000 exact=Y  1114.8ms lines=2 
+03-code    cer=0.0588 exact=n   964.7ms lines=3 
+04-code2x  cer=0.0462 exact=n  1062.2ms lines=3 
+05-small   cer=0.0000 exact=Y   424.2ms lines=2 
+06-small11 cer=0.0000 exact=Y   417.0ms lines=2 
+07-mixed   cer=0.0204 exact=n   608.2ms lines=2 
+08-lowcontrast cer=0.0000 exact=Y   376.5ms lines=2 
+09-punct   cer=0.0000 exact=Y   396.3ms lines=2 
+10-dense   cer=0.0000 exact=Y   530.5ms lines=2 
+micro CER loose=0.0176 strict=0.0617 exact=7/10 P50=569.3ms P95=1091.1ms peakWS=n/a (measure externally)
+selection single-char=97.3 % range=100.0 % glyphHit=99.1 % boundaryMAE=1.1px
+
+report: /Users/chenchen/Documents/ccShot/windows/reports/2026-11-11-windows01.json
