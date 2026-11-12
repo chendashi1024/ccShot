@@ -17,13 +17,14 @@ STAGING="$(mktemp -d "$(dirname "$OUT")/.package-$VERSION.XXXXXX")"
 trap 'rm -rf "$STAGING"' EXIT
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export PYTHONUTF8=1
 
 "$PYTHON" - <<'PY'
 import hashlib
 import json
 from pathlib import Path
 
-assets = json.loads(Path('models/models.lock.json').read_text())['assets']
+assets = json.loads(Path('models/models.lock.json').read_text(encoding='utf-8'))['assets']
 for asset in assets:
     path = Path(asset['path'])
     if path.parts[:2] != ('models', 'mobile'):
@@ -78,8 +79,8 @@ import sys
 from pathlib import Path
 
 target = Path(sys.argv[1])
-assets = json.loads(Path('src/CcShot.Windows/obj/project.assets.json').read_text())
-packs = json.loads((target / 'CcShot.deps.json').read_text())['libraries']
+assets = json.loads(Path('src/CcShot.Windows/obj/project.assets.json').read_text(encoding='utf-8-sig'))
+packs = json.loads((target / 'CcShot.deps.json').read_text(encoding='utf-8-sig'))['libraries']
 for product, files in (
     ('Microsoft.NETCore.App.Runtime.win-x64', ('LICENSE.TXT', 'THIRD-PARTY-NOTICES.TXT')),
     ('Microsoft.WindowsDesktop.App.Runtime.win-x64', ('LICENSE',)),
