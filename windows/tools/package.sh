@@ -110,16 +110,18 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 with Path("SHA256SUMS.txt").open("w", encoding="ascii", newline="\n") as sums:
     for kind in ("fd", "sc"):
-        name = f"ccShot-win-x64-{kind}.zip"
-        with ZipFile(name, "w", ZIP_DEFLATED) as archive:
+        package = Path(f"ccShot-win-x64-{kind}.zip")
+        with ZipFile(package, "w", ZIP_DEFLATED) as archive:
             for path in sorted(Path(kind).rglob("*")):
                 if path.is_file():
                     archive.write(path, path.as_posix())
         digest = hashlib.sha256()
-        with Path(name).open("rb") as package:
-            for chunk in iter(lambda: package.read(1024 * 1024), b""):
+        with package.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
                 digest.update(chunk)
-        sums.write(f"{digest.hexdigest()}  {name}\n")
+        sums.write(f"{digest.hexdigest()}  {package.name}\n")
+        size = package.stat().st_size
+        print(f"{package.name}  {size:,} 字节（{size / 1_000_000:.2f} MB）")
 PY
 
 size_of() { du -sk "$1" | awk '{printf "%.1f MB", $1/1024}'; }
@@ -139,8 +141,6 @@ if [[ -d "$FD/models/mobile" ]]; then
 fi
 echo "installed fd      $(size_of "$FD")   (app $(size_of_kb "$FD") − models $(size_of "$FD/models/mobile"))"
 echo "installed sc      $(size_of "$SC")"
-echo "download fd       $(size_of ccShot-win-x64-fd.zip)"
-echo "download sc       $(size_of ccShot-win-x64-sc.zip)"
 echo
 echo "SHA-256:"
 cat SHA256SUMS.txt
