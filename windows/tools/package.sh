@@ -43,13 +43,13 @@ for asset in assets:
 PY
 
 TARGET="$STAGING/$NAME"
-dotnet publish src/CcShot.Windows/CcShot.Windows.csproj -c Release -r win-x64 \
+dotnet publish src/ccShot.Windows/ccShot.Windows.csproj -c Release -r win-x64 \
   --self-contained true -p:RuntimeFrameworkVersion="$RUNTIME_VERSION" -o "$TARGET" -v quiet --nologo
 find "$TARGET" -name '*.pdb' -delete
 
 mkdir -p "$TARGET/models/mobile" "$TARGET/LICENSES"
 cp "$ROOT/models/mobile/det.onnx" "$ROOT/models/mobile/rec.onnx" "$ROOT/models/mobile/dict.txt" "$TARGET/models/mobile/"
-cp "$ROOT/../LICENSE" "$TARGET/LICENSES/ccshot-LICENSE.txt"
+cp "$ROOT/../LICENSE" "$TARGET/LICENSES/ccShot-LICENSE.txt"
 cp "$ROOT/third-party/licenses/"*.txt "$TARGET/LICENSES/"
 cp "$ROOT/docs/使用说明.txt" "$TARGET/README.txt"
 cp "$ROOT/THIRD-PARTY-NOTICES.md" "$TARGET/THIRD-PARTY-NOTICES.txt"
@@ -64,8 +64,8 @@ import sys
 from pathlib import Path
 
 target = Path(sys.argv[1])
-assets = json.loads(Path('src/CcShot.Windows/obj/project.assets.json').read_text(encoding='utf-8-sig'))
-packs = json.loads((target / 'CcShot.deps.json').read_text(encoding='utf-8-sig'))['libraries']
+assets = json.loads(Path('src/ccShot.Windows/obj/project.assets.json').read_text(encoding='utf-8-sig'))
+packs = json.loads((target / 'ccShot.deps.json').read_text(encoding='utf-8-sig'))['libraries']
 for product, files in (
     ('Microsoft.NETCore.App.Runtime.win-x64', ('LICENSE.TXT', 'THIRD-PARTY-NOTICES.TXT')),
     ('Microsoft.WindowsDesktop.App.Runtime.win-x64', ('LICENSE',)),

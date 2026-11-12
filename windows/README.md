@@ -19,11 +19,11 @@ Windows 的测试结论和首轮历史数据见 [阶段报告](REPORT-2026-11-11
 
 ```
 windows/
-  CcShot.sln
-  src/CcShot.Core/        跨平台逻辑（几何、OCR 引擎、逐字选择、标注模型、会话与安全输出、设置）
-  src/CcShot.Windows/     WPF 应用（纯 C# 构建界面，不用 XAML；WinForms 仅用于托盘图标）
-  src/CcShot.Tools/       离线工具：同图 OCR 基准、单图 dump
-  tests/CcShot.Core.Tests/ xUnit 测试（可在 macOS/Linux 上跑）
+  ccShot.sln
+  src/ccShot.Core/        跨平台逻辑（几何、OCR 引擎、逐字选择、标注模型、会话与安全输出、设置）
+  src/ccShot.Windows/     WPF 应用（纯 C# 构建界面，不用 XAML；WinForms 仅用于托盘图标）
+  src/ccShot.Tools/       离线工具：同图 OCR 基准、单图 dump
+  tests/ccShot.Core.Tests/ xUnit 测试（可在 macOS/Linux 上跑）
   testdata/windows-01/    新增样本：纯英文/代码/小字/低对比/标点/密集，带逐字真值
   tools/fetch-models.sh   下载模型并打印 SHA-256
   tools/gen_windows_fixtures.py  生成带逐字真值的样本
@@ -40,18 +40,18 @@ windows/
 # 依赖 .NET 8 SDK；打包另需 Python 3
 cd windows
 dotnet build -c Release                     # 三个工程 + 测试工程，可在 macOS 上交叉编译
-dotnet test tests/CcShot.Core.Tests         # 64 项逻辑测试
+dotnet test tests/ccShot.Core.Tests         # 64 项逻辑测试
 
 ./tools/fetch-models.sh mobile              # 下载 PP-OCRv4 轻量模型（14.9 MB）
 ./tools/package.sh                          # 生成 dist/packages/<commit>/ccShot-<版本号>-windows-x64.zip
 
 # 在 Windows 上从源码运行（需要 .NET 8 Desktop Runtime 和兼容的 x64 Visual C++ 运行库）
-dotnet run --project src/CcShot.Windows -c Release
+dotnet run --project src/ccShot.Windows -c Release
 ```
 
-Windows 和 macOS 从仓库根目录的 [VERSION](../VERSION) 读取同一个版本号。完整解压 ZIP 后运行 `CcShot.exe`。
+Windows 和 macOS 从仓库根目录的 [VERSION](../VERSION) 读取同一个版本号。完整解压 ZIP 后运行 `ccShot.exe`。
 
-打包脚本从微软 Redist 组件取出四个 x64 DLL，校验 SHA-256 后将它们放在 `CcShot.exe` 旁边。
+打包脚本从微软 Redist 组件取出四个 x64 DLL，校验 SHA-256 后将它们放在 `ccShot.exe` 旁边。
 组件版本和下载地址见 [运行库清单](tools/vc-runtime.lock.json)。首次打包会下载组件，后续可用 `dist/vc-runtime/` 中的校验缓存。
 
 程序启动后只在托盘出现，没有主窗口。默认快捷键 `Ctrl+Alt+X`（可在设置里改，冲突会就地提示）。
@@ -91,11 +91,11 @@ Windows 和 macOS 从仓库根目录的 [VERSION](../VERSION) 读取同一个版
 准备 `windows/models/mobile` 后，在隔离的 Windows 桌面从仓库根目录运行以下命令。验证程序会移动鼠标、按快捷键、改写剪贴板和读取自制窗口像素。
 
 ```powershell
-dotnet build windows/tests/CcShot.Windows.Smoke -c Release
-$out = 'windows/tests/CcShot.Windows.Smoke/bin/Release/net8.0-windows'
+dotnet build windows/tests/ccShot.Windows.Smoke -c Release
+$out = 'windows/tests/ccShot.Windows.Smoke/bin/Release/net8.0-windows'
 New-Item -ItemType Directory -Force "$out/models" | Out-Null
 Copy-Item -Recurse windows/models/mobile "$out/models"
-& "$out/CcShot.Windows.Smoke.exe" windows/testdata/windows-01/01-en.png
+& "$out/ccShot.Windows.Smoke.exe" windows/testdata/windows-01/01-en.png
 ```
 
 ## 复现 OCR 对比
@@ -104,7 +104,7 @@ Copy-Item -Recurse windows/models/mobile "$out/models"
 cd windows
 ./tools/fetch-models.sh                       # 模型哈希必须与 models.lock.json 一致
 python3 tools/gen_windows_fixtures.py         # 需要 Pillow；生成 testdata/windows-01
-cd src/CcShot.Tools
+cd src/ccShot.Tools
 dotnet run -c Release -- bench \
   --manifest ../../testdata/windows-01/manifest.json \
   --fixtures ../../testdata/windows-01 \

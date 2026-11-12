@@ -22,9 +22,9 @@ jobs:
       - name: 构建与核心测试
         shell: pwsh
         run: |
-          dotnet build windows/CcShot.sln -c Release
+          dotnet build windows/ccShot.sln -c Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          dotnet test windows/tests/CcShot.Core.Tests -c Release --no-build
+          dotnet test windows/tests/ccShot.Core.Tests -c Release --no-build
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: 校验并准备本地轻量模型
         shell: pwsh
@@ -41,21 +41,21 @@ jobs:
       - name: 运行 Windows x64 同图识字
         shell: pwsh
         run: |
-          dotnet run --project windows/src/CcShot.Tools -c Release --no-build -- bench --manifest windows/testdata/windows-01/manifest.json --out "$env:RUNNER_TEMP/ccshot-ocr.json" --model mobile=windows/models/mobile --repeat 1
+          dotnet run --project windows/src/ccShot.Tools -c Release --no-build -- bench --manifest windows/testdata/windows-01/manifest.json --out "$env:RUNNER_TEMP/ccShot-ocr.json" --model mobile=windows/models/mobile --repeat 1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $report = Get-Content "$env:RUNNER_TEMP/ccshot-ocr.json" -Raw | ConvertFrom-Json
+          $report = Get-Content "$env:RUNNER_TEMP/ccShot-ocr.json" -Raw | ConvertFrom-Json
           if ($report.models[0].aggregate.failures -ne 0 -or $report.models[0].aggregate.emptyOutputs -ne 0) {
             throw '至少一张固定样本识字失败'
           }
       - name: 实际唤起、截图、选字与剪贴板检查
         shell: pwsh
         run: |
-          dotnet build windows/tests/CcShot.Windows.Smoke -c Release
+          dotnet build windows/tests/ccShot.Windows.Smoke -c Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          $output = 'windows/tests/CcShot.Windows.Smoke/bin/Release/net8.0-windows'
+          $output = 'windows/tests/ccShot.Windows.Smoke/bin/Release/net8.0-windows'
           New-Item -ItemType Directory -Force "$output/models" | Out-Null
           Copy-Item -Recurse windows/models/mobile "$output/models"
-          $app = (Resolve-Path "$output/CcShot.Windows.Smoke.exe").Path
+          $app = (Resolve-Path "$output/ccShot.Windows.Smoke.exe").Path
           $rule = New-NetFirewallRule -DisplayName 'ccShot desktop smoke block outbound' -Program $app -Direction Outbound -Action Block -Profile Any
           try {
             Get-NetFirewallProfile -PolicyStore ActiveStore | Select-Object Name, Enabled | Format-Table
@@ -86,7 +86,7 @@ jobs:
           if ($sums.Count -ne 1 -or $sums[0] -cne "$hash  $name.zip") {
             throw 'ZIP 校验值与清单不一致'
           }
-          $output = Join-Path $env:RUNNER_TEMP 'ccshot-portable'
+          $output = Join-Path $env:RUNNER_TEMP 'ccShot-portable'
           Expand-Archive -LiteralPath $zip.FullName -DestinationPath $output
           $appDir = Join-Path $output $name
           $runtime = 'coreclr.dll', 'PresentationFramework.dll', 'onnxruntime.dll',
@@ -94,7 +94,10 @@ jobs:
           foreach ($dll in $runtime) {
             if (-not (Test-Path -LiteralPath "$appDir/$dll" -PathType Leaf)) { throw "下载包缺少 $dll" }
           }
-          $app = Get-Item -LiteralPath "$appDir/CcShot.exe"
+          $app = Get-ChildItem -LiteralPath $appDir -File | Where-Object Name -CEQ 'ccShot.exe'
+          if (-not $app -or $app.VersionInfo.ProductName -cne 'ccShot') {
+            throw '程序文件名和产品名称应写作 ccShot'
+          }
           $appVersion = $app.VersionInfo.ProductVersion
           if ($appVersion -cne $version) { throw "程序版本 $appVersion 与 VERSION 中的 $version 不一致" }
           $process = Start-Process $app.FullName -PassThru

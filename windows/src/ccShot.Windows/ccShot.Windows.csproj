@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>ccShot.Windows</RootNamespace>
+    <AssemblyName>ccShot</AssemblyName>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\ccShot.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <!-- WPF needs PerMonitorV2 in the manifest; the WinForms analyzer only knows about ApplicationHighDpiMode. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../ccShot.Core/ccShot.Core.csproj" />
+    <InternalsVisibleTo Include="ccShot.Windows.Smoke" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Assets\ccShot.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

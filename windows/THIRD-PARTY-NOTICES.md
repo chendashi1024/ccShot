@@ -22,12 +22,12 @@ WPF 和 WinForms 的声明按实际运行时版本附带。 [WPF v8.0.34 声明]
 
 | 组件 | 版本 | 用途 | 许可 |
 |---|---|---|---|
-| StbImageSharp | 2.30.15 | 仅 `CcShot.Tools` 读取基准样本 PNG | 见 [上游许可](https://github.com/StbSharp/StbImageSharp#license) |
+| StbImageSharp | 2.30.15 | 仅 `ccShot.Tools` 读取基准样本 PNG | 见 [上游许可](https://github.com/StbSharp/StbImageSharp#license) |
 | xUnit / Microsoft.NET.Test.Sdk | 2.9.2 / 17.11.1 | 仅测试 | Apache-2.0 / MIT |
 
-分发前可用 `dotnet list package --include-transitive src/CcShot.Windows` 复核随包依赖，确认与应用实际引用一致。
+分发前可用 `dotnet list package --include-transitive src/ccShot.Windows` 复核随包依赖，确认与应用实际引用一致。
 
 ## 待补 / 未确认
 
 1. **模型对外分发复核。** 模型托管页标注 Apache-2.0，打包校验权重哈希并附上游许可。发布前仍需核对随包具体权重的来源声明和附加条件。 [RapidOCR 模型卡](https://huggingface.co/SWHL/RapidOCR)
-2. **图标。** `Assets/ccshot.ico` 由仓库内 `app/Resources/AppIcon.icns` 转换，属项目自有资产。
+2. **图标。** `Assets/ccShot.ico` 由仓库内 `app/Resources/AppIcon.icns` 转换，属项目自有资产。
