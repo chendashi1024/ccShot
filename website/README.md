@@ -25,7 +25,7 @@ node --test website/test/*.js
 ## 正式站验收
 
 - 打开 [首页](https://ccshot.app/)，核对页面和图标，检查样式切换与图片放大。
-- 主下载 `/go/download` 和备用下载 `/go/download?source=github` 均跳到同一份 GitHub Release 安装包。分别实际下载后核对 SHA-256。
+- macOS 下载 `/go/download` 和备用下载 `/go/download?source=github` 指向同一份 DMG。Windows 下载 `/go/download?platform=windows` 指向同一 Release 的唯一 Windows x64 ZIP。实际下载两端的文件并核对 SHA-256。
 - `/go/github?to=repo` 跳到 GitHub 仓库，`/go/github?to=release` 跳到对应版本的安装说明。
 
-当前官网显示 v0.1.2。安装包为 1,837,416 字节，SHA-256 为 `93b6209f1f9c992b0bf9e9853201304e1d4aa45633bc5d31b651a549a7fc4a70`。 [发布页](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2)
+官网展示版本与仓库根目录的 [VERSION](../VERSION) 对齐。 [发布页和校验文件](https://github.com/chendashi1024/ccShot/releases)

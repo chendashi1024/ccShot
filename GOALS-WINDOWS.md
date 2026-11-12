@@ -1,6 +1,6 @@
 # ccShot Windows 版目标
 
-制定日期 2026-11-11。交接给 WorkBuddy。当前状态为待启动，Windows 工程和实测结果待交付。
+制定日期 2026-11-11。WorkBuddy 完成首版实现与验证，Windows 工程合入 `main`，随 ccShot 的统一版本发布。 [当前构建与验收](windows/README.md)
 
 ## 1. 产品目标
 
@@ -10,7 +10,7 @@
 
 AI 问答、美化、长截图、历史、录屏和自动更新留待后续。实现集中在仓库独立的 `windows/` 目录，复用现有图标、交互参考和可公开的测试图片。Mac 工程、官网及现有发行渠道在本次开发范围之外。
 
-## 2. WorkBuddy 接手方式
+## 2. 首版开发交接
 
 1. 在 `chendashi1024/ccShot` 仓库读取 [AGENTS.md](AGENTS.md)、本文件和 [WIN-01 至 WIN-07](docs/功能清单与验收标准.md#windows-validation)。按以下顺序实施，每阶段交付可复核结果后继续依赖它的工作。
 2. WorkBuddy 开工前，从最新的 `origin/main` 创建并切换到 Windows 专用分支 `workbuddy/ccshot-windows`。Windows 的开发、提交和推送都在这个分支进行，保留其他人的工作区改动。是否合并到 `main` 由用户决定。

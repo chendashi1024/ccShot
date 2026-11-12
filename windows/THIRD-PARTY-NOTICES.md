@@ -1,6 +1,6 @@
 # 第三方组件与许可（Windows 版）
 
-核对日期：2026-11-11。只记录本次实际下载、实际打包的资产；没有核实的项标为待确认，不作为可分发依据。
+核对日期为 2026-11-12。清单记录 Windows ZIP 实际使用的资产。
 
 ## 随包分发的资产
 
@@ -27,7 +27,7 @@ WPF 和 WinForms 的声明按实际运行时版本附带。 [WPF v8.0.34 声明]
 
 分发前可用 `dotnet list package --include-transitive src/ccShot.Windows` 复核随包依赖，确认与应用实际引用一致。
 
-## 待补 / 未确认
+## 随包资产核对
 
-1. **模型对外分发复核。** 模型托管页标注 Apache-2.0，打包校验权重哈希并附上游许可。发布前仍需核对随包具体权重的来源声明和附加条件。 [RapidOCR 模型卡](https://huggingface.co/SWHL/RapidOCR)
-2. **图标。** `Assets/ccShot.ico` 由仓库内 `app/Resources/AppIcon.icns` 转换，属项目自有资产。
+- RapidOCR 模型卡声明 Apache-2.0，说明 PP-OCRv4 ONNX 文件从 PaddleOCR 转换。轻量检测和识别权重的 Git LFS SHA-256 均与 [模型锁定清单](models/models.lock.json) 一致。随包提供 PaddleOCR 与 RapidOCR 的许可原文，并在此声明记录转换来源。 [模型卡](https://huggingface.co/SWHL/RapidOCR) · [权重目录](https://huggingface.co/SWHL/RapidOCR/tree/main/PP-OCRv4)
+- `Assets/ccShot.ico` 由仓库内 `app/Resources/AppIcon.icns` 转换，属项目自有资产。

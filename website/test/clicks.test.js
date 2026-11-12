@@ -10,9 +10,11 @@ import {
 } from "../src/index.js";
 
 const R2 = "https://download.ccshot.app/example.dmg";
-const GITHUB = "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg";
 const REPO = "https://github.com/chendashi1024/ccShot";
-const RELEASE = "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2";
+const VERSION = readFileSync(new URL("../../VERSION", import.meta.url), "utf8").trim();
+const GITHUB = `${REPO}/releases/download/v${VERSION}/ccShot-${VERSION}-macos-arm64.dmg`;
+const WINDOWS = `${REPO}/releases/download/v${VERSION}/ccShot-${VERSION}-windows-x64.zip`;
+const RELEASE = `${REPO}/releases/tag/v${VERSION}`;
 
 function fakeEnv() {
   return {
@@ -34,7 +36,7 @@ fakeEnv.points = [];
 test("primary download redirects to the verified GitHub file", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download?utm=ignored"));
   assert.equal(decision.event, "download_github");
-  assert.equal(decision.kind, "0.1.2");
+  assert.equal(decision.kind, VERSION);
   assert.equal(decision.location, GITHUB);
 });
 
@@ -42,6 +44,16 @@ test("github backup stays on the release asset", () => {
   const decision = resolveClick(new URL("https://ccshot.app/go/download?source=github&next=https://evil.example"));
   assert.equal(decision.event, "download_github");
   assert.equal(decision.location, GITHUB);
+});
+
+test("Windows download selects the single Windows ZIP", () => {
+  const url = new URL("https://ccshot.app/go/download?platform=windows");
+  const config = { ...downloadConfig, r2DownloadUrl: R2 };
+  assert.equal(resolveClick(url, config).location, WINDOWS);
+  url.searchParams.set("source", "github");
+  assert.equal(resolveClick(url, config).location, WINDOWS);
+  url.searchParams.set("platform", "other");
+  assert.equal(resolveClick(url, config).status, 404);
 });
 
 test("a configured mirror remains available for the primary download", () => {
@@ -92,7 +104,7 @@ test("GET records one point and redirects; HEAD does not record", async () => {
   assert.equal(response.headers.get("location"), GITHUB);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(fakeEnv.points.length, 1);
-  assert.deepEqual(fakeEnv.points[0], { indexes: ["download_github"], blobs: ["0.1.2"], doubles: [1] });
+  assert.deepEqual(fakeEnv.points[0], { indexes: ["download_github"], blobs: [VERSION], doubles: [1] });
 
   const head = await handleRequest(new Request("https://ccshot.app/go/github?to=repo", { method: "HEAD" }), env);
   assert.equal(head.status, 302);

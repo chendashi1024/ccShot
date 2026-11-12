@@ -7,19 +7,19 @@
 
     <main id="cc-home">
       <section class="hero wrap">
-        <p class="badge"><span></span>完全免费 · Mac 原生</p>
+        <p class="badge"><span></span>免费开源</p>
         <h1>截完图，<span>直接选字。</span></h1>
         <p class="hero-intro">截图、标注、提取文字。常用的功能，刚刚好。</p>
-        <div class="hero-actions"><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a></div>
-        <p class="platform">v0.1.2 预览版 · Apple Silicon · macOS 14+</p>
+        <div class="hero-actions"><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.3/ccShot-0.1.3-macos-arm64.dmg">下载 macOS 版 <span aria-hidden="true">↓</span></a><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.3/ccShot-0.1.3-windows-x64.zip">下载 Windows 版 <span aria-hidden="true">↓</span></a></div>
+        <p class="platform">v0.1.3 · macOS 14+（Apple Silicon）· Windows x64</p>
         <button class="image-button hero-image" data-zoom="arrow" aria-label="放大查看截图标注界面"><img src="assets/arrow.jpg" alt="绿色圆润的 ccShot 截图界面示意，珊瑚橙曲线箭头指向笔记重点，下方为精简工具栏" width="1088" height="660"></button>
       </section>
 
       <section id="cc-features" class="feature wrap">
         <div class="feature-copy">
           <h2>图里的文字，<br>直接拿来用。</h2>
-          <p>截图后自动识别文字，拖选需要的部分就能复制。省去打开微信、再提取文字的步骤。</p>
-          <div class="key-line"><kbd>⌘</kbd><kbd>C</kbd><span>选好，复制。</span></div>
+          <p>截图后自动识别文字，拖选需要的部分就能复制。macOS 使用系统 VisionKit，Windows 使用随包提供的 PaddleOCR 模型，两端都能离线识字。</p>
+          <div class="key-line"><kbd>⌘C</kbd><kbd>Ctrl+C</kbd><span>选好，复制。</span></div>
         </div>
         <button class="image-button ocr-image" data-zoom="select" aria-label="放大查看直接选字界面"><img src="assets/select.jpg" alt="截图中的两行文字被直接选中，选字与其他截图工具在同一个界面" width="1088" height="660"></button>
       </section>
@@ -58,9 +58,9 @@
         <div class="wrap download-inner">
           <img class="closing-icon" src="assets/icon.png" width="64" height="64" alt="">
           <h2>好用的截图工具。<br><span>完全免费。</span></h2>
-          <a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg">免费下载 macOS 版 <span aria-hidden="true">↓</span></a>
-          <p class="platform">v0.1.2 预览版 · Apple Silicon · macOS 14+</p>
-          <a class="text-link" href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2">安装说明与校验值 ↗</a>
+          <div class="download-actions"><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.3/ccShot-0.1.3-macos-arm64.dmg">下载 macOS 版 <span aria-hidden="true">↓</span></a><a class="button" href="https://github.com/chendashi1024/ccShot/releases/download/v0.1.3/ccShot-0.1.3-windows-x64.zip">下载 Windows 版 <span aria-hidden="true">↓</span></a></div>
+          <p class="platform">v0.1.3 · macOS 14+（Apple Silicon）· Windows x64</p>
+          <a class="text-link" href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.3">安装说明与校验值 ↗</a>
         </div>
       </section>
     </main>
@@ -126,6 +126,7 @@
 #ccShot-website-v2 .principles h3{font-size:18px;margin:0 0 12px}
 #ccShot-website-v2 .principles p{font-size:14px;color:var(--muted);line-height:1.9}
 #ccShot-website-v2 .download-section{background:#e6edde;padding:67px 0 76px;text-align:center}
+#ccShot-website-v2 .download-actions{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
 #ccShot-website-v2 .closing-icon{margin-bottom:14px}
 #ccShot-website-v2 .download-inner h2{font-size:clamp(32px,4vw,48px);line-height:1.35}
 #ccShot-website-v2 .download-inner h2 span{color:var(--green)}

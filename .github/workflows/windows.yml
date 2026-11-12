@@ -2,7 +2,7 @@ name: Windows 构建与桌面验证
 
 on:
   push:
-    branches: [workbuddy/ccshot-windows]
+    branches: [main, workbuddy/ccshot-windows]
     paths: ['VERSION', 'windows/**', '.github/workflows/windows.yml']
 
 permissions:

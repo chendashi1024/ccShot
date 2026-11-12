@@ -1,12 +1,17 @@
 // Click redirects for ccshot.app.
 // Counts are redirect requests, not completed downloads and not GitHub stars.
 
+const version = "0.1.3";
+const repository = "https://github.com/chendashi1024/ccShot";
+const assets = `${repository}/releases/download/v${version}`;
+
 export const downloadConfig = {
-  version: "0.1.2",
+  version,
   r2DownloadUrl: null,
-  githubReleaseAsset: "https://github.com/chendashi1024/ccShot/releases/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg",
-  githubReleasePage: "https://github.com/chendashi1024/ccShot/releases/tag/v0.1.2",
-  githubRepository: "https://github.com/chendashi1024/ccShot",
+  githubReleaseAsset: `${assets}/ccShot-${version}-macos-arm64.dmg`,
+  githubWindowsReleaseAsset: `${assets}/ccShot-${version}-windows-x64.zip`,
+  githubReleasePage: `${repository}/releases/tag/v${version}`,
+  githubRepository: repository,
 };
 
 const EVENTS = new Set(["download_r2", "download_github", "github_exit"]);
@@ -37,14 +42,16 @@ export function resolveClick(url, config = downloadConfig) {
   const path = normalizePath(url.pathname);
   if (path === "/go/download") {
     const source = url.searchParams.get("source");
+    const platform = url.searchParams.get("platform") ?? "macos";
     if (source !== null && source !== "github") return { status: 404 };
-    const useGithub = source === "github" || !validHttps(config.r2DownloadUrl);
+    if (platform !== "macos" && platform !== "windows") return { status: 404 };
+    const useGithub = platform === "windows" || source === "github" || !validHttps(config.r2DownloadUrl);
     if (useGithub) {
       return {
         status: 302,
         event: "download_github",
         kind: config.version,
-        location: config.githubReleaseAsset,
+        location: platform === "windows" ? config.githubWindowsReleaseAsset : config.githubReleaseAsset,
       };
     }
     return {

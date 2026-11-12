@@ -1,5 +1,12 @@
 # 更新日志
 
+## 0.1.3 · 2026-11-12
+
+- 首次在同一个 Release 提供 macOS Apple Silicon DMG 和 Windows x64 ZIP。两端共用一个产品版本号。
+- Windows 支持区域、窗口和当前屏截图、常用标注、图上拖选文字、复制、保存与可编辑钉图。
+- Windows ZIP 内含 PP-OCRv4 轻量模型、ONNX Runtime、.NET 桌面运行时和 Visual C++ 运行库，完整解压即可离线识字。
+- 官网提供两个平台的下载入口，README 说明 macOS 系统 API 和 Windows 本地模型的识字流程。
+
 ## 0.1.2 · 2026-11-10
 
 - 修复截图编辑的撤销、重做路由，支持 ⌘Z / ⌘⇧Z，并兼容 Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y；文字输入与标注各自撤销。

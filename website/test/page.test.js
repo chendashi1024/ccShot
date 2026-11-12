@@ -7,6 +7,8 @@ import { downloadConfig } from "../src/index.js";
 const site = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
 const offline = readFileSync(new URL("../../docs/website-preview/index.html", import.meta.url), "utf8");
 const metadata = JSON.parse(readFileSync(new URL("../deploy/metadata.json", import.meta.url), "utf8"));
+const version = readFileSync(new URL("../../VERSION", import.meta.url), "utf8").trim();
+const compatibility = `v${version} · macOS 14+（Apple Silicon）· Windows x64`;
 
 function hrefs(html, marker) {
   return [...html.matchAll(new RegExp(`<a\\b[^>]*${marker}[^>]*>`, "g"))].map((match) => {
@@ -16,24 +18,28 @@ function hrefs(html, marker) {
 }
 
 test("deployed page uses download and GitHub redirects", () => {
-  assert.deepEqual(hrefs(site, 'data-exit="download"'), ["/go/download", "/go/download"]);
+  assert.deepEqual(hrefs(site, 'data-exit="download"'), [
+    "/go/download", "/go/download?platform=windows",
+    "/go/download", "/go/download?platform=windows",
+  ]);
   assert.ok(hrefs(site, 'data-exit="github"').every((href) => href === "/go/github?to=repo"));
   assert.deepEqual(hrefs(site, 'data-exit="release"'), ["/go/github?to=release"]);
   assert.ok(site.includes("GitHub 标星"));
   const structured = JSON.parse(site.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
-  assert.equal(structured.softwareVersion, "0.1.2");
-  assert.equal(structured.downloadUrl, downloadConfig.githubReleaseAsset);
+  assert.equal(structured.softwareVersion, version);
+  assert.deepEqual(structured.downloadUrl, [downloadConfig.githubReleaseAsset, downloadConfig.githubWindowsReleaseAsset]);
   assert.equal((site.match(/<h1>/g) || []).length, 1);
   assert.ok(site.includes('lang="zh-CN"'));
   assert.ok(site.includes('name="viewport"'));
   assert.ok(site.includes('rel="canonical" href="https://ccshot.app/"'));
-  assert.equal((site.match(/v0\.1\.2 公开预览版 · Apple Silicon（arm64）· macOS 14\+/g) ?? []).length, 2);
-  assert.doesNotMatch(site, /\b0\.1\.0\b/);
+  assert.equal(site.split(compatibility).length - 1, 2);
+  assert.match(site, /VisionKit/);
+  assert.match(site, /PaddleOCR/);
 });
 
 test("the download section shows one line of compatibility and an installation link", () => {
   const section = site.match(/<section\b[^>]*id="cc-download"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
-  assert.match(section, /<p class="platform">v0\.1\.2 公开预览版 · Apple Silicon（arm64）· macOS 14\+ · <a\b[^>]*>安装说明<\/a><\/p>/);
+  assert.ok(section.includes(`<p class="platform">${compatibility} · <a`));
   assert.equal((section.match(/<p\b/g) ?? []).length, 1);
 });
 
@@ -54,10 +60,10 @@ test("public pages open external pages in a new tab", () => {
 
 test("offline page downloads the real files without the worker", () => {
   const links = [...offline.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map((match) => match[1]);
-  const release = "https://github.com/chendashi1024/ccShot/releases";
-  const asset = `${release}/download/v0.1.2/ccShot-0.1.2-macos-arm64.dmg`;
-  assert.equal(links.filter((link) => link === asset).length, 2);
-  assert.ok(links.includes(`${release}/tag/v0.1.2`));
+  for (const asset of [downloadConfig.githubReleaseAsset, downloadConfig.githubWindowsReleaseAsset]) {
+    assert.equal(links.filter((link) => link === asset).length, 2);
+  }
+  assert.ok(links.includes(downloadConfig.githubReleasePage));
   assert.ok(links.every((link) => !link.startsWith("/go/")));
 });
 
