@@ -64,14 +64,30 @@ jobs:
           } finally {
             Remove-NetFirewallRule -Name $rule.Name
           }
-      - name: 验证自包含程序启动
+      - name: 生成 Windows ZIP 试用包
+        shell: bash
+        env:
+          PYTHON: python
+        run: bash windows/tools/package.sh
+      - name: 核对 ZIP 中的 Visual C++ 运行库并启动自包含程序
         shell: pwsh
         run: |
-          $appDir = Join-Path $env:RUNNER_TEMP 'ccshot-portable'
-          dotnet publish windows/src/CcShot.Windows -c Release -r win-x64 --self-contained true -o $appDir
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          New-Item -ItemType Directory -Force "$appDir/models" | Out-Null
-          Copy-Item -Recurse windows/models/mobile "$appDir/models"
+          $revision = git rev-parse --short HEAD
+          $packages = "windows/dist/packages/$revision"
+          $runtime = 'msvcp140.dll', 'msvcp140_1.dll', 'vcruntime140.dll', 'vcruntime140_1.dll'
+          foreach ($kind in 'fd', 'sc') {
+            $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path "$packages/ccShot-win-x64-$kind.zip").Path)
+            try {
+              foreach ($dll in $runtime) {
+                if (-not $archive.GetEntry("$kind/$dll")) { throw "试用包 $kind 缺少 $dll" }
+              }
+            } finally {
+              $archive.Dispose()
+            }
+          }
+          $output = Join-Path $env:RUNNER_TEMP 'ccshot-portable'
+          Expand-Archive -LiteralPath "$packages/ccShot-win-x64-sc.zip" -DestinationPath $output
+          $appDir = Join-Path $output 'sc'
           $process = Start-Process "$appDir/CcShot.exe" -PassThru
           try {
             Start-Sleep -Seconds 2

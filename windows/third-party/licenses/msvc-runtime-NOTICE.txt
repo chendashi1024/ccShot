@@ -1,0 +1,15 @@
+Microsoft Visual C++ x64 运行库
+
+版权归 Microsoft Corporation 所有。下列 DLL 来自 Visual Studio 2022
+的 Microsoft.VC143.CRT x64 可再分发目录，并按微软的可再分发代码条款随应用提供。
+
+  msvcp140.dll
+  msvcp140_1.dll
+  vcruntime140.dll
+  vcruntime140_1.dll
+
+微软可再分发代码清单
+https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution
+
+微软运行库许可条款
+https://visualstudio.microsoft.com/license-terms/vs2022-cruntime/

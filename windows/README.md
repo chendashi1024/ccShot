@@ -10,7 +10,7 @@ PaddleOCR 模型 + ONNX Runtime 在 CPU 上跑，不需要账号、网络、独�
 | 代码 | 托盘、全局热键、区域/窗口/当前屏截图、选区调整、原位标注、文字拖选、复制/保存、钉图选字与继续编辑 |
 | 构建与测试 | Mac 交叉构建通过，64 项核心测试通过。Windows Server 2025 x64 的构建和同一批 64 项测试也已通过 |
 | Windows 桌面 | 在托管 Windows x64 桌面实际唤起、框选、CPU 识字、拖选并回读剪贴板，连续唤起和 Esc 取消、窗口点选、钉图继续编辑、三种遮挡后的剪贴板检查均通过 |
-| 试用包 | 依赖系统运行时和自包含的两个本地 ZIP，内置轻量模型。自包含包附 .NET 和桌面组件第三方声明 |
+| 试用包 | 两个 ZIP 均附轻量模型和 OCR 所需的 x64 Visual C++ 运行库。自包含包另附 .NET 桌面运行时和第三方声明 |
 | 待验收 | Windows 11 实机、不同缩放比例的双屏、干净系统覆盖升级和卸载，以及对外发布前的分发核对 |
 
 Windows 的测试结论和首轮历史数据见 [阶段报告](REPORT-2026-11-11.md)。
@@ -37,7 +37,7 @@ windows/
 ## 构建与运行
 
 ```bash
-# 依赖 .NET 8 SDK；打包另需 Python 3 和 zip
+# 依赖 .NET 8 SDK；打包另需 Python 3
 cd windows
 dotnet build -c Release                     # 三个工程 + 测试工程，可在 macOS 上交叉编译
 dotnet test tests/CcShot.Core.Tests         # 64 项逻辑测试
@@ -45,9 +45,12 @@ dotnet test tests/CcShot.Core.Tests         # 64 项逻辑测试
 ./tools/fetch-models.sh mobile              # 下载 PP-OCRv4 轻量模型（14.9 MB）
 ./tools/package.sh                          # 生成 dist/packages/<commit>/ 下的两个 ZIP
 
-# 在 Windows 上直接运行（需要 .NET 8 Desktop Runtime）
+# 在 Windows 上从源码运行（需要 .NET 8 Desktop Runtime 和兼容的 x64 Visual C++ 运行库）
 dotnet run --project src/CcShot.Windows -c Release
 ```
+
+打包脚本从微软 Redist 组件取出四个 x64 DLL，校验 SHA-256 后将它们放在两个 ZIP 的 `CcShot.exe` 旁边。
+组件版本和下载地址见 [运行库清单](tools/vc-runtime.lock.json)。首次打包会下载组件，后续可用 `dist/vc-runtime/` 中的校验缓存。
 
 程序启动后只在托盘出现，没有主窗口。默认快捷键 `Ctrl+Alt+X`（可在设置里改，冲突会就地提示）。
 

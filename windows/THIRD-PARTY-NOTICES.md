@@ -10,6 +10,7 @@
 | PP-OCRv4 识别模型（轻量） | `models/mobile/rec.onnx`，10 857 958 字节，SHA-256 `48fc40f24f6d2a207a2b1091d3437eb3cc3eb6b676dc3ef9c37384005483683b` | 同上（`PP-OCRv4/ch_PP-OCRv4_rec_infer.onnx`） | Apache-2.0 | 同上 |
 | 识别字典 | `models/mobile/dict.txt`，26 250 字节，6623 条，SHA-256 `a1c84d9bdb9ab29043c58896224d32941783eb821629618416dcb08f12886492` | PaddleOCR 仓库 `ppocr/utils/ppocr_keys_v1.txt` | Apache-2.0 | 同上 |
 | ONNX Runtime | `Microsoft.ML.OnnxRuntime` 1.20.1（NuGet） | Microsoft | MIT | `LICENSES/onnxruntime-LICENSE.txt`、`LICENSES/onnxruntime-third-party-notices.txt` |
+| Visual C++ x64 运行库（两个 ZIP 内含） | Visual Studio 2022 Redist 组件 `14.44.35211` 中的四个 `Microsoft.VC143.CRT` DLL | [微软官方组件和 SHA-256](tools/vc-runtime.lock.json) | [微软可再分发代码条款](https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution) | `LICENSES/msvc-runtime-NOTICE.txt` |
 | .NET 8 运行时（自包含包内含） | 8.0.34（自包含打包时校验） | Microsoft | MIT | `LICENSES/Microsoft.NETCore.App.Runtime.win-x64-LICENSE.txt`、`LICENSES/Microsoft.NETCore.App.Runtime.win-x64-THIRD-PARTY-NOTICES.txt` |
 | Windows Desktop（WPF / WinForms，自包含包内含） | 8.0.34 | Microsoft | MIT | `LICENSES/Microsoft.WindowsDesktop.App.Runtime.win-x64-LICENSE.txt`、`LICENSES/wpf-THIRD-PARTY-NOTICES.txt`、`LICENSES/winforms-THIRD-PARTY-NOTICES.txt` |
 

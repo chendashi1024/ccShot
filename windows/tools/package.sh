@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
-# Builds the Windows preview packages and prints the size evidence required by WIN-06.
-#
-#   ./tools/package.sh            # framework-dependent + self-contained
-#
-# The framework-dependent package needs the .NET 8 Desktop Runtime; the self-contained one does not.
-#
-# Nothing here is signed. The package is a preview build, not a release.
+# 生成框架依赖和自包含两个 Windows 预览包，并记录大小和校验值。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,13 +11,14 @@ OUT="$ROOT/dist/packages/$VERSION"
 # 每个 .NET 桌面运行时版本都有对应的第三方声明。
 RUNTIME_VERSION=8.0.34
 export RUNTIME_VERSION
+PYTHON="${PYTHON:-python3}"
 mkdir -p "$(dirname "$OUT")"
 STAGING="$(mktemp -d "$(dirname "$OUT")/.package-$VERSION.XXXXXX")"
 trap 'rm -rf "$STAGING"' EXIT
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
-python3 - <<'PY'
+"$PYTHON" - <<'PY'
 import hashlib
 import json
 from pathlib import Path
@@ -59,7 +54,7 @@ publish() {
   fi
   dotnet publish src/CcShot.Windows/CcShot.Windows.csproj -c Release -r win-x64 \
     --self-contained "$selfcontained" -o "$target" -v quiet --nologo "$@"
-  # Documentation and symbols are not part of a trial package.
+  # 试用包不附调试符号。
   find "$target" -name '*.pdb' -delete
 }
 
@@ -75,7 +70,7 @@ mkdir -p "$SC"
 publish true "$SC"
 copy_common "$SC"
 
-python3 - "$SC" <<'PY'
+"$PYTHON" - "$SC" <<'PY'
 import json
 import os
 import shutil
@@ -104,10 +99,27 @@ for component in ('wpf', 'winforms'):
     shutil.copyfile(notices / name, target / 'LICENSES' / name)
 PY
 
+"$PYTHON" "$ROOT/tools/stage-vc-runtime.py" "$FD" "$SC"
+
 cd "$STAGING"
-rm -f ccShot-win-x64-fd.zip ccShot-win-x64-sc.zip
-zip -qr ccShot-win-x64-fd.zip fd
-zip -qr ccShot-win-x64-sc.zip sc
+"$PYTHON" - <<'PY'
+import hashlib
+from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
+
+with Path("SHA256SUMS.txt").open("w", encoding="ascii", newline="\n") as sums:
+    for kind in ("fd", "sc"):
+        name = f"ccShot-win-x64-{kind}.zip"
+        with ZipFile(name, "w", ZIP_DEFLATED) as archive:
+            for path in sorted(Path(kind).rglob("*")):
+                if path.is_file():
+                    archive.write(path, path.as_posix())
+        digest = hashlib.sha256()
+        with Path(name).open("rb") as package:
+            for chunk in iter(lambda: package.read(1024 * 1024), b""):
+                digest.update(chunk)
+        sums.write(f"{digest.hexdigest()}  {name}\n")
+PY
 
 size_of() { du -sk "$1" | awk '{printf "%.1f MB", $1/1024}'; }
 size_of_kb() {
@@ -130,7 +142,7 @@ echo "download fd       $(size_of ccShot-win-x64-fd.zip)"
 echo "download sc       $(size_of ccShot-win-x64-sc.zip)"
 echo
 echo "SHA-256:"
-shasum -a 256 ccShot-win-x64-fd.zip ccShot-win-x64-sc.zip | tee SHA256SUMS.txt
+cat SHA256SUMS.txt
 cd "$ROOT"
 if [[ -e "$OUT" ]]; then
   OUT="$OUT-$(date -u +%Y%m%dT%H%M%SZ)"
