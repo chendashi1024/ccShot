@@ -2,12 +2,16 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-version=${1:-}
+version=$(<../VERSION)
 if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "用法：bash app/package-release.sh MAJOR.MINOR.PATCH" >&2
+  echo "VERSION 应为 MAJOR.MINOR.PATCH。" >&2
   exit 1
 fi
-if [ -n "$(git status --porcelain -- Sources Resources build.sh package-release.sh ../LICENSE)" ]; then
+if [[ "${1:-$version}" != "$version" ]]; then
+  echo "打包版本必须与 VERSION 中的 $version 一致。" >&2
+  exit 1
+fi
+if [ -n "$(git status --porcelain -- Sources Resources build.sh package-release.sh ../LICENSE ../VERSION)" ]; then
   echo "请先提交构建输入，再生成发行包。" >&2
   exit 1
 fi

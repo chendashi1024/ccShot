@@ -8,6 +8,7 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>CcShot.Windows</RootNamespace>
     <AssemblyName>CcShot</AssemblyName>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\ccshot.ico</ApplicationIcon>
     <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>

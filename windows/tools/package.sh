@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
-# 生成框架依赖和自包含两个 Windows 预览包，并记录大小和校验值。
+# 生成一个自包含的 Windows x64 ZIP 和校验文件。
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo nogit)"
+VERSION=$(<"$ROOT/../VERSION")
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "VERSION 应为 MAJOR.MINOR.PATCH。" >&2
+  exit 1
+fi
+NAME="ccShot-$VERSION-windows-x64"
+REVISION="$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo nogit)"
 COMMIT="$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
-OUT="$ROOT/dist/packages/$VERSION"
+OUT="$ROOT/dist/packages/$REVISION"
 # 每个 .NET 桌面运行时版本都有对应的第三方声明。
 RUNTIME_VERSION=8.0.34
 export RUNTIME_VERSION
 PYTHON="${PYTHON:-python3}"
 mkdir -p "$(dirname "$OUT")"
-STAGING="$(mktemp -d "$(dirname "$OUT")/.package-$VERSION.XXXXXX")"
+STAGING="$(mktemp -d "$(dirname "$OUT")/.package-$REVISION.XXXXXX")"
 trap 'rm -rf "$STAGING"' EXIT
 
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
@@ -36,42 +42,21 @@ for asset in assets:
         raise SystemExit(f'{path} 与锁定的模型不一致。')
 PY
 
-copy_common() {
-  local target="$1"
-  mkdir -p "$target/models/mobile" "$target/LICENSES"
-  cp "$ROOT/models/mobile/det.onnx" "$ROOT/models/mobile/rec.onnx" "$ROOT/models/mobile/dict.txt" "$target/models/mobile/"
-  cp "$ROOT/../LICENSE" "$target/LICENSES/ccshot-LICENSE.txt"
-  cp "$ROOT/third-party/licenses/"*.txt "$target/LICENSES/"
-  cp "$ROOT/docs/使用说明.txt" "$target/README.txt"
-  cp "$ROOT/THIRD-PARTY-NOTICES.md" "$target/THIRD-PARTY-NOTICES.txt"
-  printf 'ccShot Windows preview\ncommit: %s\nbuilt: %s\n' "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$target/BUILD-INFO.txt"
-}
+TARGET="$STAGING/$NAME"
+dotnet publish src/CcShot.Windows/CcShot.Windows.csproj -c Release -r win-x64 \
+  --self-contained true -p:RuntimeFrameworkVersion="$RUNTIME_VERSION" -o "$TARGET" -v quiet --nologo
+find "$TARGET" -name '*.pdb' -delete
 
-publish() {
-  local selfcontained="$1" target="$2"
-  set --
-  if [[ "$selfcontained" == true ]]; then
-    set -- "-p:RuntimeFrameworkVersion=$RUNTIME_VERSION"
-  fi
-  dotnet publish src/CcShot.Windows/CcShot.Windows.csproj -c Release -r win-x64 \
-    --self-contained "$selfcontained" -o "$target" -v quiet --nologo "$@"
-  # 试用包不附调试符号。
-  find "$target" -name '*.pdb' -delete
-}
+mkdir -p "$TARGET/models/mobile" "$TARGET/LICENSES"
+cp "$ROOT/models/mobile/det.onnx" "$ROOT/models/mobile/rec.onnx" "$ROOT/models/mobile/dict.txt" "$TARGET/models/mobile/"
+cp "$ROOT/../LICENSE" "$TARGET/LICENSES/ccshot-LICENSE.txt"
+cp "$ROOT/third-party/licenses/"*.txt "$TARGET/LICENSES/"
+cp "$ROOT/docs/使用说明.txt" "$TARGET/README.txt"
+cp "$ROOT/THIRD-PARTY-NOTICES.md" "$TARGET/THIRD-PARTY-NOTICES.txt"
+printf 'ccShot Windows\nversion: %s\ncommit: %s\nbuilt: %s\n' \
+  "$VERSION" "$COMMIT" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$TARGET/BUILD-INFO.txt"
 
-echo "== framework-dependent"
-FD="$STAGING/fd"
-mkdir -p "$FD"
-publish false "$FD"
-copy_common "$FD"
-
-echo "== self-contained"
-SC="$STAGING/sc"
-mkdir -p "$SC"
-publish true "$SC"
-copy_common "$SC"
-
-"$PYTHON" - "$SC" <<'PY'
+"$PYTHON" - "$TARGET" <<'PY'
 import json
 import os
 import shutil
@@ -100,53 +85,40 @@ for component in ('wpf', 'winforms'):
     shutil.copyfile(notices / name, target / 'LICENSES' / name)
 PY
 
-"$PYTHON" "$ROOT/tools/stage-vc-runtime.py" "$FD" "$SC"
+"$PYTHON" "$ROOT/tools/stage-vc-runtime.py" "$TARGET"
 
 cd "$STAGING"
-"$PYTHON" - <<'PY'
+"$PYTHON" - "$NAME" "$OUT" <<'PY'
 import hashlib
+import os
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
-with Path("SHA256SUMS.txt").open("w", encoding="ascii", newline="\n") as sums:
-    for kind in ("fd", "sc"):
-        package = Path(f"ccShot-win-x64-{kind}.zip")
-        with ZipFile(package, "w", ZIP_DEFLATED) as archive:
-            for path in sorted(Path(kind).rglob("*")):
-                if path.is_file():
-                    archive.write(path, path.as_posix())
-        digest = hashlib.sha256()
-        with package.open("rb") as source:
-            for chunk in iter(lambda: source.read(1024 * 1024), b""):
-                digest.update(chunk)
-        sums.write(f"{digest.hexdigest()}  {package.name}\n")
-        size = package.stat().st_size
-        print(f"{package.name}  {size:,} 字节（{size / 1_000_000:.2f} MB）")
+target, output = map(Path, sys.argv[1:])
+deliverables = Path("package")
+deliverables.mkdir()
+package = deliverables / f"{target.name}.zip"
+with ZipFile(package, "w", ZIP_DEFLATED) as archive:
+    for path in sorted(target.rglob("*")):
+        if path.is_file():
+            archive.write(path, path.as_posix())
+
+digest = hashlib.sha256()
+with package.open("rb") as source:
+    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+        digest.update(chunk)
+checksum = f"{digest.hexdigest()}  {package.name}"
+with (deliverables / "SHA256SUMS.txt").open("w", encoding="ascii", newline="\n") as sums:
+    sums.write(checksum + "\n")
+size = package.stat().st_size
+
+if output.exists():
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    output = output.with_name(f"{output.name}-{stamp}-{os.getpid()}")
+deliverables.rename(output)
+print(f"{package.name}  {size:,} 字节（{size / 1_000_000:.2f} MB）")
+print(f"SHA-256  {checksum}")
+print(f"包目录 {output}")
 PY
-
-size_of() { du -sk "$1" | awk '{printf "%.1f MB", $1/1024}'; }
-size_of_kb() {
-  local total models
-  total=$(du -sk "$1" | awk '{print $1}')
-  models=$(du -sk "$1/models/mobile" 2>/dev/null | awk '{print $1}')
-  models=${models:-0}
-  awk -v a="$total" -v b="$models" 'BEGIN {printf "%.1f MB", (a-b)/1024}'
-}
-
-echo
-echo "commit            $COMMIT"
-echo "version tag       $VERSION"
-if [[ -d "$FD/models/mobile" ]]; then
-  echo "models (mobile)   $(size_of "$FD/models/mobile")"
-fi
-echo "installed fd      $(size_of "$FD")   (app $(size_of_kb "$FD") − models $(size_of "$FD/models/mobile"))"
-echo "installed sc      $(size_of "$SC")"
-echo
-echo "SHA-256:"
-cat SHA256SUMS.txt
-cd "$ROOT"
-if [[ -e "$OUT" ]]; then
-  OUT="$OUT-$(date -u +%Y%m%dT%H%M%SZ)"
-fi
-mv "$STAGING" "$OUT"
-echo "包目录 $OUT"

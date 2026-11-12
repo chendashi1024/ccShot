@@ -10,7 +10,7 @@ cd windows
 
 | 目录 | 组合 | 检测 | 识别 | 合计 |
 |---|---|---|---|---|
-| `models/mobile` | 轻量（试用包默认） | `ch_PP-OCRv4_det_infer.onnx` 4.7 MB | `ch_PP-OCRv4_rec_infer.onnx` 10.4 MB | 14.9 MB |
+| `models/mobile` | 轻量（随 Windows 包分发） | `ch_PP-OCRv4_det_infer.onnx` 4.7 MB | `ch_PP-OCRv4_rec_infer.onnx` 10.4 MB | 14.9 MB |
 | `models/server` | 精度优先（只用于对比） | `ch_PP-OCRv4_det_server_infer.onnx` 108 MB | `ch_PP-OCRv4_rec_server_infer.onnx` 86 MB | 194 MB |
 
 字典统一使用 PaddleOCR 的 `ppocr/utils/ppocr_keys_v1.txt`（6623 条）。

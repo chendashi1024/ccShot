@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 source_revision=$(git rev-parse HEAD)
-version=${CCSHOT_VERSION:-0.1.0-dev}
+version=${CCSHOT_VERSION:-$(<../VERSION)}
 if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-dev)?$ ]]; then
   echo "版本号应为 MAJOR.MINOR.PATCH，可带 -dev。" >&2
   exit 1

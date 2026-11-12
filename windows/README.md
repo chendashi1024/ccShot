@@ -3,14 +3,14 @@
 Windows 版的目标只有一个：按快捷键框选截图后，直接在图上拖选文字并复制。基础识字用本地
 PaddleOCR 模型 + ONNX Runtime 在 CPU 上跑，不需要账号、网络、独立显卡或 API Key。
 
-**当前状态（2026-11-11）**
+**当前状态**
 
 | 层 | 状态 |
 |---|---|
 | 代码 | 托盘、全局热键、区域/窗口/当前屏截图、选区调整、原位标注、文字拖选、复制/保存、钉图选字与继续编辑 |
 | 构建与测试 | Mac 交叉构建通过，64 项核心测试通过。Windows Server 2025 x64 的构建和同一批 64 项测试也已通过 |
 | Windows 桌面 | 在托管 Windows x64 桌面实际唤起、框选、CPU 识字、拖选并回读剪贴板，连续唤起和 Esc 取消、窗口点选、钉图继续编辑、三种遮挡后的剪贴板检查均通过 |
-| 试用包 | 两个 ZIP 均附轻量模型和 OCR 所需的 x64 Visual C++ 运行库。自包含包另附 .NET 桌面运行时和第三方声明 |
+| 下载包 | 一个 Windows x64 ZIP，内含轻量 OCR 模型、.NET 桌面运行时、x64 Visual C++ 运行库及第三方声明 |
 | 待验收 | Windows 11 实机、不同缩放比例的双屏、干净系统覆盖升级和卸载，以及对外发布前的分发核对 |
 
 Windows 的测试结论和首轮历史数据见 [阶段报告](REPORT-2026-11-11.md)。
@@ -27,7 +27,7 @@ windows/
   testdata/windows-01/    新增样本：纯英文/代码/小字/低对比/标点/密集，带逐字真值
   tools/fetch-models.sh   下载模型并打印 SHA-256
   tools/gen_windows_fixtures.py  生成带逐字真值的样本
-  tools/package.sh        构建并打出预览包
+  tools/package.sh        生成 Windows 下载包和校验文件
   models/                 模型存放处（不提交，见 models/README.md）
   reports/                基准原始数据与日志
   docs/使用说明.txt        打进包里的用户说明
@@ -43,13 +43,15 @@ dotnet build -c Release                     # 三个工程 + 测试工程，可�
 dotnet test tests/CcShot.Core.Tests         # 64 项逻辑测试
 
 ./tools/fetch-models.sh mobile              # 下载 PP-OCRv4 轻量模型（14.9 MB）
-./tools/package.sh                          # 生成 dist/packages/<commit>/ 下的两个 ZIP
+./tools/package.sh                          # 生成 dist/packages/<commit>/ccShot-<版本号>-windows-x64.zip
 
 # 在 Windows 上从源码运行（需要 .NET 8 Desktop Runtime 和兼容的 x64 Visual C++ 运行库）
 dotnet run --project src/CcShot.Windows -c Release
 ```
 
-打包脚本从微软 Redist 组件取出四个 x64 DLL，校验 SHA-256 后将它们放在两个 ZIP 的 `CcShot.exe` 旁边。
+Windows 和 macOS 从仓库根目录的 [VERSION](../VERSION) 读取同一个版本号。完整解压 ZIP 后运行 `CcShot.exe`。
+
+打包脚本从微软 Redist 组件取出四个 x64 DLL，校验 SHA-256 后将它们放在 `CcShot.exe` 旁边。
 组件版本和下载地址见 [运行库清单](tools/vc-runtime.lock.json)。首次打包会下载组件，后续可用 `dist/vc-runtime/` 中的校验缓存。
 
 程序启动后只在托盘出现，没有主窗口。默认快捷键 `Ctrl+Alt+X`（可在设置里改，冲突会就地提示）。

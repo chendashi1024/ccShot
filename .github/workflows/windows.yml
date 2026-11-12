@@ -3,7 +3,7 @@ name: Windows 构建与桌面验证
 on:
   push:
     branches: [workbuddy/ccshot-windows]
-    paths: ['windows/**', '.github/workflows/windows.yml']
+    paths: ['VERSION', 'windows/**', '.github/workflows/windows.yml']
 
 permissions:
   contents: read
@@ -64,36 +64,45 @@ jobs:
           } finally {
             Remove-NetFirewallRule -Name $rule.Name
           }
-      - name: 生成 Windows ZIP 试用包
+      - name: 生成 Windows 下载包
         shell: bash
         env:
           PYTHON: python
         run: bash windows/tools/package.sh
-      - name: 核对 ZIP 中的 Visual C++ 运行库并启动自包含程序
+      - name: 校验 Windows 下载包并启动
         shell: pwsh
         run: |
           $revision = git rev-parse --short HEAD
           $packages = "windows/dist/packages/$revision"
-          $runtime = 'msvcp140.dll', 'msvcp140_1.dll', 'vcruntime140.dll', 'vcruntime140_1.dll'
-          foreach ($kind in 'fd', 'sc') {
-            $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path "$packages/ccShot-win-x64-$kind.zip").Path)
-            try {
-              foreach ($dll in $runtime) {
-                if (-not $archive.GetEntry("$kind/$dll")) { throw "试用包 $kind 缺少 $dll" }
-              }
-            } finally {
-              $archive.Dispose()
-            }
+          $version = (Get-Content VERSION -Raw).Trim()
+          $name = "ccShot-$version-windows-x64"
+          $archives = @(Get-ChildItem -LiteralPath $packages -File -Filter '*.zip')
+          if ($archives.Count -ne 1 -or $archives[0].Name -cne "$name.zip") {
+            throw "应只生成 $name.zip"
+          }
+          $zip = $archives[0]
+          $hash = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $sums = @(Get-Content -LiteralPath "$packages/SHA256SUMS.txt")
+          if ($sums.Count -ne 1 -or $sums[0] -cne "$hash  $name.zip") {
+            throw 'ZIP 校验值与清单不一致'
           }
           $output = Join-Path $env:RUNNER_TEMP 'ccshot-portable'
-          Expand-Archive -LiteralPath "$packages/ccShot-win-x64-sc.zip" -DestinationPath $output
-          $appDir = Join-Path $output 'sc'
-          $process = Start-Process "$appDir/CcShot.exe" -PassThru
+          Expand-Archive -LiteralPath $zip.FullName -DestinationPath $output
+          $appDir = Join-Path $output $name
+          $runtime = 'coreclr.dll', 'PresentationFramework.dll', 'onnxruntime.dll',
+            'msvcp140.dll', 'msvcp140_1.dll', 'vcruntime140.dll', 'vcruntime140_1.dll'
+          foreach ($dll in $runtime) {
+            if (-not (Test-Path -LiteralPath "$appDir/$dll" -PathType Leaf)) { throw "下载包缺少 $dll" }
+          }
+          $app = Get-Item -LiteralPath "$appDir/CcShot.exe"
+          $appVersion = $app.VersionInfo.ProductVersion
+          if ($appVersion -cne $version) { throw "程序版本 $appVersion 与 VERSION 中的 $version 不一致" }
+          $process = Start-Process $app.FullName -PassThru
           try {
             Start-Sleep -Seconds 2
             $process.Refresh()
-            if ($process.HasExited) { throw "自包含程序启动后退出：$($process.ExitCode)" }
-            Write-Host '通过：自包含 ccShot.exe 启动并保持运行。'
+            if ($process.HasExited) { throw "ccShot 启动后退出（$($process.ExitCode)）" }
+            Write-Host "ccShot $appVersion 已从下载包启动并保持运行"
           } finally {
             if (-not $process.HasExited) { Stop-Process -Id $process.Id }
           }
