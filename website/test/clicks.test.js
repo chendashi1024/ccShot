@@ -3,17 +3,15 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   dataPoint,
-  downloadConfig,
   handleRequest,
   resolveClick,
-  validHttps,
 } from "../src/index.js";
 
-const R2 = "https://download.ccshot.app/example.dmg";
+const R2 = "https://download.ccshot.app";
 const REPO = "https://github.com/chendashi1024/ccShot";
 const VERSION = readFileSync(new URL("../../VERSION", import.meta.url), "utf8").trim();
-const GITHUB = `${REPO}/releases/download/v${VERSION}/ccShot-${VERSION}-macos-arm64.dmg`;
-const WINDOWS = `${REPO}/releases/download/v${VERSION}/ccShot-${VERSION}-windows-x64.zip`;
+const MAC = `${R2}/ccShot-${VERSION}-macos-arm64.dmg`;
+const WINDOWS = `${R2}/ccShot-${VERSION}-windows-x64.zip`;
 const RELEASE = `${REPO}/releases/tag/v${VERSION}`;
 
 function fakeEnv() {
@@ -33,47 +31,18 @@ function fakeEnv() {
 }
 fakeEnv.points = [];
 
-test("primary download redirects to the verified GitHub file", () => {
-  const decision = resolveClick(new URL("https://ccshot.app/go/download?utm=ignored"));
-  assert.equal(decision.event, "download_github");
-  assert.equal(decision.kind, VERSION);
-  assert.equal(decision.location, GITHUB);
+test("Mac 和 Windows 下载指向 Cloudflare 文件", () => {
+  for (const [query, expected] of [["utm=ignored", MAC], ["platform=macos", MAC], ["platform=windows", WINDOWS]]) {
+    const decision = resolveClick(new URL(`https://ccshot.app/go/download?${query}`));
+    assert.deepEqual(decision, { status: 302, event: "download_r2", kind: VERSION, location: expected });
+  }
+  assert.equal(resolveClick(new URL("https://ccshot.app/go/download?platform=other")).status, 404);
 });
 
-test("github backup stays on the release asset", () => {
-  const decision = resolveClick(new URL("https://ccshot.app/go/download?source=github&next=https://evil.example"));
-  assert.equal(decision.event, "download_github");
-  assert.equal(decision.location, GITHUB);
-});
-
-test("Windows download selects the single Windows ZIP", () => {
-  const url = new URL("https://ccshot.app/go/download?platform=windows");
-  const config = { ...downloadConfig, r2DownloadUrl: R2 };
-  assert.equal(resolveClick(url, config).location, WINDOWS);
-  url.searchParams.set("source", "github");
-  assert.equal(resolveClick(url, config).location, WINDOWS);
-  url.searchParams.set("platform", "other");
-  assert.equal(resolveClick(url, config).status, 404);
-});
-
-test("a configured mirror remains available for the primary download", () => {
-  const decision = resolveClick(new URL("https://ccshot.app/go/download"), {
-    ...downloadConfig,
-    r2DownloadUrl: R2,
-  });
-  assert.equal(decision.event, "download_r2");
-  assert.equal(decision.location, R2);
-});
-
-test("unsafe configured URLs are not used", () => {
-  for (const bad of ["http://download.ccshot.app/a.dmg", "javascript:alert(1)", "https://user:pass@download.ccshot.app/a.dmg"]) {
-    assert.equal(validHttps(bad), false);
-    const decision = resolveClick(new URL("https://ccshot.app/go/download"), {
-      ...downloadConfig,
-      r2DownloadUrl: bad,
-    });
-    assert.equal(decision.event, "download_github");
-    assert.equal(decision.location, GITHUB);
+test("旧下载链接也会转到 Cloudflare", () => {
+  for (const [platform, expected] of [["macos", MAC], ["windows", WINDOWS]]) {
+    const decision = resolveClick(new URL(`https://ccshot.app/go/download?platform=${platform}&source=github&next=https://evil.example`));
+    assert.equal(decision.location, expected);
   }
 });
 
@@ -101,10 +70,10 @@ test("GET records one point and redirects; HEAD does not record", async () => {
   const env = fakeEnv();
   const response = await handleRequest(new Request("https://ccshot.app/go/download"), env);
   assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), GITHUB);
+  assert.equal(response.headers.get("location"), MAC);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(fakeEnv.points.length, 1);
-  assert.deepEqual(fakeEnv.points[0], { indexes: ["download_github"], blobs: [VERSION], doubles: [1] });
+  assert.deepEqual(fakeEnv.points[0], { indexes: ["download_r2"], blobs: [VERSION], doubles: [1] });
 
   const head = await handleRequest(new Request("https://ccshot.app/go/github?to=repo", { method: "HEAD" }), env);
   assert.equal(head.status, 302);
@@ -122,7 +91,7 @@ test("counting failure still redirects", async () => {
   };
   const response = await handleRequest(new Request("https://ccshot.app/go/download?source=github"), env);
   assert.equal(response.status, 302);
-  assert.equal(response.headers.get("location"), GITHUB);
+  assert.equal(response.headers.get("location"), MAC);
 });
 
 test("static requests are not handled as clicks", async () => {

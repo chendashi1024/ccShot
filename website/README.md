@@ -5,7 +5,7 @@
 ## 发布源
 
 - `website/public/` 存放正式首页和静态文件。下载与 GitHub 跳转在 `website/src/index.js`。
-- 只调整发布方式时，以当前正式版为准，发布前核对首页、静态文件和下载跳转。
+- 安装包与对应的 `.sha256` 存放于 R2 存储桶 `ccshot-downloads`，公开下载域名为 `download.ccshot.app`。更新版本时先上传并校验两个平台的文件，再更新和发布官网入口。
 - 改过静态文件后重新生成清单，然后运行测试。清单工具需要 Python 3 和 `blake3`，测试和本机上传使用 Node.js 22 或更新版本。
 
 ```bash
@@ -25,7 +25,7 @@ node --test website/test/*.js
 ## 正式站验收
 
 - 打开 [首页](https://ccshot.app/)，核对页面和图标，检查样式切换与图片放大。
-- macOS 下载 `/go/download` 和备用下载 `/go/download?source=github` 指向同一份 DMG。Windows 下载 `/go/download?platform=windows` 指向同一 Release 的唯一 Windows x64 ZIP。实际下载两端的文件并核对 SHA-256。
+- 从官网的 `/go/download` 和 `/go/download?platform=windows` 分别下载 Mac DMG 与 Windows x64 ZIP。确认最终域名是 `download.ccshot.app`，并与同域的 `.sha256` 校验文件比对。旧的 `source=github` 下载链接也转到同一下载域名。
 - `/go/github?to=repo` 跳到 GitHub 仓库，`/go/github?to=release` 跳到对应版本的安装说明。
 
-官网展示版本与仓库根目录的 [VERSION](../VERSION) 对齐。 [发布页和校验文件](https://github.com/chendashi1024/ccShot/releases)
+官网展示版本与仓库根目录的 [VERSION](../VERSION) 对齐。 [安装与发布说明](https://github.com/chendashi1024/ccShot/releases)

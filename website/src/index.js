@@ -3,29 +3,17 @@
 
 const version = "0.1.3";
 const repository = "https://github.com/chendashi1024/ccShot";
-const assets = `${repository}/releases/download/v${version}`;
+const downloads = "https://download.ccshot.app";
 
 export const downloadConfig = {
   version,
-  r2DownloadUrl: null,
-  githubReleaseAsset: `${assets}/ccShot-${version}-macos-arm64.dmg`,
-  githubWindowsReleaseAsset: `${assets}/ccShot-${version}-windows-x64.zip`,
+  macDownload: `${downloads}/ccShot-${version}-macos-arm64.dmg`,
+  windowsDownload: `${downloads}/ccShot-${version}-windows-x64.zip`,
   githubReleasePage: `${repository}/releases/tag/v${version}`,
   githubRepository: repository,
 };
 
-const EVENTS = new Set(["download_r2", "download_github", "github_exit"]);
-
-export function validHttps(value) {
-  if (typeof value !== "string" || value.length === 0 || value.length > 2048) return false;
-  let parsed;
-  try {
-    parsed = new URL(value);
-  } catch {
-    return false;
-  }
-  return parsed.protocol === "https:" && parsed.username === "" && parsed.password === "";
-}
+const EVENTS = new Set(["download_r2", "github_exit"]);
 
 export function dataPoint(event, kind) {
   if (!EVENTS.has(event)) throw new Error("unknown event");
@@ -45,20 +33,11 @@ export function resolveClick(url, config = downloadConfig) {
     const platform = url.searchParams.get("platform") ?? "macos";
     if (source !== null && source !== "github") return { status: 404 };
     if (platform !== "macos" && platform !== "windows") return { status: 404 };
-    const useGithub = platform === "windows" || source === "github" || !validHttps(config.r2DownloadUrl);
-    if (useGithub) {
-      return {
-        status: 302,
-        event: "download_github",
-        kind: config.version,
-        location: platform === "windows" ? config.githubWindowsReleaseAsset : config.githubReleaseAsset,
-      };
-    }
     return {
       status: 302,
       event: "download_r2",
       kind: config.version,
-      location: config.r2DownloadUrl,
+      location: platform === "windows" ? config.windowsDownload : config.macDownload,
     };
   }
   if (path === "/go/github") {

@@ -27,7 +27,7 @@ test("deployed page uses download and GitHub redirects", () => {
   assert.ok(site.includes("GitHub 标星"));
   const structured = JSON.parse(site.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1]);
   assert.equal(structured.softwareVersion, version);
-  assert.deepEqual(structured.downloadUrl, [downloadConfig.githubReleaseAsset, downloadConfig.githubWindowsReleaseAsset]);
+  assert.deepEqual(structured.downloadUrl, [downloadConfig.macDownload, downloadConfig.windowsDownload]);
   assert.equal((site.match(/<h1>/g) || []).length, 1);
   assert.ok(site.includes('lang="zh-CN"'));
   assert.ok(site.includes('name="viewport"'));
@@ -60,7 +60,7 @@ test("public pages open external pages in a new tab", () => {
 
 test("offline page downloads the real files without the worker", () => {
   const links = [...offline.matchAll(/<a\b[^>]*\bhref="([^"]+)"/g)].map((match) => match[1]);
-  for (const asset of [downloadConfig.githubReleaseAsset, downloadConfig.githubWindowsReleaseAsset]) {
+  for (const asset of [downloadConfig.macDownload, downloadConfig.windowsDownload]) {
     assert.equal(links.filter((link) => link === asset).length, 2);
   }
   assert.ok(links.includes(downloadConfig.githubReleasePage));

@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://ccshot.app/">官网</a> ·
-  <a href="https://github.com/chendashi1024/ccShot/releases/tag/v0.1.3">下载 ccShot</a> ·
+  <a href="https://ccshot.app/#cc-download">下载 ccShot</a> ·
   <a href="CHANGELOG.md">更新日志</a> ·
   <a href="https://github.com/chendashi1024/ccShot/issues">问题反馈</a>
 </p>
@@ -28,12 +28,12 @@
 
 | 平台 | 下载 v0.1.3 | 运行方式 |
 | --- | --- | --- |
-| macOS 14 或更新版本，Apple Silicon（M 系列） | [DMG](https://github.com/chendashi1024/ccShot/releases/download/v0.1.3/ccShot-0.1.3-macos-arm64.dmg) | 打开 DMG，把 `ccShot.app` 拖进「应用程序」 |
-| Windows x64 | [ZIP](https://github.com/chendashi1024/ccShot/releases/download/v0.1.3/ccShot-0.1.3-windows-x64.zip) | 完整解压到新目录，运行 `ccShot.exe` |
+| macOS 14 或更新版本，Apple Silicon（M 系列） | [DMG](https://download.ccshot.app/ccShot-0.1.3-macos-arm64.dmg) | 打开 DMG，把 `ccShot.app` 拖进「应用程序」 |
+| Windows x64 | [ZIP](https://download.ccshot.app/ccShot-0.1.3-windows-x64.zip) | 完整解压到新目录，运行 `ccShot.exe` |
 
 macOS 首次截图时，按提示允许屏幕录制，再重新打开 ccShot。应用采用临时签名。若系统阻止打开，确认来源和 SHA-256 后，可前往「系统设置 → 隐私与安全性」选择「仍要打开」。 [Apple 的打开应用说明](https://support.apple.com/zh-cn/102445)
 
-Windows 的 ZIP 已包含 .NET 桌面运行时、Visual C++ 运行库和离线模型。程序启动后在任务栏通知区域显示图标。程序未签名，若系统提示未知发布者，请先核对下载文件的 SHA-256。 [发布说明与校验文件](https://github.com/chendashi1024/ccShot/releases/tag/v0.1.3)
+Windows 的 ZIP 已包含 .NET 桌面运行时、Visual C++ 运行库和离线模型。程序启动后在任务栏通知区域显示图标。程序未签名，若系统提示未知发布者，请先核对下载文件的 SHA-256。 [Mac SHA-256](https://download.ccshot.app/ccShot-0.1.3-macos-arm64.dmg.sha256) · [Windows SHA-256](https://download.ccshot.app/ccShot-0.1.3-windows-x64.zip.sha256)
 
 ## 识字原理
 
