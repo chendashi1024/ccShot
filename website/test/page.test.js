@@ -8,7 +8,7 @@ const site = readFileSync(new URL("../public/index.html", import.meta.url), "utf
 const offline = readFileSync(new URL("../../docs/website-preview/index.html", import.meta.url), "utf8");
 const metadata = JSON.parse(readFileSync(new URL("../deploy/metadata.json", import.meta.url), "utf8"));
 const version = readFileSync(new URL("../../VERSION", import.meta.url), "utf8").trim();
-const compatibility = `v${version} · macOS 14+（Apple Silicon）· Windows x64`;
+const compatibility = "macOS 14+（Apple Silicon）· Windows x64";
 
 function hrefs(html, marker) {
   return [...html.matchAll(new RegExp(`<a\\b[^>]*${marker}[^>]*>`, "g"))].map((match) => {
@@ -33,13 +33,14 @@ test("deployed page uses download and GitHub redirects", () => {
   assert.ok(site.includes('name="viewport"'));
   assert.ok(site.includes('rel="canonical" href="https://ccshot.app/"'));
   assert.equal(site.split(compatibility).length - 1, 2);
-  assert.match(site, /VisionKit/);
-  assert.match(site, /PaddleOCR/);
+  assert.equal(site.split(`v${version} · ${compatibility}`).length - 1, 1);
+  assert.match(site, /<title>ccShot · macOS 和 Windows 截图工具<\/title>/);
+  assert.match(site, /<p class="hero-intro">适用于 macOS 和 Windows 的截图工具/);
 });
 
 test("the download section shows one line of compatibility and an installation link", () => {
   const section = site.match(/<section\b[^>]*id="cc-download"[^>]*>([\s\S]*?)<\/section>/)?.[1] ?? "";
-  assert.ok(section.includes(`<p class="platform">${compatibility} · <a`));
+  assert.ok(section.includes(`<p class="platform">v${version} · ${compatibility} · <a`));
   assert.equal((section.match(/<p\b/g) ?? []).length, 1);
 });
 

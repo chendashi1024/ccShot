@@ -18,7 +18,7 @@ for asset in sorted(assets):
     asset_urls[asset] = f'data:{mime};base64,' + base64.b64encode(path.read_bytes()).decode()
     fragment = fragment.replace(asset, asset_urls[asset])
 assert len(fragment.encode()) < 1_000_000, '会话预览需保持小于 1 MB'
-document = '<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="ccShot 是免费的 macOS 和 Windows 截图工具。截图后直接选字，支持标注、保存与桌面钉图。"><link rel="canonical" href="https://ccshot.app/"><link rel="icon" type="image/png" href="' + asset_urls[icon_asset] + '"><title>ccShot · 截完图，直接选字</title><style>body{margin:0;background:#fafbf7}</style></head><body>\n' + fragment + '\n</body></html>\n'
+document = '<!doctype html>\n<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="ccShot 是免费的 macOS 和 Windows 截图工具。截图后直接选字，支持标注、保存与桌面钉图。"><link rel="canonical" href="https://ccshot.app/"><link rel="icon" type="image/png" href="' + asset_urls[icon_asset] + '"><title>ccShot · macOS 和 Windows 截图工具</title><style>body{margin:0;background:#fafbf7}</style></head><body>\n' + fragment + '\n</body></html>\n'
 (root / 'index.html').write_text(document)
 if args.inline_output:
     if not args.inline_output.parent.is_dir():
