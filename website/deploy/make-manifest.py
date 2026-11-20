@@ -17,6 +17,7 @@ content_types = {
     ".png": "image/png",
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
+    ".ico": "image/vnd.microsoft.icon",
 }
 manifest = {}
 types = {}

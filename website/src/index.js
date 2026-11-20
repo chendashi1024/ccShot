@@ -1,7 +1,7 @@
 // Click redirects for ccshot.app.
 // Counts are redirect requests, not completed downloads and not GitHub stars.
 
-const version = "0.1.3";
+const version = "0.1.4";
 const repository = "https://github.com/chendashi1024/ccShot";
 const downloads = "https://download.ccshot.app";
 

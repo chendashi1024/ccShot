@@ -4,13 +4,29 @@
       "hash": "23f353d26276d1b570348d81cecdc6a8",
       "size": 602
     },
+    "/apple-touch-icon.png": {
+      "hash": "6a472a9745a9c886a1005b71173ed641",
+      "size": 15676
+    },
+    "/favicon.ico": {
+      "hash": "81a375f037b8169049099e4c6a3245ea",
+      "size": 45079
+    },
+    "/icon-192.png": {
+      "hash": "a5456395cf05d9945fe86f6f246e2750",
+      "size": 16138
+    },
     "/icon.png": {
       "hash": "de6441d5065174cd0e490f8362d4040d",
       "size": 8088
     },
     "/index.html": {
-      "hash": "da8f465ce9f0ee6893b78c5a298c4bab",
-      "size": 630359
+      "hash": "e2e521e389d1992d90d91f1b0d105c0d",
+      "size": 638617
+    },
+    "/llms.txt": {
+      "hash": "9608a0c07acd6b90ce08a68fdf0c7edb",
+      "size": 2674
     },
     "/og.jpg": {
       "hash": "b838c8f8ceed51b94c3a9ca0fd5c5b76",

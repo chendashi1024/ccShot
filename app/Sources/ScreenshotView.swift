@@ -7,6 +7,12 @@ struct ScreenshotPresentation {
     let displayID: UInt32
     let allowsAdjustment: Bool
     var captureSize: CGSize {screenFrame.size}
+    @MainActor var sourceScreenIsAvailable: Bool {
+        NSScreen.screens.contains { screen in
+            (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == displayID
+                && screen.frame == screenFrame
+        }
+    }
     func replacingRegion(_ value: CGRect) -> Self {
         Self(background:background,screenFrame:screenFrame,region:value,displayID:displayID,allowsAdjustment:allowsAdjustment)
     }
@@ -30,12 +36,15 @@ struct ScreenshotPresentation {
     var onAdjustmentBegin:(()->Void)?
     var onAdjustmentCancel:(()->Void)?
     var onRegionChange:((CGRect)->Bool)?
+    var canMoveFromInterior: ((CGPoint) -> Bool)?
+    var onBlankDoubleClick: (() -> Void)?
     private(set) var isAdjusting=false
     private let border=ScreenshotBorder()
     private var anchor:CGPoint?
     private var previous:CGRect = .zero
     private var handle:SelectionHandle?
     private var moving=false
+    private var completesOnClick = false
 
     init(presentation:ScreenshotPresentation,imagePixels:CGSize) {
         self.presentation=presentation;region=presentation.region;self.imagePixels=imagePixels
@@ -69,42 +78,62 @@ struct ScreenshotPresentation {
         let local=convert(point,from:superview)
         guard bounds.contains(local) else {return nil}
         if chrome.contains(where:{!$0.isHidden && $0.frame.contains(local)}) {return super.hitTest(point)}
-        if canAdjust,let rect=placement?.image {
+        if canAdjust,sourceGeometryAvailable,let rect=placement?.image {
             let near=rect.insetBy(dx:-7,dy:-7).contains(local)
             let inside=rect.width>14 && rect.height>14 && rect.insetBy(dx:7,dy:7).contains(local)
             if near && !inside {return self}
             if !rect.contains(local) {return self}
+            if canMoveFromInterior?(local) == true { return self }
         }
         return super.hitTest(point)
     }
     override func mouseDown(with event:NSEvent) {
-        guard canAdjust,sourceGeometryAvailable,let point=capturePoint(convert(event.locationInWindow,from:nil)) else {return}
-        window?.makeFirstResponder(self);anchor=point;previous=region
+        let local = convert(event.locationInWindow, from: nil)
+        guard canAdjust,sourceGeometryAvailable,let point=capturePoint(local) else {return}
+        anchor=point;previous=region
         let scale=(placement?.background.width ?? 1)/presentation.captureSize.width
         let tolerance=7/max(0.001,scale)
         handle=SelectionHandle.allCases.first {let p=$0.point(in:region);return hypot(p.x-point.x,p.y-point.y)<=tolerance}
         moving=handle==nil && region.insetBy(dx:-tolerance,dy:-tolerance).contains(point)
-        isAdjusting=true;onAdjustmentBegin?();imageView?.isHidden=true
+        completesOnClick = event.clickCount == 2 && moving && region.contains(point) && canMoveFromInterior?(local) == true
     }
     override func mouseDragged(with event:NSEvent) {
-        guard isAdjusting,let anchor,let point=capturePoint(convert(event.locationInWindow,from:nil)) else {return}
+        guard canAdjust, sourceGeometryAvailable, let anchor, let point=capturePoint(convert(event.locationInWindow,from:nil)), let background = placement?.background else {return}
+        if !isAdjusting {
+            let scale = background.width / presentation.captureSize.width
+            guard hypot(point.x-anchor.x,point.y-anchor.y) * scale > 3 else { return }
+            window?.makeFirstResponder(self)
+            isAdjusting=true;onAdjustmentBegin?();imageView?.isHidden=true
+        }
+        let image = CGSize(width: presentation.background.width, height: presentation.background.height)
         if let handle {region=handle.resize(previous,toward:point,canvas:presentation.captureSize,minimum:CGSize(width:presentation.captureSize.width/CGFloat(presentation.background.width),height:presentation.captureSize.height/CGFloat(presentation.background.height)))}
-        else if moving {
-            var rect=previous.offsetBy(dx:point.x-anchor.x,dy:point.y-anchor.y)
-            rect.origin.x=min(max(0,rect.minX),presentation.captureSize.width-rect.width);rect.origin.y=min(max(0,rect.minY),presentation.captureSize.height-rect.height);region=rect
+        else if moving, var pixels = CaptureGeometry.pixelRect(previous, canvas: presentation.captureSize, image: image) {
+            // 只平移原有的整像素范围，避免分别取整两条边改变截图尺寸。
+            let dx = ((point.x - anchor.x) * image.width / presentation.captureSize.width).rounded()
+            let dy = ((point.y - anchor.y) * image.height / presentation.captureSize.height).rounded()
+            pixels.origin.x = min(max(0, pixels.minX + dx), image.width - pixels.width)
+            pixels.origin.y = min(max(0, pixels.minY - dy), image.height - pixels.height)
+            region = CaptureGeometry.viewRect(pixels, canvas: presentation.captureSize, image: image)
         } else {region=CGRect(x:min(anchor.x,point.x),y:min(anchor.y,point.y),width:abs(point.x-anchor.x),height:abs(point.y-anchor.y))}
-        // 与真正裁图共用像素边界，避免预览框与最终裁剪相差一列。
-        if let pixels=CaptureGeometry.pixelRect(region,canvas:presentation.captureSize,image:CGSize(width:presentation.background.width,height:presentation.background.height)) {region=CaptureGeometry.viewRect(pixels,canvas:presentation.captureSize,image:CGSize(width:presentation.background.width,height:presentation.background.height))}
+        // 改大小时与真正裁图共用像素边界。
+        if !moving, let pixels=CaptureGeometry.pixelRect(region,canvas:presentation.captureSize,image:image) {region=CaptureGeometry.viewRect(pixels,canvas:presentation.captureSize,image:image)}
         onLayout?();refreshBorder()
     }
     override func mouseUp(with event:NSEvent) {
-        guard isAdjusting else {return}
-        isAdjusting=false;anchor=nil;handle=nil
+        guard anchor != nil else { return }
+        defer { anchor=nil;handle=nil;completesOnClick=false }
+        guard sourceGeometryAvailable else { return }
+        guard isAdjusting else {
+            if completesOnClick { onBlankDoubleClick?() }
+            return
+        }
+        mouseDragged(with: event)
+        isAdjusting=false
         guard region.width>0,region.height>0,region != previous else {cancelAdjustment();return}
         if onRegionChange?(region) != true {cancelAdjustment()}
     }
     private func cancelAdjustment() {
-        region=previous;isAdjusting=false;anchor=nil;handle=nil;imageView?.isHidden=false
+        region=previous;isAdjusting=false;anchor=nil;handle=nil;completesOnClick=false;imageView?.isHidden=false
         onAdjustmentCancel?();onLayout?();refreshBorder()
     }
     override func keyDown(with event:NSEvent) {

@@ -278,7 +278,7 @@ import QuartzCore
         controller.onReselect = { [weak self,weak controller] rect in
             guard let self,let controller,self.imageWindows[id] === controller,let screenshot,
                   screenshot.allowsAdjustment,controller.annotationDocument.state.objects.isEmpty,!controller.canvas.hasDraft,
-                  NSScreen.screens.contains(where:{($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == screenshot.displayID && $0.frame == screenshot.screenFrame}),
+                  screenshot.sourceScreenIsAvailable,
                   let pixels=CaptureGeometry.pixelRect(rect,canvas:screenshot.captureSize,image:CGSize(width:screenshot.background.width,height:screenshot.background.height)),
                   let image=screenshot.background.cropping(to:pixels) else {return false}
             controller.close()

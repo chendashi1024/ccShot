@@ -205,6 +205,11 @@ import UniformTypeIdentifiers
         screenshotView?.onAdjustmentBegin = { [weak self] in self?.invalidateRecognition() }
         screenshotView?.onAdjustmentCancel = { [weak self] in self?.recognize() }
         screenshotView?.onRegionChange = { [weak self] rect in self?.onReselect?(rect) ?? false }
+        screenshotView?.canMoveFromInterior = { [weak self] point in
+            guard let self, let root = screenshotView, canvas.tool == .select else { return false }
+            return canvas.canStartTextSelection?(canvas.convert(point, from: root)) != true
+        }
+        screenshotView?.onBlankDoubleClick = canvas.onBlankDoubleClick
         status.onChange = { [weak self] in if self?.screenshot != nil {self?.layoutScreenshot()} else if self?.pinned == true {self?.layoutPin()} }
         updateControls(); if screenshot == nil && !pinned {window.center()} else if let screenshot {window.setFrame(screenshot.screenFrame,display:false)}
         showWindow(nil); window.makeKeyAndOrderFront(nil)
@@ -410,7 +415,8 @@ import UniformTypeIdentifiers
         colorWell.suspend();window?.orderOut(nil)
     }
     func preserveScreenshotAfterScreenChange() {
-        guard let root=screenshotView,let window else {return}
+        guard let root=screenshotView,let window,!root.presentation.sourceScreenIsAvailable else {return}
+        if root.isAdjusting { root.cancelOperation(nil) }
         colorWell.suspend();root.sourceGeometryAvailable=false
         if let screen=window.screen ?? NSScreen.main {window.setFrame(screen.frame,display:true)}
         layoutScreenshot()
@@ -1037,6 +1043,7 @@ extension ImageWindow {
             checks["stable_region_\(tool.title)"] = canvas.frame == original && toolbarPanel.frame == primaryFrame
         }
         canvas.chooseTool(.arrow)
+        checks["drawing_tool_keeps_interior_drag"] = root.hitTest(root.convert(CGPoint(x: original.midX, y: original.midY), to: root.superview)) === canvas
         checks["curved_open_arrow_is_default"] = arrowSamples[1].state == .on && canvas.currentStyle.arrowHead == .open && !canvas.currentStyle.dashed
         checks["samples_have_no_visible_titles"] = arrowSamples.allSatisfy { $0.title.isEmpty && $0.image != nil && !$0.isHidden }
         func drawArrow(from start: CGPoint, to end: CGPoint) {
@@ -1081,10 +1088,39 @@ extension ImageWindow {
         checks["annotations_disable_crop_handles"] = !root.canAdjust
         annotationDocument.undo();canvas.chooseTool(.select);layoutScreenshot()
         checks["undo_restores_crop_handles"] = root.canAdjust && annotationDocument.state.objects.isEmpty
-        let down=NSEvent.mouseEvent(with:.leftMouseDown,location:CGPoint(x:original.maxX,y:original.minY),modifierFlags:[],timestamp:0,windowNumber:window!.windowNumber,context:nil,eventNumber:1,clickCount:1,pressure:1)!
-        root.mouseDown(with:down)
-        checks["adjustment_blocks_old_output"] = root.isAdjusting && stableImage()==nil && overlay.analysis==nil
+        let blank = CGPoint(x: original.midX, y: original.midY)
+        func sendMouse(_ type: NSEvent.EventType, at point: CGPoint, count: Int = 1) {
+            guard let window else { return }
+            let event = NSEvent.mouseEvent(with: type, location: root.convert(point, to: nil), modifierFlags: [],
+                                           timestamp: 0, windowNumber: window.windowNumber, context: nil,
+                                           eventNumber: 1, clickCount: count, pressure: type == .leftMouseUp ? 0 : 1)!
+            window.sendEvent(event)
+        }
+        var requestedRegion: CGRect?
+        onReselect = { requestedRegion = $0; return false }
+        sendMouse(.leftMouseDown, at: blank)
+        sendMouse(.leftMouseDragged, at: CGPoint(x: blank.x + 1, y: blank.y))
+        checks["blank_click_does_not_start_adjustment"] = !root.isAdjusting && root.region == original
+        let moved = original.offsetBy(dx: 40, dy: 30)
+        let end = CGPoint(x: blank.x + 40, y: blank.y + 30)
+        sendMouse(.leftMouseDragged, at: end)
+        checks["blank_drag_moves_region_without_resizing"] = root.isAdjusting && root.region == moved
+        sendMouse(.leftMouseUp, at: end)
+        checks["blank_drag_requests_new_crop"] = requestedRegion == moved && !root.isAdjusting && root.region == original
+        requestedRegion = nil
+        sendMouse(.leftMouseDown, at: blank, count: 2)
+        sendMouse(.leftMouseDragged, at: .zero, count: 2)
+        checks["second_press_can_drag_to_screen_edge"] = root.isAdjusting && root.region.origin == .zero && root.region.size == original.size
         root.cancelOperation(nil)
+        sendMouse(.leftMouseUp, at: .zero, count: 2)
+        checks["escape_cancels_move_without_recropping"] = requestedRegion == nil && root.region == original && window?.isVisible == true
+        onReselect = nil
+        sendMouse(.leftMouseDown, at: CGPoint(x: original.maxX, y: original.minY))
+        sendMouse(.leftMouseDragged, at: CGPoint(x: original.maxX + 40, y: original.minY - 30))
+        checks["adjustment_blocks_old_output"] = root.isAdjusting && stableImage()==nil && overlay.analysis==nil
+        checks["handle_drag_resizes_region"] = root.region.width == original.width + 40 && root.region.height == original.height + 30
+        root.cancelOperation(nil)
+        sendMouse(.leftMouseUp, at: CGPoint(x: original.maxX + 40, y: original.minY - 30))
         checks["cancel_adjustment_preserves_image"] = !root.isAdjusting && root.region==original && stableImage()?.width==716 && !canvas.isHidden
         preserveScreenshotAfterScreenChange()
         checks["screen_change_preserves_crop_and_disables_recrop"] = !root.sourceGeometryAvailable && !root.canAdjust && stableImage()?.width==716 && stableImage()?.height==450

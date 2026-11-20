@@ -51,6 +51,17 @@ import AppKit
         await editor.recognitionForVerification?.value
         var checks=editor.inlineLayoutChecks(previewPath: previewPath)
         checks.merge(await editor.screenshotOutputChecks()) { _, new in new }
+        if let screen = NSScreen.main,
+           let displayID = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value {
+            let displayPresentation = ScreenshotPresentation(background: background, screenFrame: screen.frame,
+                                                              region: presentation.region, displayID: displayID, allowsAdjustment: true)
+            let displayEditor = ImageWindow(annotationDocument: AnnotationDocument(image: crop), pinned: false,
+                                            preferences: AppPreferences(store: store), screenshot: displayPresentation, pasteboard: pasteboard)
+            defer { displayEditor.close() }
+            displayEditor.preserveScreenshotAfterScreenChange()
+            let root = displayEditor.window?.contentView as? ScreenshotView
+            checks["unchanged_source_display_keeps_adjustment"] = root?.canAdjust == true && root?.sourceGeometryAvailable == true
+        }
         for copySelectedText in [false, true] {
             let doubleClickEditor = ImageWindow(annotationDocument: AnnotationDocument(image: crop), pinned: false,
                                                 preferences: AppPreferences(store: store), screenshot: presentation, pasteboard: pasteboard)
@@ -60,8 +71,11 @@ import AppKit
             if copySelectedText {
                 let canvas = doubleClickEditor.canvas
                 let textPoint = CGPoint(x: 130, y: 381)
-                let hit = canvas.hitTest(canvas.convert(textPoint, to: canvas.superview))
-                checks["text_hit_goes_to_selection_layer"] = canvas.canStartTextSelection?(textPoint) == true && hit != nil && hit !== canvas
+                if let root = window.contentView {
+                    let hit = root.hitTest(canvas.convert(textPoint, to: root.superview))
+                    checks["text_hit_goes_to_selection_layer"] = canvas.canStartTextSelection?(textPoint) == true
+                        && hit?.isDescendant(of: canvas) == true && hit !== canvas
+                }
                 doubleClickEditor.selectAll(nil)
             }
             let selectedText = doubleClickEditor.selectedTextForVerification

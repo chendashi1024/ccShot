@@ -9,9 +9,16 @@
 - 改过静态文件后重新生成清单，然后运行测试。清单工具需要 Python 3 和 `blake3`，测试和本机上传使用 Node.js 22 或更新版本。
 
 ```bash
+python3 docs/website-preview/build.py
 python3 website/deploy/make-manifest.py
 node --test website/test/*.js
 ```
+
+首页与离线页由 `docs/website-preview/preview.html` 和 `head.html` 共同生成；FAQ 的 JSON-LD 从可见问答提取。`website/public/llms.txt` 是公开产品资料索引，版本更新时与首页、README 一起核对，不代表搜索或 AI 引用保证。首页通过 `rel="alternate"` 引用它；`robots.txt` 已允许抓取全站，sitemap 继续列规范首页，不把资料副本与图标当作独立落地页。
+
+站点图标来自现有 `app/Resources/AppIcon.icns`。需要重新生成时运行 `python3 website/deploy/make-icons.py`（需要 Pillow），再生成清单。`favicon.ico` 包含 16/32/48/64/128/256 像素，MIME 为 `image/vnd.microsoft.icon`；另有 180 像素 `apple-touch-icon.png` 和 192 像素 `icon-192.png`，MIME 均为 `image/png`。原 `/icon.png` 的 URL 与内容保持不变。新图标均独立存放，不内嵌到 HTML。
+
+发布后检查首页、图标、`llms.txt` 的状态码与 Content-Type，确认 Googlebot 和 Googlebot-Image 不受阻挡。再通过 Google Search Console 的网址检查请求重新抓取首页，在 Bing Webmaster Tools 提交首页，并检查 sitemap 状态。图标通过首页声明被重新发现，不能承诺立即更换；参见 [Google 图标规范](https://developers.google.com/search/docs/appearance/favicon-in-search)。
 
 ## 从本机发布
 
